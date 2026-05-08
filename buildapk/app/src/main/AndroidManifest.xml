@@ -1,0 +1,79 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    android:versionCode="1"
+    android:versionName="1.0">
+
+    <uses-permission android:name="android.permission.CAMERA" />
+    <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+    <uses-permission android:name="android.permission.READ_MEDIA_IMAGES" />
+    <uses-permission android:name="android.permission.READ_MEDIA_VIDEO" />
+
+    <uses-feature android:name="android.hardware.camera2.full" android:required="false" />
+
+    <application
+        android:name=".OpenIrisApplication"
+        android:label="@string/app_name"
+        android:icon="@mipmap/detect"
+        android:usesCleartextTraffic="false"
+        android:theme="@style/Theme.OpenIris">
+
+        <activity
+            android:name=".MainActivity"
+            android:label="@string/app_name"
+            android:screenOrientation="portrait"
+            android:exported="true"
+            android:theme="@style/Theme.OpenIris">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
+
+        <activity
+            android:name=".ImageDetectActivity"
+            android:label="@string/image_detect"
+            android:screenOrientation="portrait"
+            android:exported="false" />
+
+        <activity
+            android:name=".RealtimeDetectActivity"
+            android:label="@string/realtime_detect"
+            android:screenOrientation="portrait"
+            android:exported="false" />
+
+        <activity
+            android:name=".VideoDetectActivity"
+            android:label="@string/video_detect"
+            android:screenOrientation="portrait"
+            android:exported="false" />
+
+        <activity
+            android:name=".SettingsActivity"
+            android:label="@string/settings"
+            android:screenOrientation="portrait"
+            android:exported="false" />
+
+        <activity
+            android:name=".AiModelSettingsActivity"
+            android:label="AI 模型设置"
+            android:screenOrientation="portrait"
+            android:exported="false" />
+
+        <activity
+            android:name=".AiProviderEditActivity"
+            android:label="编辑提供商"
+            android:screenOrientation="portrait"
+            android:exported="false" />
+
+        <provider
+            android:name="androidx.core.content.FileProvider"
+            android:authorities="${applicationId}.fileprovider"
+            android:exported="false"
+            android:grantUriPermissions="true">
+            <meta-data
+                android:name="android.support.FILE_PROVIDER_PATHS"
+                android:resource="@xml/file_paths" />
+        </provider>
+    </application>
+</manifest>
