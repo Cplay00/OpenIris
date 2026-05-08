@@ -1,35 +1,37 @@
-# Build outputs
-build/
-app/build/
-.gradle/
-local.properties
-
-# IDE files
-.idea/
+# Android
 *.iml
-*.iws
-*.ipr
+.gradle
+/local.properties
+/.idea
+.DS_Store
+/build
+/captures
+.externalNativeBuild
+.cxx
+app/build
+build
 
-# OS files
+# Gradle
+buildapk/.gradle
+buildapk/build
+buildapk/app/build
+buildapk/app/.cxx
+
+# IDE
+.idea
+*.iml
+.vscode
+
+# OS
 .DS_Store
 Thumbs.db
+
+# Backup
+backup/
 
 # Temporary files
 *.tmp
 *.log
 
-# Large binary files (NCNN/OpenCV libraries - download separately)
-buildapk/app/src/main/jni/ncnn-20240410-android-vulkan/
-buildapk/app/src/main/jni/opencv-mobile-3.4.20-android/
-
 # Gradle wrapper jar
-gradle-9.4.1-all.zip
-
-# Backup files
-backup/
-
-# Build APKs (use GitHub Releases instead)
-*.apk
-
-# Configuration cache
-build/reports/configuration-cache/
+gradle/wrapper/gradle-wrapper.jar
