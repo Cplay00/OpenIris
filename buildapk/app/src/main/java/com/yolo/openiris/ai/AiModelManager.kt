@@ -66,10 +66,10 @@ class AiModelManager private constructor(context: Context) {
     }
 
     /**
-     * 设置调用间隔
+     * 设置调用间隔（最小 1 秒）
      */
     fun setCallIntervalSeconds(seconds: Int) {
-        configStore.setCallIntervalSeconds(seconds)
+        configStore.setCallIntervalSeconds(seconds.coerceAtLeast(1))
     }
 
     /**

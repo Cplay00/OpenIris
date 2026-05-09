@@ -34,6 +34,7 @@ class VlmScheduler(
     private val triggerCount = AtomicLong(0)
     private val skipCount = AtomicLong(0)
 
+    @Volatile
     private var intervalMs: Long = config.vlmIntervalSeconds * 1000L
 
     /**

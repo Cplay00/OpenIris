@@ -71,10 +71,11 @@ class LlmClient private constructor(
      * 异步融合结果
      */
     fun fuseAsync(yoloResult: DetectionResult, vlmResult: VlmResult, callback: LlmCallback) {
-        val prompt = LlmRequestBuilder.buildPrompt(yoloResult, vlmResult)
-        val request = buildRequest(prompt)
+        try {
+            val prompt = LlmRequestBuilder.buildPrompt(yoloResult, vlmResult)
+            val request = buildRequest(prompt)
 
-        client.newCall(request).enqueue(object : Callback {
+            client.newCall(request).enqueue(object : Callback {
             override fun onFailure(call: Call, e: IOException) {
                 Log.e(TAG, "LLM async request failed", e)
                 callback.onError(e)
@@ -89,7 +90,11 @@ class LlmClient private constructor(
                     callback.onError(e)
                 }
             }
-        })
+            })
+        } catch (e: Exception) {
+            Log.e(TAG, "LLM async build request failed", e)
+            callback.onError(e)
+        }
     }
 
     private fun buildRequest(prompt: String): Request {
@@ -143,7 +148,11 @@ class LlmClient private constructor(
                 for (j in 0 until evidenceArray.length()) {
                     evidence.add(evidenceArray.getString(j))
                 }
-                val confidence = obj.optString("confidence").ifBlank { null }
+                val confidence = if (obj.has("confidence") && !obj.isNull("confidence")) {
+                    obj.opt("confidence")?.toString()?.ifBlank { null }
+                } else {
+                    null
+                }
                 val score = if (obj.has("score") && !obj.isNull("score")) {
                     obj.optDouble("score").toFloat()
                 } else {

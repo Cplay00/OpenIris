@@ -44,7 +44,8 @@ object LlmRequestBuilder {
         val payload = FusionPromptPayload(
             yoloCounts = yoloResult.countByLabel(),
             yoloObjects = yoloResult.objects.map {
-                "${it.label} | confidence=${String.format("%.2f", it.confidence)} | bbox=${it.bbox.x},${it.bbox.y},${it.bbox.width},${it.bbox.height}"
+                val conf = if (it.confidence.isFinite()) String.format("%.2f", it.confidence) else "0.00"
+                "${it.label} | confidence=$conf | bbox=${it.bbox.x},${it.bbox.y},${it.bbox.width},${it.bbox.height}"
             },
             vlmSceneSummary = vlmResult.sceneSummary,
             vlmObjects = vlmResult.objects.map {

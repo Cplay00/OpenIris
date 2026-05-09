@@ -69,6 +69,8 @@ class RealtimeDetectActivity : AppCompatActivity(), SurfaceHolder.Callback {
     private var currentModel = 0
     private var isAiEnabled = false
     private var isFullscreen = false
+    private var cachedLabels: List<String> = emptyList()
+    private var cachedModelName: String = ""
 
     // Detection trackers
     private val yoloTracker = SlidingWindowTracker(15000) // 15 seconds window
@@ -170,6 +172,10 @@ class RealtimeDetectActivity : AppCompatActivity(), SurfaceHolder.Callback {
         if (!ret) {
             Log.e(TAG, "Failed to load model")
         }
+
+        // 缓存 labels 避免每帧都读文件
+        cachedModelName = config.selectedModel
+        cachedLabels = loadLabels(config.selectedModel)
     }
 
     private fun updateAiStatus() {
@@ -240,8 +246,7 @@ class RealtimeDetectActivity : AppCompatActivity(), SurfaceHolder.Callback {
 
     private fun processDetectionResult(rawResults: IntArray) {
         val objects = mutableListOf<DetectedObject>()
-        val config = configManager.loadConfig()
-        val labels = loadLabels(config.selectedModel)
+        val labels = cachedLabels
 
         var i = 0
         while (i + 5 < rawResults.size) {
@@ -271,7 +276,7 @@ class RealtimeDetectActivity : AppCompatActivity(), SurfaceHolder.Callback {
         }
 
         runOnUiThread {
-            overlayView.setResults(objects, 640, 640)
+            overlayView.setResults(objects, overlayView.width, overlayView.height)
             updateResultSummary()
         }
     }
@@ -373,10 +378,7 @@ class RealtimeDetectActivity : AppCompatActivity(), SurfaceHolder.Callback {
 
     private fun loadLabels(modelName: String): List<String> {
         return try {
-            val inputStream = assets.open("models/$modelName/labels.txt")
-            val labels = inputStream.bufferedReader().readLines().filter { it.isNotBlank() }
-            inputStream.close()
-            labels
+            assets.open("models/$modelName/labels.txt").use { it.bufferedReader().readLines().filter { line -> line.isNotBlank() } }
         } catch (e: Exception) {
             Log.e(TAG, "Failed to load labels", e)
             emptyList()

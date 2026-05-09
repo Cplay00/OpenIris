@@ -272,7 +272,7 @@ class AiApiClient {
             val choices = jsonObject.getAsJsonArray("choices")
             if (choices != null && choices.size() > 0) {
                 val message = choices[0].asJsonObject.getAsJsonObject("message")
-                val content = message.get("content")?.asString ?: ""
+                val content = message?.get("content")?.asString ?: ""
 
                 // 尝试解析结构化输出
                 val structuredOutput = tryParseStructuredOutput(content)

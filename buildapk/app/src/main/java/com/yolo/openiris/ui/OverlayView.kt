@@ -63,7 +63,7 @@ class OverlayView @JvmOverloads constructor(
         val scaleY = height.toFloat() / imageHeight
 
         for (obj in detectedObjects) {
-            val color = colors[obj.labelIndex % colors.size]
+            val color = colors[Math.floorMod(obj.labelIndex, colors.size)]
             boxPaint.color = color
 
             val rect = RectF(
@@ -80,14 +80,15 @@ class OverlayView @JvmOverloads constructor(
             val textBounds = android.graphics.Rect()
             textPaint.getTextBounds(label, 0, label.length, textBounds)
 
+            val labelTop = maxOf(0f, rect.top - textBounds.height() - 12)
             val labelRect = RectF(
                 rect.left,
-                rect.top - textBounds.height() - 12,
+                labelTop,
                 rect.left + textWidth + 12,
-                rect.top
+                labelTop + textBounds.height() + 12
             )
             canvas.drawRect(labelRect, bgPaint)
-            canvas.drawText(label, rect.left + 6, rect.top - 6, textPaint)
+            canvas.drawText(label, rect.left + 6, labelTop + textBounds.height() + 4, textPaint)
         }
     }
 }

@@ -66,9 +66,10 @@ object ImageUtils {
     private fun getColorForLabel(labelIndex: Int): Int {
         val colors = intArrayOf(
             Color.RED, Color.GREEN, Color.BLUE, Color.YELLOW,
-            Color.CYAN, Color.MAGENTA, Color.WHITE, Color.BLACK
+            Color.CYAN, Color.MAGENTA, Color.WHITE,
+            Color.parseColor("#FF6B35"), Color.parseColor("#8B5CF6")
         )
-        return colors[labelIndex % colors.size]
+        return colors[Math.floorMod(labelIndex, colors.size)]
     }
 
     /**
@@ -82,10 +83,22 @@ object ImageUtils {
      * 将 Bitmap 转换为 RGB 字节数组（用于 NCNN 推理）
      */
     fun bitmapToRgbBytes(bitmap: Bitmap): ByteArray {
-        val width = bitmap.width
-        val height = bitmap.height
+        // 确保 Bitmap 是 ARGB_8888 格式
+        val argbBitmap = if (bitmap.config != Bitmap.Config.ARGB_8888) {
+            bitmap.copy(Bitmap.Config.ARGB_8888, false)
+        } else {
+            bitmap
+        }
+
+        val width = argbBitmap.width
+        val height = argbBitmap.height
         val pixels = IntArray(width * height)
-        bitmap.getPixels(pixels, 0, width, 0, 0, width, height)
+        argbBitmap.getPixels(pixels, 0, width, 0, 0, width, height)
+
+        // 如果创建了新 bitmap，回收它
+        if (argbBitmap !== bitmap) {
+            argbBitmap.recycle()
+        }
 
         val rgbBytes = ByteArray(width * height * 3)
         for (i in pixels.indices) {

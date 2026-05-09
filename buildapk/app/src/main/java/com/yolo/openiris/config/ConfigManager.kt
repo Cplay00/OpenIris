@@ -1,6 +1,8 @@
 package com.yolo.openiris.config
 
 import android.content.Context
+import android.content.SharedPreferences
+import android.util.Log
 import androidx.security.crypto.EncryptedSharedPreferences
 import androidx.security.crypto.MasterKey
 
@@ -11,6 +13,7 @@ import androidx.security.crypto.MasterKey
 class ConfigManager private constructor(context: Context) {
 
     companion object {
+        private const val TAG = "ConfigManager"
         private const val PREFS_FILE = "openiris_config"
         private const val KEY_API_BASE_URL = "api_base_url"
         private const val KEY_API_KEY = "api_key"
@@ -38,17 +41,22 @@ class ConfigManager private constructor(context: Context) {
         }
     }
 
-    private val masterKey: MasterKey = MasterKey.Builder(context)
-        .setKeyScheme(MasterKey.KeyScheme.AES256_GCM)
-        .build()
+    private val encryptedPrefs: SharedPreferences = try {
+        val masterKey = MasterKey.Builder(context)
+            .setKeyScheme(MasterKey.KeyScheme.AES256_GCM)
+            .build()
 
-    private val encryptedPrefs = EncryptedSharedPreferences.create(
-        context,
-        PREFS_FILE,
-        masterKey,
-        EncryptedSharedPreferences.PrefKeyEncryptionScheme.AES256_SIV,
-        EncryptedSharedPreferences.PrefValueEncryptionScheme.AES256_GCM
-    )
+        EncryptedSharedPreferences.create(
+            context,
+            PREFS_FILE,
+            masterKey,
+            EncryptedSharedPreferences.PrefKeyEncryptionScheme.AES256_SIV,
+            EncryptedSharedPreferences.PrefValueEncryptionScheme.AES256_GCM
+        )
+    } catch (e: Exception) {
+        Log.e(TAG, "加密存储初始化失败，回退到普通 SharedPreferences", e)
+        context.getSharedPreferences(PREFS_FILE, Context.MODE_PRIVATE)
+    }
 
     private val defaults = AppConfig()
 
@@ -150,10 +158,25 @@ class ConfigManager private constructor(context: Context) {
     }
 
     /**
-     * 清除所有配置
+     * 清除所有配置（保留 AI Provider 密钥）
      */
     fun clearConfig() {
-        encryptedPrefs.edit().clear().apply()
+        encryptedPrefs.edit().apply {
+            remove(KEY_API_BASE_URL)
+            remove(KEY_API_KEY)
+            remove(KEY_VLM_MODEL)
+            remove(KEY_LLM_MODEL)
+            remove(KEY_VLM_INTERVAL)
+            remove(KEY_USE_GPU)
+            remove(KEY_SELECTED_MODEL)
+            remove(KEY_ENABLE_LLM_FUSION)
+            remove(KEY_ENABLE_JSON_EXPORT)
+            remove(KEY_ENABLE_IMAGE_EXPORT)
+            remove(KEY_ENABLE_VIDEO_EXPORT)
+            remove(KEY_IMAGE_EXPORT_PATH)
+            remove(KEY_JSON_EXPORT_PATH)
+            apply()
+        }
     }
 
     /**

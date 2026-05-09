@@ -19,14 +19,16 @@ object JsonExporter {
         .setPrettyPrinting()
         .create()
 
-    private val dateFormat = SimpleDateFormat("yyyy-MM-dd_HH-mm-ss", Locale.getDefault())
+    private fun getTimestamp(): String {
+        return SimpleDateFormat("yyyy-MM-dd_HH-mm-ss", Locale.getDefault()).format(Date())
+    }
 
     fun export(context: Context, result: AnalysisResult): ExportResult {
         return try {
             val configManager = ConfigManager.getInstance(context)
             val jsonPath = configManager.getJsonExportPath()
             
-            val timestamp = dateFormat.format(Date())
+            val timestamp = getTimestamp()
             val fileName = "openiris_analysis_${timestamp}.json"
             
             val baseDir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOCUMENTS)
@@ -75,14 +77,16 @@ object JsonExporter {
 
 object ImageExporter {
 
-    private val dateFormat = SimpleDateFormat("yyyy-MM-dd_HH-mm-ss", Locale.getDefault())
+    private fun getTimestamp(): String {
+        return SimpleDateFormat("yyyy-MM-dd_HH-mm-ss", Locale.getDefault()).format(Date())
+    }
 
     fun export(context: Context, bitmap: Bitmap): ExportResult {
         return try {
             val configManager = ConfigManager.getInstance(context)
             val imagePath = configManager.getImageExportPath()
             
-            val timestamp = dateFormat.format(Date())
+            val timestamp = getTimestamp()
             val fileName = "openiris_annotated_${timestamp}.jpg"
             
             val baseDir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_PICTURES)

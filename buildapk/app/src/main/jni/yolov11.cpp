@@ -362,34 +362,6 @@ std::vector<Object> Inference::runInference(const cv::Mat &bgr)
 
     // objects = proposals;
     std::vector<Object> objects;
-    for (auto& pro : proposals)
-	{
-        float x0 = pro.rect.x;
-		float y0 = pro.rect.y;
-		float x1 = pro.rect.x + pro.rect.width;
-		float y1 = pro.rect.y + pro.rect.height;
-		float& score = pro.prob;
-		int& label = pro.label;
-
-		x0 = (x0 - (wpad / 2)) / scale;
-		y0 = (y0 - (hpad / 2)) / scale;
-		x1 = (x1 - (wpad / 2)) / scale;
-		y1 = (y1 - (hpad / 2)) / scale;
-
-		x0 = clamp(x0, 0.f, img_w);
-		y0 = clamp(y0, 0.f, img_h);
-		x1 = clamp(x1, 0.f, img_w);
-		y1 = clamp(y1, 0.f, img_h);
-
-		Object obj;
-		obj.rect.x = x0;
-		obj.rect.y = y0;
-		obj.rect.width = x1 - x0;
-		obj.rect.height = y1 - y0;
-		obj.prob = score;
-		obj.label = label;
-		objects.push_back(obj);
-	}
 
     non_max_suppression(proposals, objects,
                         img_h, img_w, hpad / 2, wpad / 2,

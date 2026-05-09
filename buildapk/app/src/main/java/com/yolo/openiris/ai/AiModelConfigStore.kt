@@ -2,6 +2,7 @@ package com.yolo.openiris.ai
 
 import android.content.Context
 import android.content.SharedPreferences
+import android.util.Log
 import com.google.gson.Gson
 import com.google.gson.reflect.TypeToken
 import com.yolo.openiris.config.ConfigManager
@@ -21,6 +22,7 @@ class AiModelConfigStore(context: Context) {
     private val gson = Gson()
 
     companion object {
+        private const val TAG = "AiModelConfigStore"
         private const val PREFS_NAME = "ai_model_config"
         private const val KEY_PROVIDERS = "providers"
         private const val KEY_DEFAULT_MODEL_ID = "default_model_id"
@@ -56,6 +58,7 @@ class AiModelConfigStore(context: Context) {
                 provider.copy(apiKey = apiKey)
             }
         } catch (e: Exception) {
+            Log.e(TAG, "Failed to load providers", e)
             emptyList()
         }
     }
@@ -63,8 +66,11 @@ class AiModelConfigStore(context: Context) {
     /**
      * 添加提供商（apiKey 加密存储）
      */
+    @Synchronized
     fun addProvider(provider: AiProvider) {
         val providers = loadRawProviders().toMutableList()
+        // 避免重复添加
+        providers.removeAll { it.id == provider.id }
         providers.add(provider.copy(apiKey = ""))
         saveRawProviders(providers)
         configManager.saveAiProviderApiKey(provider.id, provider.apiKey)
@@ -73,6 +79,7 @@ class AiModelConfigStore(context: Context) {
     /**
      * 更新提供商（apiKey 加密存储）
      */
+    @Synchronized
     fun updateProvider(provider: AiProvider) {
         val providers = loadRawProviders().toMutableList()
         val index = providers.indexOfFirst { it.id == provider.id }
@@ -86,6 +93,7 @@ class AiModelConfigStore(context: Context) {
     /**
      * 删除提供商（同时删除加密的 apiKey）
      */
+    @Synchronized
     fun deleteProvider(providerId: String) {
         val providers = loadRawProviders().toMutableList()
         providers.removeAll { it.id == providerId }
@@ -166,6 +174,7 @@ class AiModelConfigStore(context: Context) {
     /**
      * 为提供商添加模型
      */
+    @Synchronized
     fun addModelToProvider(providerId: String, model: AiModel) {
         val providers = loadRawProviders().toMutableList()
         val providerIndex = providers.indexOfFirst { it.id == providerId }
@@ -181,6 +190,7 @@ class AiModelConfigStore(context: Context) {
     /**
      * 从提供商删除模型
      */
+    @Synchronized
     fun removeModelFromProvider(providerId: String, modelId: String) {
         val providers = loadRawProviders().toMutableList()
         val providerIndex = providers.indexOfFirst { it.id == providerId }
@@ -196,6 +206,7 @@ class AiModelConfigStore(context: Context) {
     /**
      * 更新模型
      */
+    @Synchronized
     fun updateModel(providerId: String, model: AiModel) {
         val providers = loadRawProviders().toMutableList()
         val providerIndex = providers.indexOfFirst { it.id == providerId }
@@ -220,6 +231,7 @@ class AiModelConfigStore(context: Context) {
             val type = object : TypeToken<List<AiProvider>>() {}.type
             gson.fromJson(json, type) ?: emptyList()
         } catch (e: Exception) {
+            Log.e(TAG, "Failed to load raw providers", e)
             emptyList()
         }
     }

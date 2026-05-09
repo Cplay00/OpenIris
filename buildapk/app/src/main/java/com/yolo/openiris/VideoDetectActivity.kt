@@ -11,6 +11,7 @@ import android.view.animation.DecelerateInterpolator
 import android.widget.ImageButton
 import android.widget.Toast
 import android.widget.VideoView
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.WindowInsetsControllerCompat
@@ -71,6 +72,17 @@ class VideoDetectActivity : AppCompatActivity() {
     private var analysisResults: MutableList<AnalysisResult> = mutableListOf()
     private var aiCallJob: Job? = null
 
+    private val pickVideoLauncher = registerForActivityResult(
+        ActivityResultContracts.GetContent()
+    ) { uri ->
+        uri?.let {
+            videoUri = it
+            videoView.setVideoURI(it)
+            buttonAnalyze.isEnabled = true
+            textStatus.text = "已选择视频"
+        }
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_video_detect)
@@ -125,7 +137,7 @@ class VideoDetectActivity : AppCompatActivity() {
         }
 
         buttonSelectVideo.setOnClickListener {
-            // TODO: Implement video selection
+            pickVideoLauncher.launch("video/*")
         }
 
         buttonPlayPause.setOnClickListener { togglePlayPause() }
@@ -215,6 +227,13 @@ class VideoDetectActivity : AppCompatActivity() {
             val durationStr = retriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_DURATION)
             val durationMs = durationStr?.toLongOrNull() ?: 0L
 
+            if (durationMs <= 0) {
+                withContext(Dispatchers.Main) {
+                    textStatus.text = "无法读取视频时长"
+                }
+                return results
+            }
+
             var currentTimeMs = 0L
 
             while (currentTimeMs < durationMs) {
@@ -225,6 +244,7 @@ class VideoDetectActivity : AppCompatActivity() {
 
                 if (frame != null) {
                     val yoloResult = runYoloDetection(frame)
+                    frame.recycle()
                     results.add(
                         AnalysisResult.fromResults(
                             mode = DetectionMode.VIDEO,
@@ -285,7 +305,7 @@ class VideoDetectActivity : AppCompatActivity() {
 
     private fun loadLabels(modelName: String): List<String> {
         return try {
-            assets.open("models/$modelName/labels.txt").bufferedReader().readLines().filter { it.isNotBlank() }
+            assets.open("models/$modelName/labels.txt").use { it.bufferedReader().readLines().filter { line -> line.isNotBlank() } }
         } catch (e: Exception) {
             emptyList()
         }
@@ -478,6 +498,9 @@ class VideoDetectActivity : AppCompatActivity() {
         super.onPause()
         if (isPlaying) {
             videoView.pause()
+            isPlaying = false
+            buttonPlayPause.text = "播放"
+            buttonPlayPause.setIconResource(android.R.drawable.ic_media_play)
         }
         stopAiCallLoop()
     }

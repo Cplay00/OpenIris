@@ -71,10 +71,11 @@ class VlmClient private constructor(
      * 异步识别图片
      */
     fun recognizeAsync(bitmap: Bitmap, callback: VlmCallback) {
-        val base64Image = bitmapToBase64(bitmap)
-        val request = buildRequest(base64Image)
+        try {
+            val base64Image = bitmapToBase64(bitmap)
+            val request = buildRequest(base64Image)
 
-        client.newCall(request).enqueue(object : Callback {
+            client.newCall(request).enqueue(object : Callback {
             override fun onFailure(call: Call, e: IOException) {
                 Log.e(TAG, "VLM async request failed", e)
                 callback.onError(e)
@@ -89,7 +90,11 @@ class VlmClient private constructor(
                     callback.onError(e)
                 }
             }
-        })
+            })
+        } catch (e: Exception) {
+            Log.e(TAG, "VLM async build request failed", e)
+            callback.onError(e)
+        }
     }
 
     private fun buildRequest(base64Image: String): Request {

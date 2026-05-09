@@ -133,13 +133,15 @@ object ResultFusion {
 
     /**
      * 检查 YOLO 和 VLM 结果是否一致
+     * 当两边都有检测结果且存在共同识别的对象时返回 true
      */
     fun isConsistent(yoloResult: DetectionResult, vlmResult: VlmResult): Boolean {
-        val yoloLabels = yoloResult.uniqueLabels().toSet()
-        val vlmNames = vlmResult.objectNames().toSet()
+        val yoloLabels = yoloResult.uniqueLabels().map { it.lowercase() }.toSet()
+        val vlmNames = vlmResult.objectNames().map { it.lowercase() }.toSet()
 
-        // 简单的名称匹配（中文到英文的映射需要额外的词典）
-        // 这里仅做基本检查
-        return yoloLabels.isNotEmpty() && vlmNames.isNotEmpty()
+        if (yoloLabels.isEmpty() || vlmNames.isEmpty()) return false
+
+        // 检查是否存在交集（共同识别的对象）
+        return yoloLabels.intersect(vlmNames).isNotEmpty()
     }
 }

@@ -473,6 +473,9 @@ void NdkCameraWindow::on_image_render(cv::Mat& rgb) const
 
 void NdkCameraWindow::on_image(const unsigned char* nv21, int nv21_width, int nv21_height) const
 {
+    if (!win)
+        return;
+
     // resolve orientation from camera_orientation and accelerometer_sensor
     {
         if (!sensor_event_queue)

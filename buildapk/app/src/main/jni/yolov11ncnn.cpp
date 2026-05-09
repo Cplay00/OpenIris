@@ -94,7 +94,7 @@ static int draw_fps(cv::Mat& rgb)
     }
 
     char text[32];
-    sprintf(text, "FPS=%.2f", avg_fps);
+    snprintf(text, sizeof(text), "FPS=%.2f", avg_fps);
 
     int baseLine = 0;
     cv::Size label_size = cv::getTextSize(text, cv::FONT_HERSHEY_SIMPLEX, 0.5, 1, &baseLine);
@@ -279,13 +279,14 @@ JNIEXPORT jboolean JNICALL Java_com_yolo_openiris_Yolov11Ncnn_loadModel(JNIEnv* 
             // no gpu
             delete g_yolo;
             g_yolo = 0;
+            return JNI_FALSE;
         }
         else
         {
-            if (!g_yolo)
-                //g_yolo = new Inference_det;
+            if (!g_yolo) {
                 g_yolo = new Inference;
-                g_yolo->loadNcnnNetwork(mgr, modeltype, target_size, mean_vals[(int)modelid], norm_vals[(int)modelid], use_gpu);
+            }
+            g_yolo->loadNcnnNetwork(mgr, modeltype, target_size, mean_vals[(int)modelid], norm_vals[(int)modelid], use_gpu);
         }
     }
 
@@ -331,9 +332,17 @@ JNIEXPORT jboolean JNICALL Java_com_yolo_openiris_Yolov11Ncnn_setOutputWindow(JN
 JNIEXPORT void JNICALL Java_com_yolo_openiris_Yolov11Ncnn_setDetectionCallback(JNIEnv* env, jobject thiz, jobject callback)
 {
     if (callback == nullptr) {
-        g_callback_obj = nullptr;
+        if (g_callback_obj) {
+            env->DeleteGlobalRef(g_callback_obj);
+            g_callback_obj = nullptr;
+        }
         g_callback_method = nullptr;
         return;
+    }
+
+    if (g_callback_obj) {
+        env->DeleteGlobalRef(g_callback_obj);
+        g_callback_obj = nullptr;
     }
 
     g_callback_obj = env->NewGlobalRef(callback);

@@ -191,9 +191,7 @@ class ImageDetectActivity : AppCompatActivity() {
                     decoder.allocator = ImageDecoder.ALLOCATOR_SOFTWARE
                 }
             } else {
-                val inputStream = contentResolver.openInputStream(uri)
-                val bmp = BitmapFactory.decodeStream(inputStream)
-                inputStream?.close()
+                val bmp = contentResolver.openInputStream(uri)?.use { BitmapFactory.decodeStream(it) }
                 bmp
             }
 
@@ -209,6 +207,8 @@ class ImageDetectActivity : AppCompatActivity() {
     }
 
     private fun processImage(bitmap: Bitmap) {
+        originalBitmap?.recycle()
+        annotatedBitmap?.recycle()
         originalBitmap = bitmap
         imageView.setImageBitmap(bitmap)
         startDetection()
@@ -304,10 +304,7 @@ class ImageDetectActivity : AppCompatActivity() {
 
     private fun loadLabels(modelName: String): List<String> {
         return try {
-            val inputStream = assets.open("models/$modelName/labels.txt")
-            val labels = inputStream.bufferedReader().readLines().filter { it.isNotBlank() }
-            inputStream.close()
-            labels
+            assets.open("models/$modelName/labels.txt").use { it.bufferedReader().readLines().filter { line -> line.isNotBlank() } }
         } catch (e: Exception) {
             Log.e(TAG, "Failed to load labels", e)
             emptyList()

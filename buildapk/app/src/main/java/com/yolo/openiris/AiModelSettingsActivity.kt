@@ -80,8 +80,12 @@ class AiModelSettingsActivity : AppCompatActivity() {
     }
 
     private fun loadData() {
-        // 加载 AI 启用状态
+        // 加载 AI 启用状态（临时移除监听避免递归触发）
+        switchAiEnabled.setOnCheckedChangeListener(null)
         switchAiEnabled.isChecked = aiModelManager.isAiEnabled()
+        switchAiEnabled.setOnCheckedChangeListener { _, isChecked ->
+            aiModelManager.setAiEnabled(isChecked)
+        }
 
         // 加载调用间隔
         editCallInterval.setText(aiModelManager.getCallIntervalSeconds().toString())
@@ -99,7 +103,7 @@ class AiModelSettingsActivity : AppCompatActivity() {
     override fun onPause() {
         super.onPause()
         // 保存调用间隔
-        val interval = editCallInterval.text.toString().toIntOrNull() ?: 5
+        val interval = (editCallInterval.text?.toString()?.toIntOrNull() ?: 5).coerceAtLeast(1)
         aiModelManager.setCallIntervalSeconds(interval)
     }
 

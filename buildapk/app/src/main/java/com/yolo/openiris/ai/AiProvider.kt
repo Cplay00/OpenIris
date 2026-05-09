@@ -14,11 +14,15 @@ data class AiProvider(
     val isEnabled: Boolean = true
 ) {
     /**
-     * 获取有效的 API Base URL（确保以 /v1 结尾）
+     * 获取有效的 API Base URL（确保以 /v1 结尾，避免重复追加）
      */
     fun getEffectiveBaseUrl(): String {
         val url = baseUrl.trimEnd('/')
-        return if (url.endsWith("/v1")) url else "$url/v1"
+        // 如果已经以 /v1 结尾，直接返回
+        if (url.endsWith("/v1")) return url
+        // 如果包含 /v1/ 后面还有路径段，说明已经有版本路径，直接返回
+        if (url.contains("/v1/")) return url
+        return "$url/v1"
     }
 
     /**
