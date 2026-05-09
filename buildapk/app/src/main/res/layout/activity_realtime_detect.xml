@@ -24,7 +24,9 @@
         android:layout_height="wrap_content"
         android:orientation="horizontal"
         android:layout_gravity="top"
-        android:padding="12dp"
+        android:paddingHorizontal="12dp"
+        android:paddingTop="36dp"
+        android:paddingBottom="12dp"
         android:background="#80000000"
         android:gravity="center_vertical">
 
@@ -78,6 +80,7 @@
         android:layout_gravity="end|center_vertical"
         android:orientation="vertical"
         android:layout_marginEnd="12dp"
+        android:layout_marginTop="80dp"
         android:background="#80000000"
         android:padding="8dp">
 
@@ -102,7 +105,6 @@
             android:layout_marginTop="8dp"
             android:text="GPU"
             android:textSize="10sp"
-            android:textColor="@android:color/white"
             style="@style/Widget.Material3.Button.TonalButton" />
 
         <!-- AI 开关 -->
@@ -113,7 +115,6 @@
             android:layout_marginTop="8dp"
             android:text="AI"
             android:textSize="10sp"
-            android:textColor="#AAAAAA"
             style="@style/Widget.Material3.Button.TonalButton" />
     </LinearLayout>
 

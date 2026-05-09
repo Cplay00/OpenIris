@@ -12,6 +12,7 @@ import android.view.WindowManager
 import android.view.animation.DecelerateInterpolator
 import android.widget.ImageButton
 import android.widget.Toast
+import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.WindowInsetsControllerCompat
@@ -80,6 +81,7 @@ class RealtimeDetectActivity : AppCompatActivity(), SurfaceHolder.Callback {
     private var aiCallJob: Job? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
+        enableEdgeToEdge()
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_realtime_detect)
 
@@ -89,7 +91,6 @@ class RealtimeDetectActivity : AppCompatActivity(), SurfaceHolder.Callback {
         aiModelManager = AiModelManager.getInstance(this)
         yolov11Ncnn = Yolov11Ncnn()
 
-        // 设置检测结果回调
         yolov11Ncnn.setDetectionCallback(object : Yolov11Ncnn.DetectionCallback {
             override fun onDetectionResult(results: IntArray) {
                 processDetectionResult(results)
@@ -97,6 +98,10 @@ class RealtimeDetectActivity : AppCompatActivity(), SurfaceHolder.Callback {
         })
 
         initViews()
+        if (!loadModel()) {
+            finish()
+            return
+        }
         loadModel()
     }
 
@@ -142,8 +147,11 @@ class RealtimeDetectActivity : AppCompatActivity(), SurfaceHolder.Callback {
 
         buttonToggleGpu.setOnClickListener {
             useGpu = !useGpu
-            loadModel()
-            buttonToggleGpu.text = if (useGpu) "GPU" else "CPU"
+            if (loadModel()) {
+                buttonToggleGpu.text = if (useGpu) "GPU" else "CPU"
+            } else {
+                useGpu = !useGpu
+            }
         }
 
         buttonToggleAi.setOnClickListener {
@@ -163,32 +171,30 @@ class RealtimeDetectActivity : AppCompatActivity(), SurfaceHolder.Callback {
         cameraView.setOnClickListener { toggleFullscreen() }
     }
 
-    private fun loadModel() {
+    private fun loadModel(): Boolean {
         val config = configManager.loadConfig()
-        currentModel = if (config.selectedModel == "yolov11s") 1 else 0
+        currentModel = 0
         val cpuGpu = if (useGpu) 1 else 0
 
         val ret = yolov11Ncnn.loadModel(assets, currentModel, cpuGpu)
         if (!ret) {
             Log.e(TAG, "Failed to load model")
+            Toast.makeText(this, "模型加载失败，请检查 GPU 设置", Toast.LENGTH_LONG).show()
+            return false
         }
 
-        // 缓存 labels 避免每帧都读文件
         cachedModelName = config.selectedModel
         cachedLabels = loadLabels(config.selectedModel)
+        return true
     }
 
     private fun updateAiStatus() {
         if (isAiEnabled) {
             textAiStatus.text = "AI: 开启"
             textAiStatus.setTextColor(getColor(R.color.capsule_ai_text))
-            buttonToggleAi.text = "AI"
-            buttonToggleAi.setTextColor(getColor(R.color.capsule_ai_text))
         } else {
             textAiStatus.text = "AI: 关闭"
             textAiStatus.setTextColor(getColor(android.R.color.darker_gray))
-            buttonToggleAi.text = "AI"
-            buttonToggleAi.setTextColor(getColor(android.R.color.darker_gray))
         }
     }
 

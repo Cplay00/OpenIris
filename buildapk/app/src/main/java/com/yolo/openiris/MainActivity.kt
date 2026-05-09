@@ -6,23 +6,19 @@ import android.content.pm.PackageManager
 import android.os.Bundle
 import android.util.Log
 import android.view.WindowManager
-import android.widget.ArrayAdapter
-import android.widget.AutoCompleteTextView
+import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
+import androidx.core.view.ViewCompat
+import androidx.core.view.WindowInsetsCompat
 import com.google.android.material.button.MaterialButton
-import com.google.android.material.textfield.MaterialAutoCompleteTextView
 
 class MainActivity : AppCompatActivity() {
 
     companion object {
         private const val TAG = "OpenIris-Main"
     }
-
-    private lateinit var yolov11Ncnn: Yolov11Ncnn
-    private var currentModel = 0
-    private var currentCpuGpu = 0
 
     private val requestPermissionLauncher = registerForActivityResult(
         ActivityResultContracts.RequestMultiplePermissions()
@@ -44,14 +40,18 @@ class MainActivity : AppCompatActivity() {
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
+        enableEdgeToEdge()
         super.onCreate(savedInstanceState)
         setContentView(R.layout.main)
 
         window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
 
-        yolov11Ncnn = Yolov11Ncnn()
+        ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.mainRoot)) { v, insets ->
+            val systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
+            v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom)
+            insets
+        }
 
-        // Setup action buttons
         val buttonRealtimeDetect: MaterialButton = findViewById(R.id.buttonRealtimeDetect)
         buttonRealtimeDetect.setOnClickListener {
             startActivity(Intent(this, RealtimeDetectActivity::class.java))
@@ -70,32 +70,6 @@ class MainActivity : AppCompatActivity() {
         val buttonSettings: MaterialButton = findViewById(R.id.buttonSettings)
         buttonSettings.setOnClickListener {
             startActivity(Intent(this, SettingsActivity::class.java))
-        }
-
-        // Setup model dropdown
-        val spinnerModel: MaterialAutoCompleteTextView = findViewById(R.id.spinnerModel)
-        val modelAdapter = ArrayAdapter.createFromResource(
-            this,
-            R.array.model_array,
-            android.R.layout.simple_list_item_1
-        )
-        spinnerModel.setAdapter(modelAdapter)
-        spinnerModel.setText(modelAdapter.getItem(0).toString(), false)
-        spinnerModel.setOnItemClickListener { _, _, position, _ ->
-            currentModel = position
-        }
-
-        // Setup CPU/GPU dropdown
-        val spinnerCPUGPU: MaterialAutoCompleteTextView = findViewById(R.id.spinnerCPUGPU)
-        val cpuGpuAdapter = ArrayAdapter.createFromResource(
-            this,
-            R.array.cpugpu_array,
-            android.R.layout.simple_list_item_1
-        )
-        spinnerCPUGPU.setAdapter(cpuGpuAdapter)
-        spinnerCPUGPU.setText(cpuGpuAdapter.getItem(0).toString(), false)
-        spinnerCPUGPU.setOnItemClickListener { _, _, position, _ ->
-            currentCpuGpu = position
         }
 
         checkAndRequestPermissions()
@@ -121,7 +95,4 @@ class MainActivity : AppCompatActivity() {
             requestPermissionLauncher.launch(permissions.toTypedArray())
         }
     }
-
-    fun getCurrentModel(): Int = currentModel
-    fun getCurrentCpuGpu(): Int = currentCpuGpu
 }

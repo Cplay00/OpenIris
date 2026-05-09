@@ -18,7 +18,8 @@
     <ScrollView
         android:layout_width="match_parent"
         android:layout_height="0dp"
-        android:layout_weight="1">
+        android:layout_weight="1"
+        android:fillViewport="true">
 
         <LinearLayout
             android:layout_width="match_parent"
@@ -84,67 +85,103 @@
                 android:layout_marginBottom="16dp"
                 style="@style/Widget.Material3.Button.TonalButton" />
 
-            <!-- 可用模型列表标题 -->
-            <LinearLayout
+            <!-- 可用模型区域 -->
+            <com.google.android.material.card.MaterialCardView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:orientation="horizontal"
-                android:gravity="center_vertical"
-                android:layout_marginBottom="8dp">
+                android:layout_marginBottom="16dp"
+                app:cardElevation="0dp"
+                app:cardCornerRadius="12dp"
+                app:strokeWidth="1dp"
+                app:strokeColor="?attr/colorOutlineVariant">
 
-                <com.google.android.material.textview.MaterialTextView
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    android:text="可用模型"
-                    android:textAppearance="?attr/textAppearanceTitleSmall" />
-
-                <com.google.android.material.textview.MaterialTextView
-                    android:id="@+id/textModelCount"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:textAppearance="?attr/textAppearanceLabelSmall"
-                    android:textColor="?attr/colorOnSurfaceVariant" />
-            </LinearLayout>
-
-            <!-- 搜索框 -->
-            <com.google.android.material.textfield.TextInputLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:hint="搜索模型"
-                android:layout_marginBottom="8dp"
-                app:startIconDrawable="@android:drawable/ic_menu_search"
-                style="@style/Widget.Material3.TextInputLayout.OutlinedBox">
-
-                <com.google.android.material.textfield.TextInputEditText
-                    android:id="@+id/editSearchModel"
+                <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:inputType="text" />
-            </com.google.android.material.textfield.TextInputLayout>
+                    android:orientation="vertical"
+                    android:padding="12dp">
 
-            <!-- 可用模型列表（固定高度） -->
-            <androidx.recyclerview.widget.RecyclerView
-                android:id="@+id/recyclerModels"
+                    <!-- 可用模型标题 -->
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal"
+                        android:gravity="center_vertical"
+                        android:layout_marginBottom="8dp">
+
+                        <com.google.android.material.textview.MaterialTextView
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:text="可用模型"
+                            android:textAppearance="?attr/textAppearanceTitleSmall" />
+
+                        <com.google.android.material.textview.MaterialTextView
+                            android:id="@+id/textModelCount"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:textAppearance="?attr/textAppearanceLabelSmall"
+                            android:textColor="?attr/colorOnSurfaceVariant" />
+                    </LinearLayout>
+
+                    <!-- 搜索框 -->
+                    <com.google.android.material.textfield.TextInputLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:hint="搜索模型"
+                        android:layout_marginBottom="8dp"
+                        app:startIconDrawable="@android:drawable/ic_menu_search"
+                        style="@style/Widget.Material3.TextInputLayout.OutlinedBox">
+
+                        <com.google.android.material.textfield.TextInputEditText
+                            android:id="@+id/editSearchModel"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:inputType="text" />
+                    </com.google.android.material.textfield.TextInputLayout>
+
+                    <!-- 可用模型列表（固定高度，独立滚动） -->
+                    <androidx.recyclerview.widget.RecyclerView
+                        android:id="@+id/recyclerModels"
+                        android:layout_width="match_parent"
+                        android:layout_height="240dp"
+                        android:nestedScrollingEnabled="true"
+                        android:overScrollMode="always" />
+                </LinearLayout>
+            </com.google.android.material.card.MaterialCardView>
+
+            <!-- 已选模型区域 -->
+            <com.google.android.material.card.MaterialCardView
                 android:layout_width="match_parent"
-                android:layout_height="200dp"
-                android:nestedScrollingEnabled="false"
-                android:layout_marginBottom="16dp" />
-
-            <!-- 已选模型列表标题 -->
-            <com.google.android.material.textview.MaterialTextView
-                android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="已选模型"
-                android:textAppearance="?attr/textAppearanceTitleSmall"
-                android:layout_marginBottom="8dp" />
+                android:layout_marginBottom="16dp"
+                app:cardElevation="0dp"
+                app:cardCornerRadius="12dp"
+                app:strokeWidth="1dp"
+                app:strokeColor="?attr/colorOutlineVariant">
 
-            <!-- 已选模型列表 -->
-            <androidx.recyclerview.widget.RecyclerView
-                android:id="@+id/recyclerSelectedModels"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:nestedScrollingEnabled="false" />
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:padding="12dp">
+
+                    <com.google.android.material.textview.MaterialTextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="已选模型"
+                        android:textAppearance="?attr/textAppearanceTitleSmall"
+                        android:layout_marginBottom="8dp" />
+
+                    <!-- 已选模型列表（固定高度，独立滚动） -->
+                    <androidx.recyclerview.widget.RecyclerView
+                        android:id="@+id/recyclerSelectedModels"
+                        android:layout_width="match_parent"
+                        android:layout_height="300dp"
+                        android:nestedScrollingEnabled="true"
+                        android:overScrollMode="always" />
+                </LinearLayout>
+            </com.google.android.material.card.MaterialCardView>
         </LinearLayout>
     </ScrollView>
 

@@ -2,7 +2,6 @@ package com.yolo.openiris.export
 
 import android.content.Context
 import android.graphics.Bitmap
-import android.os.Environment
 import com.google.gson.Gson
 import com.google.gson.GsonBuilder
 import com.yolo.openiris.config.ConfigManager
@@ -27,14 +26,15 @@ object JsonExporter {
         return try {
             val configManager = ConfigManager.getInstance(context)
             val jsonPath = configManager.getJsonExportPath()
-            
+
             val timestamp = getTimestamp()
             val fileName = "openiris_analysis_${timestamp}.json"
-            
-            val baseDir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOCUMENTS)
+
+            val baseDir = context.getExternalFilesDir(null)
+                ?: return ExportResult(ExportType.JSON, "", false, "无法访问外部存储")
             val exportDir = File(baseDir, jsonPath)
             exportDir.mkdirs()
-            
+
             val file = File(exportDir, fileName)
 
             val jsonData = ExportData(
@@ -85,14 +85,15 @@ object ImageExporter {
         return try {
             val configManager = ConfigManager.getInstance(context)
             val imagePath = configManager.getImageExportPath()
-            
+
             val timestamp = getTimestamp()
             val fileName = "openiris_annotated_${timestamp}.jpg"
-            
-            val baseDir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_PICTURES)
+
+            val baseDir = context.getExternalFilesDir(null)
+                ?: return ExportResult(ExportType.ANNOTATED_IMAGE, "", false, "无法访问外部存储")
             val exportDir = File(baseDir, imagePath)
             exportDir.mkdirs()
-            
+
             val file = File(exportDir, fileName)
 
             FileOutputStream(file).use { out ->

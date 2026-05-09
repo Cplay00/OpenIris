@@ -20,7 +20,9 @@
         android:layout_height="wrap_content"
         android:orientation="horizontal"
         android:layout_gravity="top"
-        android:padding="12dp"
+        android:paddingHorizontal="12dp"
+        android:paddingTop="36dp"
+        android:paddingBottom="12dp"
         android:background="#80000000"
         android:gravity="center_vertical">
 

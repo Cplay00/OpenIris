@@ -25,8 +25,7 @@
     <string name="api_test_success">API 连接成功</string>
     <string name="api_test_failed">API 连接失败</string>
     <string-array name="model_array">
-        <item>n</item>
-        <item>s</item>
+        <item>YOLOv11n</item>
     </string-array>
     <string-array name="cpugpu_array">
         <item>CPU</item>

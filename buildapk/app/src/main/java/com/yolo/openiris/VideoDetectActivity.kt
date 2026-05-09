@@ -11,6 +11,7 @@ import android.view.animation.DecelerateInterpolator
 import android.widget.ImageButton
 import android.widget.Toast
 import android.widget.VideoView
+import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.WindowInsetsCompat
@@ -84,6 +85,7 @@ class VideoDetectActivity : AppCompatActivity() {
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
+        enableEdgeToEdge()
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_video_detect)
 
@@ -150,11 +152,9 @@ class VideoDetectActivity : AppCompatActivity() {
         }
     }
 
-    private fun loadModel() {
-        val config = configManager.loadConfig()
-        val modelId = if (config.selectedModel == "yolov11s") 1 else 0
-        val cpuGpu = if (config.useGpu) 1 else 0
-        yolov11Ncnn.loadModel(assets, modelId, cpuGpu)
+    private fun loadModel(): Boolean {
+        val cpuGpu = if (configManager.loadConfig().useGpu) 1 else 0
+        return yolov11Ncnn.loadModel(assets, 0, cpuGpu)
     }
 
     private fun loadVideo() {

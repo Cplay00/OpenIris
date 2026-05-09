@@ -19,6 +19,7 @@ import android.widget.ImageButton
 import android.widget.ImageView
 import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
 import androidx.core.content.FileProvider
@@ -108,6 +109,7 @@ class ImageDetectActivity : AppCompatActivity() {
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
+        enableEdgeToEdge()
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_image_detect)
 
@@ -116,7 +118,9 @@ class ImageDetectActivity : AppCompatActivity() {
         yolov11Ncnn = Yolov11Ncnn()
 
         initViews()
-        loadModel()
+        if (!loadModel()) {
+            Toast.makeText(this, "模型加载失败", Toast.LENGTH_LONG).show()
+        }
     }
 
     private fun initViews() {
@@ -154,15 +158,15 @@ class ImageDetectActivity : AppCompatActivity() {
         buttonExportImage.setOnClickListener { exportImage() }
     }
 
-    private fun loadModel() {
-        val config = configManager.loadConfig()
-        val modelId = if (config.selectedModel == "yolov11s") 1 else 0
-        val cpuGpu = if (config.useGpu) 1 else 0
-        val ret = yolov11Ncnn.loadModel(assets, modelId, cpuGpu)
+    private fun loadModel(): Boolean {
+        val cpuGpu = if (configManager.loadConfig().useGpu) 1 else 0
+        val ret = yolov11Ncnn.loadModel(assets, 0, cpuGpu)
         if (!ret) {
             Log.e(TAG, "Failed to load model")
             textStatus.text = "模型加载失败"
+            return false
         }
+        return true
     }
 
     private fun takePhoto() {
