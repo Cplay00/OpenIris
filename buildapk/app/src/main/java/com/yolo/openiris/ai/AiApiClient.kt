@@ -59,21 +59,22 @@ class AiApiClient {
                 .addHeader("Content-Type", "application/json")
                 .build()
 
-            val response = client.newCall(request).execute()
-            if (response.isSuccessful) {
-                val body = response.body?.string() ?: ""
-                val jsonObject = JsonParser.parseString(body).asJsonObject
-                val dataArray = jsonObject.getAsJsonArray("data")
-                val models = mutableListOf<String>()
-                dataArray?.forEach { item ->
-                    val modelId = item.asJsonObject.get("id")?.asString
-                    if (modelId != null) {
-                        models.add(modelId)
+            client.newCall(request).execute().use { response ->
+                if (response.isSuccessful) {
+                    val body = response.body?.string() ?: ""
+                    val jsonObject = JsonParser.parseString(body).asJsonObject
+                    val dataArray = jsonObject.getAsJsonArray("data")
+                    val models = mutableListOf<String>()
+                    dataArray?.forEach { item ->
+                        val modelId = item.asJsonObject.get("id")?.asString
+                        if (modelId != null) {
+                            models.add(modelId)
+                        }
                     }
+                    Result.success(models)
+                } else {
+                    Result.failure(Exception("HTTP ${response.code}: ${response.message}"))
                 }
-                Result.success(models)
-            } else {
-                Result.failure(Exception("HTTP ${response.code}: ${response.message}"))
             }
         } catch (e: Exception) {
             Log.e(TAG, "Failed to fetch model list", e)
@@ -126,27 +127,28 @@ class AiApiClient {
                 .post(jsonBody)
                 .build()
 
-            val response = client.newCall(request).execute()
-            val duration = System.currentTimeMillis() - startTime
+            client.newCall(request).execute().use { response ->
+                val duration = System.currentTimeMillis() - startTime
 
-            if (response.isSuccessful) {
-                val body = response.body?.string() ?: ""
-                val result = parseResponse(body, model)
-                AiResult.success(
-                    modelId = model.id,
-                    modelName = model.displayName,
-                    content = result.first,
-                    structuredOutput = result.second,
-                    durationMs = duration
-                )
-            } else {
-                val errorBody = response.body?.string() ?: "Unknown error"
-                AiResult.failure(
-                    modelId = model.id,
-                    modelName = model.displayName,
-                    error = "HTTP ${response.code}: $errorBody",
-                    durationMs = duration
-                )
+                if (response.isSuccessful) {
+                    val body = response.body?.string() ?: ""
+                    val result = parseResponse(body, model)
+                    AiResult.success(
+                        modelId = model.id,
+                        modelName = model.displayName,
+                        content = result.first,
+                        structuredOutput = result.second,
+                        durationMs = duration
+                    )
+                } else {
+                    val errorBody = response.body?.string() ?: "Unknown error"
+                    AiResult.failure(
+                        modelId = model.id,
+                        modelName = model.displayName,
+                        error = "HTTP ${response.code}: $errorBody",
+                        durationMs = duration
+                    )
+                }
             }
         } catch (e: Exception) {
             val duration = System.currentTimeMillis() - startTime
@@ -226,27 +228,28 @@ class AiApiClient {
                 .post(jsonBody)
                 .build()
 
-            val response = client.newCall(request).execute()
-            val duration = System.currentTimeMillis() - startTime
+            client.newCall(request).execute().use { response ->
+                val duration = System.currentTimeMillis() - startTime
 
-            if (response.isSuccessful) {
-                val body = response.body?.string() ?: ""
-                val result = parseResponse(body, model)
-                AiResult.success(
-                    modelId = model.id,
-                    modelName = model.displayName,
-                    content = result.first,
-                    structuredOutput = result.second,
-                    durationMs = duration
-                )
-            } else {
-                val errorBody = response.body?.string() ?: "Unknown error"
-                AiResult.failure(
-                    modelId = model.id,
-                    modelName = model.displayName,
-                    error = "HTTP ${response.code}: $errorBody",
-                    durationMs = duration
-                )
+                if (response.isSuccessful) {
+                    val body = response.body?.string() ?: ""
+                    val result = parseResponse(body, model)
+                    AiResult.success(
+                        modelId = model.id,
+                        modelName = model.displayName,
+                        content = result.first,
+                        structuredOutput = result.second,
+                        durationMs = duration
+                    )
+                } else {
+                    val errorBody = response.body?.string() ?: "Unknown error"
+                    AiResult.failure(
+                        modelId = model.id,
+                        modelName = model.displayName,
+                        error = "HTTP ${response.code}: $errorBody",
+                        durationMs = duration
+                    )
+                }
             }
         } catch (e: Exception) {
             val duration = System.currentTimeMillis() - startTime

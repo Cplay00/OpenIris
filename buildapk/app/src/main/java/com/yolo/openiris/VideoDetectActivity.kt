@@ -366,8 +366,24 @@ class VideoDetectActivity : AppCompatActivity() {
 
     private suspend fun callAiModel() {
         try {
+            // 将当前视频帧的 YOLO 检测结果作为上下文传给 AI
+            val currentTimeMs = videoView.currentPosition.toLong()
+            val currentFrameResult = analysisResults.lastOrNull { result ->
+                (result.videoTimestampMs ?: 0) <= currentTimeMs
+            }
+            val yoloObjects = currentFrameResult?.yoloResult?.objects ?: emptyList()
+
+            val contextPrompt = if (yoloObjects.isNotEmpty()) {
+                val yoloText = yoloObjects.groupBy { it.label }
+                    .map { (label, list) -> "$label(${list.size}个)" }
+                    .joinToString("、")
+                "当前视频帧 YOLO 检测到：$yoloText。请基于以上检测结果，补充识别画面中的其他物体，以JSON格式返回结果。"
+            } else {
+                "请识别视频中的物体，以JSON格式返回结果。"
+            }
+
             val result = aiModelManager.callWithFallback(
-                prompt = "请识别视频中的物体，以JSON格式返回结果。",
+                prompt = contextPrompt,
                 onError = { error ->
                     runOnUiThread {
                         Toast.makeText(this, error, Toast.LENGTH_LONG).show()

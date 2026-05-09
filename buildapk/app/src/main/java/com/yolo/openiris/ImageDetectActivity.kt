@@ -79,6 +79,7 @@ class ImageDetectActivity : AppCompatActivity() {
     private var originalBitmap: Bitmap? = null
     private var annotatedBitmap: Bitmap? = null
     private var analysisResult: AnalysisResult? = null
+    private var lastAiOutput: com.yolo.openiris.ai.StructuredOutput? = null
     private var photoUri: Uri? = null
 
     // Activity result launchers
@@ -228,6 +229,12 @@ class ImageDetectActivity : AppCompatActivity() {
                 annotatedBitmap = ImageUtils.drawDetections(bitmap, yoloResult.objects)
                 imageView.setImageBitmap(annotatedBitmap)
 
+                // 先赋值 analysisResult，确保 updateCombinedResults() 能读到 YOLO 结果
+                analysisResult = AnalysisResult.fromResults(
+                    mode = DetectionMode.IMAGE,
+                    yoloResult = yoloResult
+                )
+
                 if (isAiEnabled) {
                     textStatus.text = "正在进行 AI 识别..."
                     try {
@@ -238,6 +245,7 @@ class ImageDetectActivity : AppCompatActivity() {
                         )
 
                         if (aiResult.success && aiResult.structuredOutput != null) {
+                            lastAiOutput = aiResult.structuredOutput
                             displayAiResults(aiResult.structuredOutput)
                         } else {
                             Toast.makeText(this@ImageDetectActivity, "AI 识别失败: ${aiResult.error}", Toast.LENGTH_SHORT).show()
@@ -247,11 +255,6 @@ class ImageDetectActivity : AppCompatActivity() {
                         Toast.makeText(this@ImageDetectActivity, "AI 识别异常: ${e.message}", Toast.LENGTH_SHORT).show()
                     }
                 }
-
-                analysisResult = AnalysisResult.fromResults(
-                    mode = DetectionMode.IMAGE,
-                    yoloResult = yoloResult
-                )
 
                 textStatus.text = "检测完成"
 
@@ -356,6 +359,7 @@ class ImageDetectActivity : AppCompatActivity() {
 
         val combinedMap = mutableMapOf<String, Pair<Int, Float>>()
 
+        // 合入 YOLO 结果
         val yoloResult = analysisResult?.yoloResult
         if (yoloResult != null) {
             yoloResult.countByLabel().forEach { (label, count) ->
@@ -365,6 +369,24 @@ class ImageDetectActivity : AppCompatActivity() {
                     .average()
                     .toFloat()
                 combinedMap[label] = Pair(count, avgConfidence)
+            }
+        }
+
+        // 合入 AI 结果
+        val aiOutput = lastAiOutput
+        if (aiOutput != null) {
+            aiOutput.objects.forEach { obj ->
+                val name = obj.getDisplayName()
+                val existing = combinedMap[name]
+                if (existing != null) {
+                    // 同名对象取较大数量，置信度取平均
+                    combinedMap[name] = Pair(
+                        maxOf(existing.first, obj.count),
+                        (existing.second + obj.confidence) / 2f
+                    )
+                } else {
+                    combinedMap[name] = Pair(obj.count, obj.confidence)
+                }
             }
         }
 

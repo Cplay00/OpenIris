@@ -4,15 +4,20 @@ import android.content.Context
 import android.content.SharedPreferences
 import com.google.gson.Gson
 import com.google.gson.reflect.TypeToken
+import com.yolo.openiris.config.ConfigManager
 
 /**
  * AI 模型配置持久化存储
+ *
+ * 提供商元数据存储在普通 SharedPreferences 中，
+ * apiKey 单独通过 ConfigManager 的 EncryptedSharedPreferences 加密存储。
  */
 class AiModelConfigStore(context: Context) {
 
     private val prefs: SharedPreferences = context.getSharedPreferences(
         PREFS_NAME, Context.MODE_PRIVATE
     )
+    private val configManager = ConfigManager.getInstance(context)
     private val gson = Gson()
 
     companion object {
@@ -24,54 +29,68 @@ class AiModelConfigStore(context: Context) {
     }
 
     /**
-     * 保存所有提供商配置
+     * 保存所有提供商配置（apiKey 单独加密存储）
      */
     fun saveProviders(providers: List<AiProvider>) {
-        val json = gson.toJson(providers)
+        // 将 apiKey 从 provider 中剥离，单独加密存储
+        providers.forEach { provider ->
+            configManager.saveAiProviderApiKey(provider.id, provider.apiKey)
+        }
+        // 存储不含 apiKey 的 provider 元数据
+        val metadataList = providers.map { it.copy(apiKey = "") }
+        val json = gson.toJson(metadataList)
         prefs.edit().putString(KEY_PROVIDERS, json).apply()
     }
 
     /**
-     * 加载所有提供商配置
+     * 加载所有提供商配置（从加密存储恢复 apiKey）
      */
     fun loadProviders(): List<AiProvider> {
         val json = prefs.getString(KEY_PROVIDERS, null) ?: return emptyList()
         return try {
             val type = object : TypeToken<List<AiProvider>>() {}.type
-            gson.fromJson(json, type) ?: emptyList()
+            val metadataList: List<AiProvider> = gson.fromJson(json, type) ?: emptyList()
+            // 从加密存储恢复 apiKey
+            metadataList.map { provider ->
+                val apiKey = configManager.getAiProviderApiKey(provider.id)
+                provider.copy(apiKey = apiKey)
+            }
         } catch (e: Exception) {
             emptyList()
         }
     }
 
     /**
-     * 添加提供商
+     * 添加提供商（apiKey 加密存储）
      */
     fun addProvider(provider: AiProvider) {
-        val providers = loadProviders().toMutableList()
-        providers.add(provider)
-        saveProviders(providers)
+        val providers = loadRawProviders().toMutableList()
+        providers.add(provider.copy(apiKey = ""))
+        saveRawProviders(providers)
+        configManager.saveAiProviderApiKey(provider.id, provider.apiKey)
     }
 
     /**
-     * 更新提供商
+     * 更新提供商（apiKey 加密存储）
      */
     fun updateProvider(provider: AiProvider) {
-        val providers = loadProviders().toMutableList()
+        val providers = loadRawProviders().toMutableList()
         val index = providers.indexOfFirst { it.id == provider.id }
         if (index >= 0) {
-            providers[index] = provider
-            saveProviders(providers)
+            providers[index] = provider.copy(apiKey = "")
+            saveRawProviders(providers)
+            configManager.saveAiProviderApiKey(provider.id, provider.apiKey)
         }
     }
 
     /**
-     * 删除提供商
+     * 删除提供商（同时删除加密的 apiKey）
      */
     fun deleteProvider(providerId: String) {
-        val providers = loadProviders().toMutableList()
+        val providers = loadRawProviders().toMutableList()
         providers.removeAll { it.id == providerId }
-        saveProviders(providers)
+        saveRawProviders(providers)
+        configManager.removeAiProviderApiKey(providerId)
     }
 
     /**
@@ -138,7 +157,7 @@ class AiModelConfigStore(context: Context) {
     }
 
     /**
-     * 根据提供商 ID 获取提供商
+     * 根据提供商 ID 获取提供商（含加密 apiKey）
      */
     fun getProvider(providerId: String): AiProvider? {
         return loadProviders().find { it.id == providerId }
@@ -148,14 +167,14 @@ class AiModelConfigStore(context: Context) {
      * 为提供商添加模型
      */
     fun addModelToProvider(providerId: String, model: AiModel) {
-        val providers = loadProviders().toMutableList()
+        val providers = loadRawProviders().toMutableList()
         val providerIndex = providers.indexOfFirst { it.id == providerId }
         if (providerIndex >= 0) {
             val provider = providers[providerIndex]
             val updatedModels = provider.models.toMutableList()
             updatedModels.add(model)
             providers[providerIndex] = provider.copy(models = updatedModels)
-            saveProviders(providers)
+            saveRawProviders(providers)
         }
     }
 
@@ -163,14 +182,14 @@ class AiModelConfigStore(context: Context) {
      * 从提供商删除模型
      */
     fun removeModelFromProvider(providerId: String, modelId: String) {
-        val providers = loadProviders().toMutableList()
+        val providers = loadRawProviders().toMutableList()
         val providerIndex = providers.indexOfFirst { it.id == providerId }
         if (providerIndex >= 0) {
             val provider = providers[providerIndex]
             val updatedModels = provider.models.toMutableList()
             updatedModels.removeAll { it.id == modelId }
             providers[providerIndex] = provider.copy(models = updatedModels)
-            saveProviders(providers)
+            saveRawProviders(providers)
         }
     }
 
@@ -178,7 +197,7 @@ class AiModelConfigStore(context: Context) {
      * 更新模型
      */
     fun updateModel(providerId: String, model: AiModel) {
-        val providers = loadProviders().toMutableList()
+        val providers = loadRawProviders().toMutableList()
         val providerIndex = providers.indexOfFirst { it.id == providerId }
         if (providerIndex >= 0) {
             val provider = providers[providerIndex]
@@ -187,8 +206,29 @@ class AiModelConfigStore(context: Context) {
             if (modelIndex >= 0) {
                 updatedModels[modelIndex] = model
                 providers[providerIndex] = provider.copy(models = updatedModels)
-                saveProviders(providers)
+                saveRawProviders(providers)
             }
         }
+    }
+
+    /**
+     * 从存储加载原始 provider 元数据（不含 apiKey）
+     */
+    private fun loadRawProviders(): List<AiProvider> {
+        val json = prefs.getString(KEY_PROVIDERS, null) ?: return emptyList()
+        return try {
+            val type = object : TypeToken<List<AiProvider>>() {}.type
+            gson.fromJson(json, type) ?: emptyList()
+        } catch (e: Exception) {
+            emptyList()
+        }
+    }
+
+    /**
+     * 保存原始 provider 元数据（不含 apiKey）
+     */
+    private fun saveRawProviders(providers: List<AiProvider>) {
+        val json = gson.toJson(providers)
+        prefs.edit().putString(KEY_PROVIDERS, json).apply()
     }
 }

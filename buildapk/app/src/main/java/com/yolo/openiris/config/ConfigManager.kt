@@ -190,4 +190,35 @@ class ConfigManager private constructor(context: Context) {
     fun setJsonExportPath(path: String) {
         encryptedPrefs.edit().putString(KEY_JSON_EXPORT_PATH, path).apply()
     }
+
+    /**
+     * 保存 AI Provider 的 API Key（加密存储）
+     */
+    fun saveAiProviderApiKey(providerId: String, apiKey: String) {
+        val key = "ai_provider_key_$providerId"
+        encryptedPrefs.edit().apply {
+            if (apiKey.isBlank()) {
+                remove(key)
+            } else {
+                putString(key, apiKey.trim())
+            }
+            apply()
+        }
+    }
+
+    /**
+     * 获取 AI Provider 的 API Key
+     */
+    fun getAiProviderApiKey(providerId: String): String {
+        val key = "ai_provider_key_$providerId"
+        return encryptedPrefs.getString(key, "")?.trim().orEmpty()
+    }
+
+    /**
+     * 删除 AI Provider 的 API Key
+     */
+    fun removeAiProviderApiKey(providerId: String) {
+        val key = "ai_provider_key_$providerId"
+        encryptedPrefs.edit().remove(key).apply()
+    }
 }

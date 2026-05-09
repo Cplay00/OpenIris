@@ -206,8 +206,17 @@ class RealtimeDetectActivity : AppCompatActivity(), SurfaceHolder.Callback {
 
     private suspend fun callAiModel() {
         try {
+            // 将当前 YOLO 检测结果作为上下文传给 AI
+            val yoloSummary = yoloTracker.getSortedSummary()
+            val contextPrompt = if (yoloSummary.isNotEmpty()) {
+                val yoloText = yoloSummary.joinToString("、") { "${it.name}(${it.count}个)" }
+                "当前画面 YOLO 检测到：$yoloText。请基于以上检测结果，补充识别画面中的其他物体，以JSON格式返回结果。"
+            } else {
+                "请识别图片中的物体，以JSON格式返回结果。"
+            }
+
             val result = aiModelManager.callWithFallback(
-                prompt = "请识别图片中的物体，以JSON格式返回结果。",
+                prompt = contextPrompt,
                 onError = { error ->
                     runOnUiThread {
                         Toast.makeText(this, error, Toast.LENGTH_LONG).show()
