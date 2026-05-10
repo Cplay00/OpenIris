@@ -32,6 +32,17 @@ android {
         jvmToolchain(8)
     }
 
+    buildTypes {
+        release {
+            minifyEnabled true
+            shrinkResources true
+            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+        }
+        debug {
+            minifyEnabled false
+        }
+    }
+
     buildFeatures {
         viewBinding = true
         buildConfig = true
