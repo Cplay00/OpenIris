@@ -91,12 +91,6 @@ class RealtimeDetectActivity : AppCompatActivity(), SurfaceHolder.Callback {
         aiModelManager = AiModelManager.getInstance(this)
         yolov11Ncnn = Yolov11Ncnn()
 
-        yolov11Ncnn.setDetectionCallback(object : Yolov11Ncnn.DetectionCallback {
-            override fun onDetectionResult(results: IntArray) {
-                processDetectionResult(results)
-            }
-        })
-
         initViews()
         if (!loadModel()) {
             finish()

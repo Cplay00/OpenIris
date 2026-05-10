@@ -115,10 +115,6 @@ static int draw_fps(cv::Mat& rgb)
 static Inference* g_yolo = 0;
 static ncnn::Mutex lock;
 
-// JNI 回调相关全局变量
-static JavaVM* g_jvm = nullptr;
-static jmethodID g_callback_method = nullptr;
-
 class MyNdkCamera : public NdkCameraWindow
 {
 public:
@@ -136,57 +132,8 @@ void MyNdkCamera::on_image_render(cv::Mat& rgb) const
             std::vector<Object> objects;
             objects = g_yolo->runInference(rgb);
 
-            // 调用 Java 回调
-            if (g_jvm && g_callback_method)
-            {
-                JNIEnv* env = nullptr;
-                bool attached = false;
-                int status = g_jvm->GetEnv((void**)&env, JNI_VERSION_1_4);
-                if (status == JNI_EDETACHED) {
-                    g_jvm->AttachCurrentThread(&env, nullptr);
-                    attached = true;
-                }
-
-                if (env) {
-                    int num_objects = objects.size();
-                    int result_size = num_objects * 6;
-                    jintArray result = env->NewIntArray(result_size);
-                    if (result) {
-                        jint* result_data = env->GetIntArrayElements(result, nullptr);
-                        for (int i = 0; i < num_objects; i++)
-                        {
-                            const Object& obj = objects[i];
-                            result_data[i * 6 + 0] = (int)obj.rect.x;
-                            result_data[i * 6 + 1] = (int)obj.rect.y;
-                            result_data[i * 6 + 2] = (int)obj.rect.width;
-                            result_data[i * 6 + 3] = (int)obj.rect.height;
-                            result_data[i * 6 + 4] = obj.label;
-                            result_data[i * 6 + 5] = (int)(obj.prob * 1000);
-                        }
-                        env->ReleaseIntArrayElements(result, result_data, 0);
-                        env->CallStaticVoidMethod(
-                            env->FindClass("com/yolo/openiris/Yolov11Ncnn"),
-                            g_callback_method,
-                            result
-                        );
-                        env->DeleteLocalRef(result);
-                    }
-                }
-
-                if (attached) {
-                    g_jvm->DetachCurrentThread();
-                }
-            }
-
             g_yolo->draw(rgb, objects);
         }
-        /*if (g_yolo)
-        {
-            std::vector<Detection> objects;
-            objects = g_yolo->runInference(rgb);
-
-            g_yolo->draw(rgb, objects);
-        }*/
         else
         {
             draw_unsupported(rgb);
@@ -204,18 +151,7 @@ JNIEXPORT jint JNI_OnLoad(JavaVM* vm, void* reserved)
 {
     __android_log_print(ANDROID_LOG_DEBUG, "ncnn", "JNI_OnLoad");
 
-    g_jvm = vm;
     g_camera = new MyNdkCamera;
-
-    // 预初始化回调方法 ID
-    JNIEnv* env = nullptr;
-    if (vm->GetEnv((void**)&env, JNI_VERSION_1_4) == JNI_OK) {
-        jclass clazz = env->FindClass("com/yolo/openiris/Yolov11Ncnn");
-        if (clazz) {
-            g_callback_method = env->GetStaticMethodID(clazz, "onDetectionResultFromJNI", "([I)V");
-            env->DeleteLocalRef(clazz);
-        }
-    }
 
     return JNI_VERSION_1_4;
 }
@@ -233,9 +169,6 @@ JNIEXPORT void JNI_OnUnload(JavaVM* vm, void* reserved)
 
     delete g_camera;
     g_camera = 0;
-
-    g_jvm = nullptr;
-    g_callback_method = nullptr;
 }
 
 // public native boolean loadModel(AssetManager mgr, int modelid, int cpugpu);
@@ -284,19 +217,17 @@ JNIEXPORT jboolean JNICALL Java_com_yolo_openiris_Yolov11Ncnn_loadModel(JNIEnv* 
 
         if (use_gpu && ncnn::get_gpu_count() == 0)
         {
-            __android_log_print(ANDROID_LOG_WARN, "ncnn", "GPU requested but no Vulkan GPU available, falling back to CPU");
-            use_gpu = false;
-        }
-
-        if (!g_yolo) {
-            g_yolo = new Inference;
-        }
-        int ret = g_yolo->loadNcnnNetwork(mgr, modeltype, target_size, mean_vals[(int)modelid], norm_vals[(int)modelid], use_gpu);
-        if (ret != 0) {
-            __android_log_print(ANDROID_LOG_ERROR, "ncnn", "Failed to load model: %s (ret=%d)", modeltype, ret);
+            // no gpu
             delete g_yolo;
             g_yolo = 0;
-            return JNI_FALSE;
+        }
+        else
+        {
+            if (!g_yolo)
+            {
+                g_yolo = new Inference;
+                g_yolo->loadNcnnNetwork(mgr, modeltype, target_size, mean_vals[(int)modelid], norm_vals[(int)modelid], use_gpu);
+            }
         }
     }
 
