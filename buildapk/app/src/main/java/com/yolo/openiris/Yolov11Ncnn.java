@@ -20,7 +20,9 @@ public class Yolov11Ncnn
 
     public native int[] detectBitmap(Bitmap bitmap, int modelid, int cpugpu);
 
-    public native void setDetectionCallback(DetectionCallback callback);
+    public void setDetectionCallback(DetectionCallback callback) {
+        detectionCallback = callback;
+    }
 
     // 由 JNI 调用的方法
     private static void onDetectionResultFromJNI(int[] results) {

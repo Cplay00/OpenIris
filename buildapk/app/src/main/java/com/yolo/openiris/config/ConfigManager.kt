@@ -41,21 +41,30 @@ class ConfigManager private constructor(context: Context) {
         }
     }
 
-    private val encryptedPrefs: SharedPreferences = try {
-        val masterKey = MasterKey.Builder(context)
-            .setKeyScheme(MasterKey.KeyScheme.AES256_GCM)
-            .build()
+    private val encryptedPrefs: SharedPreferences
+    val isEncryptionAvailable: Boolean
 
-        EncryptedSharedPreferences.create(
-            context,
-            PREFS_FILE,
-            masterKey,
-            EncryptedSharedPreferences.PrefKeyEncryptionScheme.AES256_SIV,
-            EncryptedSharedPreferences.PrefValueEncryptionScheme.AES256_GCM
-        )
-    } catch (e: Exception) {
-        Log.e(TAG, "加密存储初始化失败，回退到普通 SharedPreferences", e)
-        context.getSharedPreferences(PREFS_FILE, Context.MODE_PRIVATE)
+    init {
+        var encrypted = true
+        val prefs: SharedPreferences = try {
+            val masterKey = MasterKey.Builder(context)
+                .setKeyScheme(MasterKey.KeyScheme.AES256_GCM)
+                .build()
+
+            EncryptedSharedPreferences.create(
+                context,
+                PREFS_FILE,
+                masterKey,
+                EncryptedSharedPreferences.PrefKeyEncryptionScheme.AES256_SIV,
+                EncryptedSharedPreferences.PrefValueEncryptionScheme.AES256_GCM
+            )
+        } catch (e: Exception) {
+            Log.e(TAG, "加密存储初始化失败，回退到普通 SharedPreferences", e)
+            encrypted = false
+            context.getSharedPreferences(PREFS_FILE, Context.MODE_PRIVATE)
+        }
+        encryptedPrefs = prefs
+        isEncryptionAvailable = encrypted
     }
 
     private val defaults = AppConfig()
@@ -216,8 +225,12 @@ class ConfigManager private constructor(context: Context) {
 
     /**
      * 保存 AI Provider 的 API Key（加密存储）
+     * 回退模式下会记录警告日志（明文存储）
      */
     fun saveAiProviderApiKey(providerId: String, apiKey: String) {
+        if (!isEncryptionAvailable && apiKey.isNotBlank()) {
+            Log.w(TAG, "加密存储不可用，API Key 将以明文保存！providerId=$providerId")
+        }
         val key = "ai_provider_key_$providerId"
         encryptedPrefs.edit().apply {
             if (apiKey.isBlank()) {

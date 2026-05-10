@@ -117,7 +117,6 @@ static ncnn::Mutex lock;
 
 // JNI 回调相关全局变量
 static JavaVM* g_jvm = nullptr;
-static jobject g_callback_obj = nullptr;
 static jmethodID g_callback_method = nullptr;
 
 class MyNdkCamera : public NdkCameraWindow
@@ -138,7 +137,7 @@ void MyNdkCamera::on_image_render(cv::Mat& rgb) const
             objects = g_yolo->runInference(rgb);
 
             // 调用 Java 回调
-            if (g_jvm && g_callback_obj && g_callback_method)
+            if (g_jvm && g_callback_method)
             {
                 JNIEnv* env = nullptr;
                 bool attached = false;
@@ -208,6 +207,16 @@ JNIEXPORT jint JNI_OnLoad(JavaVM* vm, void* reserved)
     g_jvm = vm;
     g_camera = new MyNdkCamera;
 
+    // 预初始化回调方法 ID
+    JNIEnv* env = nullptr;
+    if (vm->GetEnv((void**)&env, JNI_VERSION_1_4) == JNI_OK) {
+        jclass clazz = env->FindClass("com/yolo/openiris/Yolov11Ncnn");
+        if (clazz) {
+            g_callback_method = env->GetStaticMethodID(clazz, "onDetectionResultFromJNI", "([I)V");
+            env->DeleteLocalRef(clazz);
+        }
+    }
+
     return JNI_VERSION_1_4;
 }
 
@@ -226,14 +235,13 @@ JNIEXPORT void JNI_OnUnload(JavaVM* vm, void* reserved)
     g_camera = 0;
 
     g_jvm = nullptr;
-    g_callback_obj = nullptr;
     g_callback_method = nullptr;
 }
 
 // public native boolean loadModel(AssetManager mgr, int modelid, int cpugpu);
 JNIEXPORT jboolean JNICALL Java_com_yolo_openiris_Yolov11Ncnn_loadModel(JNIEnv* env, jobject thiz, jobject assetManager, jint modelid, jint cpugpu)
 {
-    if (modelid < 0 || modelid > 6 || cpugpu < 0 || cpugpu > 1)
+    if (modelid < 0 || modelid > 1 || cpugpu < 0 || cpugpu > 1)
     {
         return JNI_FALSE;
     }
@@ -332,32 +340,6 @@ JNIEXPORT jboolean JNICALL Java_com_yolo_openiris_Yolov11Ncnn_setOutputWindow(JN
     g_camera->set_window(win);
 
     return JNI_TRUE;
-}
-
-// public native void setDetectionCallback(DetectionCallback callback);
-JNIEXPORT void JNICALL Java_com_yolo_openiris_Yolov11Ncnn_setDetectionCallback(JNIEnv* env, jobject thiz, jobject callback)
-{
-    if (callback == nullptr) {
-        if (g_callback_obj) {
-            env->DeleteGlobalRef(g_callback_obj);
-            g_callback_obj = nullptr;
-        }
-        g_callback_method = nullptr;
-        return;
-    }
-
-    if (g_callback_obj) {
-        env->DeleteGlobalRef(g_callback_obj);
-        g_callback_obj = nullptr;
-    }
-
-    g_callback_obj = env->NewGlobalRef(callback);
-    jclass callbackClass = env->GetObjectClass(callback);
-    g_callback_method = env->GetStaticMethodID(
-        env->FindClass("com/yolo/openiris/Yolov11Ncnn"),
-        "onDetectionResultFromJNI",
-        "([I)V"
-    );
 }
 
 // public native int[] detectBitmap(Bitmap bitmap, int modelid, int cpugpu);

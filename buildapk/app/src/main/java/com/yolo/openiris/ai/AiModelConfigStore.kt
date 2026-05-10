@@ -45,18 +45,34 @@ class AiModelConfigStore(context: Context) {
     }
 
     /**
-     * 加载所有提供商配置（从加密存储恢复 apiKey）
+     * 加载所有提供商配置（从加密存储恢复 apiKey，含旧格式迁移）
      */
     fun loadProviders(): List<AiProvider> {
         val json = prefs.getString(KEY_PROVIDERS, null) ?: return emptyList()
         return try {
             val type = object : TypeToken<List<AiProvider>>() {}.type
             val metadataList: List<AiProvider> = gson.fromJson(json, type) ?: emptyList()
-            // 从加密存储恢复 apiKey
-            metadataList.map { provider ->
-                val apiKey = configManager.getAiProviderApiKey(provider.id)
+            var needMigration = false
+
+            val result = metadataList.map { provider ->
+                var apiKey = configManager.getAiProviderApiKey(provider.id)
+                // 旧格式迁移：加密存储为空但 JSON 中有旧 key
+                if (apiKey.isBlank() && provider.apiKey.isNotBlank()) {
+                    Log.w(TAG, "Migrating apiKey for provider: ${provider.id}")
+                    configManager.saveAiProviderApiKey(provider.id, provider.apiKey)
+                    apiKey = provider.apiKey
+                    needMigration = true
+                }
                 provider.copy(apiKey = apiKey)
             }
+
+            // 迁移后清理明文
+            if (needMigration) {
+                val cleaned = result.map { it.copy(apiKey = "") }
+                saveRawProviders(cleaned)
+            }
+
+            result
         } catch (e: Exception) {
             Log.e(TAG, "Failed to load providers", e)
             emptyList()
