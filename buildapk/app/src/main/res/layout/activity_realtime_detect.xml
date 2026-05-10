@@ -81,44 +81,120 @@
         android:orientation="vertical"
         android:layout_marginEnd="12dp"
         android:layout_marginTop="80dp"
-        android:background="#80000000"
+        android:background="@color/btn_bg_overlay"
         android:padding="8dp">
 
-        <!-- 切换摄像头 -->
-        <com.google.android.material.button.MaterialButton
-            android:id="@+id/buttonSwitchCamera"
-            android:layout_width="48dp"
+        <!-- 切换摄像头卡片 -->
+        <com.google.android.material.card.MaterialCardView
+            android:id="@+id/cardSwitchCamera"
+            android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:insetTop="0dp"
-            android:insetBottom="0dp"
-            android:text="📷"
-            android:textSize="16sp"
-            android:tooltipText="切换摄像头"
-            style="@style/Widget.Material3.Button.TonalButton" />
+            app:cardCornerRadius="12dp"
+            app:cardElevation="0dp"
+            app:cardBackgroundColor="@color/btn_camera"
+            android:layout_marginBottom="8dp"
+            android:clickable="true"
+            android:focusable="true">
+            
+            <LinearLayout
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:gravity="center"
+                android:padding="12dp">
+                
+                <ImageView
+                    android:layout_width="28dp"
+                    android:layout_height="28dp"
+                    android:src="@android:drawable/ic_menu_camera"
+                    android:tint="#FFFFFF"
+                    android:contentDescription="切换摄像头" />
+                
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="切换"
+                    android:textSize="10sp"
+                    android:textColor="#FFFFFF"
+                    android:layout_marginTop="4dp" />
+            </LinearLayout>
+        </com.google.android.material.card.MaterialCardView>
 
-        <!-- GPU/CPU 切换 -->
-        <com.google.android.material.button.MaterialButton
-            android:id="@+id/buttonToggleGpu"
-            android:layout_width="48dp"
+        <!-- GPU/CPU 切换卡片 -->
+        <com.google.android.material.card.MaterialCardView
+            android:id="@+id/cardToggleGpu"
+            android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_marginTop="8dp"
-            android:text="GPU"
-            android:textSize="10sp"
-            android:tooltipText="切换处理器"
-            style="@style/Widget.Material3.Button.TonalButton" />
+            app:cardCornerRadius="12dp"
+            app:cardElevation="0dp"
+            app:cardBackgroundColor="@color/btn_gpu_enabled"
+            android:layout_marginBottom="8dp"
+            android:clickable="true"
+            android:focusable="true">
+            
+            <LinearLayout
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:gravity="center"
+                android:padding="12dp">
+                
+                <TextView
+                    android:id="@+id/textGpuStatus"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="GPU"
+                    android:textSize="14sp"
+                    android:textStyle="bold"
+                    android:textColor="#FFFFFF" />
+                
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="处理器"
+                    android:textSize="10sp"
+                    android:textColor="#FFFFFF"
+                    android:layout_marginTop="2dp" />
+            </LinearLayout>
+        </com.google.android.material.card.MaterialCardView>
 
-        <!-- AI 开关 -->
-        <com.google.android.material.button.MaterialButton
-            android:id="@+id/buttonToggleAi"
-            android:layout_width="48dp"
+        <!-- AI 开关卡片 -->
+        <com.google.android.material.card.MaterialCardView
+            android:id="@+id/cardToggleAi"
+            android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_marginTop="8dp"
-            android:text="AI"
-            android:textSize="10sp"
-            android:tooltipText="AI 识别"
-            android:backgroundTint="#606060"
-            android:textColor="#FFFFFF"
-            style="@style/Widget.Material3.Button.TonalButton" />
+            app:cardCornerRadius="12dp"
+            app:cardElevation="0dp"
+            app:cardBackgroundColor="@color/btn_ai_disabled"
+            android:clickable="true"
+            android:focusable="true">
+            
+            <LinearLayout
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:gravity="center"
+                android:padding="12dp">
+                
+                <TextView
+                    android:id="@+id/textAiStatusBtn"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="AI"
+                    android:textSize="14sp"
+                    android:textStyle="bold"
+                    android:textColor="#FFFFFF" />
+                
+                <TextView
+                    android:id="@+id/textAiState"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="关闭"
+                    android:textSize="10sp"
+                    android:textColor="#FFFFFF"
+                    android:layout_marginTop="2dp" />
+            </LinearLayout>
+        </com.google.android.material.card.MaterialCardView>
     </LinearLayout>
 
     <!-- 底部结果汇总面板 -->

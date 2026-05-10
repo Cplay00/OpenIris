@@ -55,4 +55,12 @@
     <color name="capsule_unique_bg">#FFF3E0</color>
     <color name="capsule_unique_border">#FF9800</color>
     <color name="capsule_unique_text">#E65100</color>
+    
+    <!-- Button State Colors -->
+    <color name="btn_gpu_enabled">#4CAF50</color>
+    <color name="btn_gpu_disabled">#FF9800</color>
+    <color name="btn_ai_enabled">#2196F3</color>
+    <color name="btn_ai_disabled">#9E9E9E</color>
+    <color name="btn_camera">#2196F3</color>
+    <color name="btn_bg_overlay">#CC000000</color>
 </resources>

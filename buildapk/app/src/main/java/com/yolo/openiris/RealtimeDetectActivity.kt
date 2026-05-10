@@ -3,6 +3,7 @@ package com.yolo.openiris
 import android.animation.AnimatorSet
 import android.animation.ObjectAnimator
 import android.graphics.Bitmap
+import android.graphics.Color
 import android.graphics.PixelFormat
 import android.os.Bundle
 import android.os.Environment
@@ -13,22 +14,21 @@ import android.view.View
 import android.view.WindowManager
 import android.view.animation.DecelerateInterpolator
 import android.widget.ImageButton
+import android.widget.TextView
 import android.widget.Toast
 import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
-import androidx.core.content.FileProvider
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.WindowInsetsControllerCompat
 import androidx.lifecycle.lifecycleScope
 import com.google.android.flexbox.FlexboxLayout
-import com.google.android.material.button.MaterialButton
+import com.google.android.material.card.MaterialCardView
 import com.google.android.material.textview.MaterialTextView
 import com.yolo.openiris.ai.AiModelManager
 import com.yolo.openiris.config.ConfigManager
 import com.yolo.openiris.detection.BoundingBox
 import com.yolo.openiris.detection.DetectedObject
-import com.yolo.openiris.detection.DetectionResult
 import com.yolo.openiris.detection.SlidingWindowTracker
 import com.yolo.openiris.ui.CapsuleView
 import com.yolo.openiris.ui.OverlayView
@@ -58,9 +58,14 @@ class RealtimeDetectActivity : AppCompatActivity(), SurfaceHolder.Callback {
     private lateinit var textAiStatus: MaterialTextView
     private lateinit var buttonBack: ImageButton
     private lateinit var buttonCapture: ImageButton
-    private lateinit var buttonSwitchCamera: MaterialButton
-    private lateinit var buttonToggleGpu: MaterialButton
-    private lateinit var buttonToggleAi: MaterialButton
+
+    // Card buttons
+    private lateinit var cardSwitchCamera: MaterialCardView
+    private lateinit var cardToggleGpu: MaterialCardView
+    private lateinit var cardToggleAi: MaterialCardView
+    private lateinit var textGpuStatus: TextView
+    private lateinit var textAiStatusBtn: TextView
+    private lateinit var textAiState: TextView
 
     // Result summary components
     private lateinit var flexboxYolo: FlexboxLayout
@@ -84,10 +89,8 @@ class RealtimeDetectActivity : AppCompatActivity(), SurfaceHolder.Callback {
     private val yoloTracker = SlidingWindowTracker(15000)
     private val aiTracker = SlidingWindowTracker(15000)
 
-    // AI call job
+    // Jobs
     private var aiCallJob: Job? = null
-
-    // Screenshot analysis job
     private var screenshotJob: Job? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -109,18 +112,25 @@ class RealtimeDetectActivity : AppCompatActivity(), SurfaceHolder.Callback {
     }
 
     private fun initViews() {
+        // Camera and overlay
         cameraView = findViewById(R.id.cameraView)
         overlayView = findViewById(R.id.overlayView)
 
+        // Top status bar
         textFps = findViewById(R.id.textFps)
         textAiStatus = findViewById(R.id.textAiStatus)
         buttonBack = findViewById(R.id.buttonBack)
         buttonCapture = findViewById(R.id.buttonCapture)
 
-        buttonSwitchCamera = findViewById(R.id.buttonSwitchCamera)
-        buttonToggleGpu = findViewById(R.id.buttonToggleGpu)
-        buttonToggleAi = findViewById(R.id.buttonToggleAi)
+        // Card buttons
+        cardSwitchCamera = findViewById(R.id.cardSwitchCamera)
+        cardToggleGpu = findViewById(R.id.cardToggleGpu)
+        cardToggleAi = findViewById(R.id.cardToggleAi)
+        textGpuStatus = findViewById(R.id.textGpuStatus)
+        textAiStatusBtn = findViewById(R.id.textAiStatusBtn)
+        textAiState = findViewById(R.id.textAiState)
 
+        // Result summary
         flexboxYolo = findViewById(R.id.flexboxYolo)
         flexboxAi = findViewById(R.id.flexboxAi)
         flexboxCombined = findViewById(R.id.flexboxCombined)
@@ -129,33 +139,33 @@ class RealtimeDetectActivity : AppCompatActivity(), SurfaceHolder.Callback {
         textCombinedCount = findViewById(R.id.textCombinedCount)
         textWindowDuration = findViewById(R.id.textWindowDuration)
 
+        // Setup camera
         cameraView.holder.setFormat(PixelFormat.RGBA_8888)
         cameraView.holder.addCallback(this)
 
-        // 初始化按钮状态
-        buttonToggleGpu.text = if (useGpu) "GPU" else "CPU"
-        updateAiButtonStyle()
+        // Initialize button states
+        updateGpuButton()
+        updateAiButton()
 
+        // Set click listeners
         buttonBack.setOnClickListener { finish() }
-
-        // 截图按钮 - 截取当前画面并保存
         buttonCapture.setOnClickListener { captureAndSave() }
 
-        buttonSwitchCamera.setOnClickListener {
+        cardSwitchCamera.setOnClickListener {
             facing = 1 - facing
             yolov11Ncnn.closeCamera()
             yolov11Ncnn.openCamera(facing)
         }
 
-        buttonToggleGpu.setOnClickListener {
+        cardToggleGpu.setOnClickListener {
             useGpu = !useGpu
-            buttonToggleGpu.text = if (useGpu) "GPU" else "CPU"
+            updateGpuButton()
             loadModel()
         }
 
-        buttonToggleAi.setOnClickListener {
+        cardToggleAi.setOnClickListener {
             isAiEnabled = !isAiEnabled
-            updateAiButtonStyle()
+            updateAiButton()
             updateAiStatus()
             if (isAiEnabled) {
                 startAiCallLoop()
@@ -166,6 +176,7 @@ class RealtimeDetectActivity : AppCompatActivity(), SurfaceHolder.Callback {
             }
         }
 
+        // Update window duration text
         textWindowDuration.text = "${yoloTracker.getWindowDurationSeconds()}秒窗口"
     }
 
@@ -186,22 +197,45 @@ class RealtimeDetectActivity : AppCompatActivity(), SurfaceHolder.Callback {
         return true
     }
 
-    private fun updateAiButtonStyle() {
-        if (isAiEnabled) {
-            buttonToggleAi.text = "AI"
-            buttonToggleAi.backgroundTintList = ContextCompat.getColorStateList(this, R.color.capsule_ai_text)
-            buttonToggleAi.setTextColor(ContextCompat.getColor(this, android.R.color.white))
+    // 颜色对比度计算
+    private fun getContrastColor(backgroundColor: Int): Int {
+        val red = Color.red(backgroundColor)
+        val green = Color.green(backgroundColor)
+        val blue = Color.blue(backgroundColor)
+        // 计算相对亮度 (W3C 标准)
+        val luminance = (0.299 * red + 0.587 * green + 0.114 * blue) / 255
+        return if (luminance > 0.5) Color.BLACK else Color.WHITE
+    }
+
+    // 更新 GPU 按钮状态
+    private fun updateGpuButton() {
+        val color = if (useGpu) {
+            ContextCompat.getColor(this, R.color.btn_gpu_enabled)
         } else {
-            buttonToggleAi.text = "AI"
-            buttonToggleAi.backgroundTintList = ContextCompat.getColorStateList(this, android.R.color.darker_gray)
-            buttonToggleAi.setTextColor(ContextCompat.getColor(this, android.R.color.white))
+            ContextCompat.getColor(this, R.color.btn_gpu_disabled)
         }
+        cardToggleGpu.setCardBackgroundColor(color)
+        textGpuStatus.text = if (useGpu) "GPU" else "CPU"
+        textGpuStatus.setTextColor(getContrastColor(color))
+    }
+
+    // 更新 AI 按钮状态
+    private fun updateAiButton() {
+        val color = if (isAiEnabled) {
+            ContextCompat.getColor(this, R.color.btn_ai_enabled)
+        } else {
+            ContextCompat.getColor(this, R.color.btn_ai_disabled)
+        }
+        cardToggleAi.setCardBackgroundColor(color)
+        textAiState.text = if (isAiEnabled) "开启" else "关闭"
+        textAiState.setTextColor(getContrastColor(color))
+        textAiStatusBtn.setTextColor(getContrastColor(color))
     }
 
     private fun updateAiStatus() {
         if (isAiEnabled) {
             textAiStatus.text = "AI: 开启"
-            textAiStatus.setTextColor(getColor(R.color.capsule_ai_text))
+            textAiStatus.setTextColor(getColor(R.color.btn_ai_enabled))
         } else {
             textAiStatus.text = "AI: 关闭"
             textAiStatus.setTextColor(getColor(android.R.color.darker_gray))
@@ -223,14 +257,14 @@ class RealtimeDetectActivity : AppCompatActivity(), SurfaceHolder.Callback {
     private fun saveBitmap(bitmap: Bitmap) {
         val timeStamp = SimpleDateFormat("yyyyMMdd_HHmmss", Locale.getDefault()).format(Date())
         val fileName = "OpenIris_${timeStamp}.jpg"
-        
+
         val storageDir = getExternalFilesDir(Environment.DIRECTORY_PICTURES)
         val file = File(storageDir, fileName)
-        
+
         file.outputStream().use { out ->
             bitmap.compress(Bitmap.CompressFormat.JPEG, 95, out)
         }
-        
+
         Log.d(TAG, "Screenshot saved: ${file.absolutePath}")
     }
 
@@ -252,12 +286,11 @@ class RealtimeDetectActivity : AppCompatActivity(), SurfaceHolder.Callback {
         aiCallJob = null
     }
 
-    // 启动截图分析 - 定期截图并使用 YOLO 检测
     private fun startScreenshotAnalysis() {
         screenshotJob?.cancel()
         screenshotJob = lifecycleScope.launch {
             while (isAiEnabled) {
-                delay(1000) // 每秒分析一次
+                delay(1000)
                 if (isAiEnabled) {
                     analyzeCurrentFrame()
                 }
@@ -272,13 +305,10 @@ class RealtimeDetectActivity : AppCompatActivity(), SurfaceHolder.Callback {
 
     private fun analyzeCurrentFrame() {
         try {
-            // 创建空位图用于 YOLO 检测
             val bitmap = Bitmap.createBitmap(640, 640, Bitmap.Config.ARGB_8888)
-            
-            // 使用 YOLO 检测
+
             val rawResults = yolov11Ncnn.detectBitmap(bitmap, currentModel, if (useGpu) 1 else 0)
-            
-            // 处理检测结果
+
             val objects = mutableListOf<DetectedObject>()
             var i = 0
             while (i + 5 < rawResults.size) {
@@ -302,7 +332,6 @@ class RealtimeDetectActivity : AppCompatActivity(), SurfaceHolder.Callback {
                 i += 6
             }
 
-            // 更新 YOLO 追踪器
             objects.forEach { obj ->
                 yoloTracker.addDetection(obj.label, obj.confidence)
             }
