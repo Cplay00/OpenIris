@@ -16,6 +16,7 @@ buildapk/.gradle
 buildapk/build
 buildapk/app/build
 buildapk/app/.cxx
+buildapk/usable-apk
 
 # IDE
 .idea
@@ -35,3 +36,6 @@ backup/
 
 # Gradle wrapper jar
 gradle/wrapper/gradle-wrapper.jar
+
+# APK files (release in GitHub Releases)
+usable-apk/
