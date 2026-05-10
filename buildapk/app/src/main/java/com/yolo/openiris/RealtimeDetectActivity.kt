@@ -102,7 +102,6 @@ class RealtimeDetectActivity : AppCompatActivity(), SurfaceHolder.Callback {
             finish()
             return
         }
-        loadModel()
     }
 
     private fun initViews() {
