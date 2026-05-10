@@ -61,14 +61,14 @@
             android:textAppearance="?attr/textAppearanceLabelSmall"
             android:layout_marginEnd="8dp" />
 
-        <!-- 全屏切换按钮 -->
+        <!-- 截图按钮 -->
         <ImageButton
-            android:id="@+id/buttonFullscreen"
+            android:id="@+id/buttonCapture"
             android:layout_width="40dp"
             android:layout_height="40dp"
-            android:src="@android:drawable/ic_menu_crop"
+            android:src="@android:drawable/ic_menu_camera"
             android:background="?attr/selectableItemBackgroundBorderless"
-            android:contentDescription="全屏"
+            android:contentDescription="截图"
             app:tint="@android:color/white" />
     </LinearLayout>
 
@@ -88,33 +88,36 @@
         <com.google.android.material.button.MaterialButton
             android:id="@+id/buttonSwitchCamera"
             android:layout_width="48dp"
-            android:layout_height="48dp"
+            android:layout_height="wrap_content"
             android:insetTop="0dp"
             android:insetBottom="0dp"
-            app:icon="@android:drawable/ic_menu_camera"
-            app:iconGravity="textStart"
-            app:iconPadding="0dp"
-            style="@style/Widget.Material3.Button.IconButton"
-            app:iconTint="@android:color/white" />
+            android:text="📷"
+            android:textSize="16sp"
+            android:tooltipText="切换摄像头"
+            style="@style/Widget.Material3.Button.TonalButton" />
 
         <!-- GPU/CPU 切换 -->
         <com.google.android.material.button.MaterialButton
             android:id="@+id/buttonToggleGpu"
             android:layout_width="48dp"
-            android:layout_height="48dp"
+            android:layout_height="wrap_content"
             android:layout_marginTop="8dp"
             android:text="GPU"
             android:textSize="10sp"
+            android:tooltipText="切换处理器"
             style="@style/Widget.Material3.Button.TonalButton" />
 
         <!-- AI 开关 -->
         <com.google.android.material.button.MaterialButton
             android:id="@+id/buttonToggleAi"
             android:layout_width="48dp"
-            android:layout_height="48dp"
+            android:layout_height="wrap_content"
             android:layout_marginTop="8dp"
             android:text="AI"
             android:textSize="10sp"
+            android:tooltipText="AI 识别"
+            android:backgroundTint="#606060"
+            android:textColor="#FFFFFF"
             style="@style/Widget.Material3.Button.TonalButton" />
     </LinearLayout>
 
@@ -197,6 +200,7 @@
                             android:id="@+id/textYoloCount"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
+                            android:text="0 类"
                             android:textAppearance="?attr/textAppearanceLabelSmall"
                             android:textColor="#1565C0" />
                     </LinearLayout>
@@ -248,6 +252,7 @@
                             android:id="@+id/textAiCount"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
+                            android:text="0 类"
                             android:textAppearance="?attr/textAppearanceLabelSmall"
                             android:textColor="#7B1FA2" />
                     </LinearLayout>
@@ -298,6 +303,7 @@
                             android:id="@+id/textCombinedCount"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
+                            android:text="0 类"
                             android:textAppearance="?attr/textAppearanceLabelSmall"
                             android:textColor="#2E7D32" />
                     </LinearLayout>

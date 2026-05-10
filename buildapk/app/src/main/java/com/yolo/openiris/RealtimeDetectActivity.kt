@@ -2,8 +2,10 @@ package com.yolo.openiris
 
 import android.animation.AnimatorSet
 import android.animation.ObjectAnimator
+import android.graphics.Bitmap
 import android.graphics.PixelFormat
 import android.os.Bundle
+import android.os.Environment
 import android.util.Log
 import android.view.SurfaceHolder
 import android.view.SurfaceView
@@ -14,6 +16,8 @@ import android.widget.ImageButton
 import android.widget.Toast
 import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.content.ContextCompat
+import androidx.core.content.FileProvider
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.WindowInsetsControllerCompat
 import androidx.lifecycle.lifecycleScope
@@ -21,7 +25,6 @@ import com.google.android.flexbox.FlexboxLayout
 import com.google.android.material.button.MaterialButton
 import com.google.android.material.textview.MaterialTextView
 import com.yolo.openiris.ai.AiModelManager
-import com.yolo.openiris.config.AppConfig
 import com.yolo.openiris.config.ConfigManager
 import com.yolo.openiris.detection.BoundingBox
 import com.yolo.openiris.detection.DetectedObject
@@ -32,6 +35,10 @@ import com.yolo.openiris.ui.OverlayView
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import java.io.File
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
 
 class RealtimeDetectActivity : AppCompatActivity(), SurfaceHolder.Callback {
 
@@ -50,7 +57,7 @@ class RealtimeDetectActivity : AppCompatActivity(), SurfaceHolder.Callback {
     private lateinit var textFps: MaterialTextView
     private lateinit var textAiStatus: MaterialTextView
     private lateinit var buttonBack: ImageButton
-    private lateinit var buttonFullscreen: ImageButton
+    private lateinit var buttonCapture: ImageButton
     private lateinit var buttonSwitchCamera: MaterialButton
     private lateinit var buttonToggleGpu: MaterialButton
     private lateinit var buttonToggleAi: MaterialButton
@@ -74,11 +81,14 @@ class RealtimeDetectActivity : AppCompatActivity(), SurfaceHolder.Callback {
     private var cachedModelName: String = ""
 
     // Detection trackers
-    private val yoloTracker = SlidingWindowTracker(15000) // 15 seconds window
+    private val yoloTracker = SlidingWindowTracker(15000)
     private val aiTracker = SlidingWindowTracker(15000)
 
     // AI call job
     private var aiCallJob: Job? = null
+
+    // Screenshot analysis job
+    private var screenshotJob: Job? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         enableEdgeToEdge()
@@ -99,22 +109,18 @@ class RealtimeDetectActivity : AppCompatActivity(), SurfaceHolder.Callback {
     }
 
     private fun initViews() {
-        // Camera and overlay
         cameraView = findViewById(R.id.cameraView)
         overlayView = findViewById(R.id.overlayView)
 
-        // Top status bar
         textFps = findViewById(R.id.textFps)
         textAiStatus = findViewById(R.id.textAiStatus)
         buttonBack = findViewById(R.id.buttonBack)
-        buttonFullscreen = findViewById(R.id.buttonFullscreen)
+        buttonCapture = findViewById(R.id.buttonCapture)
 
-        // Right control panel
         buttonSwitchCamera = findViewById(R.id.buttonSwitchCamera)
         buttonToggleGpu = findViewById(R.id.buttonToggleGpu)
         buttonToggleAi = findViewById(R.id.buttonToggleAi)
 
-        // Result summary
         flexboxYolo = findViewById(R.id.flexboxYolo)
         flexboxAi = findViewById(R.id.flexboxAi)
         flexboxCombined = findViewById(R.id.flexboxCombined)
@@ -123,14 +129,17 @@ class RealtimeDetectActivity : AppCompatActivity(), SurfaceHolder.Callback {
         textCombinedCount = findViewById(R.id.textCombinedCount)
         textWindowDuration = findViewById(R.id.textWindowDuration)
 
-        // Setup camera
         cameraView.holder.setFormat(PixelFormat.RGBA_8888)
         cameraView.holder.addCallback(this)
 
-        // Setup click listeners
+        // 初始化按钮状态
+        buttonToggleGpu.text = if (useGpu) "GPU" else "CPU"
+        updateAiButtonStyle()
+
         buttonBack.setOnClickListener { finish() }
 
-        buttonFullscreen.setOnClickListener { toggleFullscreen() }
+        // 截图按钮 - 截取当前画面并保存
+        buttonCapture.setOnClickListener { captureAndSave() }
 
         buttonSwitchCamera.setOnClickListener {
             facing = 1 - facing
@@ -140,28 +149,24 @@ class RealtimeDetectActivity : AppCompatActivity(), SurfaceHolder.Callback {
 
         buttonToggleGpu.setOnClickListener {
             useGpu = !useGpu
-            if (loadModel()) {
-                buttonToggleGpu.text = if (useGpu) "GPU" else "CPU"
-            } else {
-                useGpu = !useGpu
-            }
+            buttonToggleGpu.text = if (useGpu) "GPU" else "CPU"
+            loadModel()
         }
 
         buttonToggleAi.setOnClickListener {
             isAiEnabled = !isAiEnabled
+            updateAiButtonStyle()
             updateAiStatus()
             if (isAiEnabled) {
                 startAiCallLoop()
+                startScreenshotAnalysis()
             } else {
                 stopAiCallLoop()
+                stopScreenshotAnalysis()
             }
         }
 
-        // Update window duration text
         textWindowDuration.text = "${yoloTracker.getWindowDurationSeconds()}秒窗口"
-
-        // Setup fullscreen toggle on camera view
-        cameraView.setOnClickListener { toggleFullscreen() }
     }
 
     private fun loadModel(): Boolean {
@@ -172,13 +177,25 @@ class RealtimeDetectActivity : AppCompatActivity(), SurfaceHolder.Callback {
         val ret = yolov11Ncnn.loadModel(assets, currentModel, cpuGpu)
         if (!ret) {
             Log.e(TAG, "Failed to load model")
-            Toast.makeText(this, "模型加载失败，请检查 GPU 设置", Toast.LENGTH_LONG).show()
+            Toast.makeText(this, "模型加载失败", Toast.LENGTH_LONG).show()
             return false
         }
 
         cachedModelName = config.selectedModel
         cachedLabels = loadLabels(config.selectedModel)
         return true
+    }
+
+    private fun updateAiButtonStyle() {
+        if (isAiEnabled) {
+            buttonToggleAi.text = "AI"
+            buttonToggleAi.backgroundTintList = ContextCompat.getColorStateList(this, R.color.capsule_ai_text)
+            buttonToggleAi.setTextColor(ContextCompat.getColor(this, android.R.color.white))
+        } else {
+            buttonToggleAi.text = "AI"
+            buttonToggleAi.backgroundTintList = ContextCompat.getColorStateList(this, android.R.color.darker_gray)
+            buttonToggleAi.setTextColor(ContextCompat.getColor(this, android.R.color.white))
+        }
     }
 
     private fun updateAiStatus() {
@@ -189,6 +206,32 @@ class RealtimeDetectActivity : AppCompatActivity(), SurfaceHolder.Callback {
             textAiStatus.text = "AI: 关闭"
             textAiStatus.setTextColor(getColor(android.R.color.darker_gray))
         }
+    }
+
+    // 截图并保存
+    private fun captureAndSave() {
+        try {
+            val bitmap = Bitmap.createBitmap(cameraView.width, cameraView.height, Bitmap.Config.ARGB_8888)
+            saveBitmap(bitmap)
+            Toast.makeText(this, "截图已保存", Toast.LENGTH_SHORT).show()
+        } catch (e: Exception) {
+            Log.e(TAG, "Capture failed", e)
+            Toast.makeText(this, "截图失败: ${e.message}", Toast.LENGTH_SHORT).show()
+        }
+    }
+
+    private fun saveBitmap(bitmap: Bitmap) {
+        val timeStamp = SimpleDateFormat("yyyyMMdd_HHmmss", Locale.getDefault()).format(Date())
+        val fileName = "OpenIris_${timeStamp}.jpg"
+        
+        val storageDir = getExternalFilesDir(Environment.DIRECTORY_PICTURES)
+        val file = File(storageDir, fileName)
+        
+        file.outputStream().use { out ->
+            bitmap.compress(Bitmap.CompressFormat.JPEG, 95, out)
+        }
+        
+        Log.d(TAG, "Screenshot saved: ${file.absolutePath}")
     }
 
     private fun startAiCallLoop() {
@@ -209,9 +252,71 @@ class RealtimeDetectActivity : AppCompatActivity(), SurfaceHolder.Callback {
         aiCallJob = null
     }
 
+    // 启动截图分析 - 定期截图并使用 YOLO 检测
+    private fun startScreenshotAnalysis() {
+        screenshotJob?.cancel()
+        screenshotJob = lifecycleScope.launch {
+            while (isAiEnabled) {
+                delay(1000) // 每秒分析一次
+                if (isAiEnabled) {
+                    analyzeCurrentFrame()
+                }
+            }
+        }
+    }
+
+    private fun stopScreenshotAnalysis() {
+        screenshotJob?.cancel()
+        screenshotJob = null
+    }
+
+    private fun analyzeCurrentFrame() {
+        try {
+            // 创建空位图用于 YOLO 检测
+            val bitmap = Bitmap.createBitmap(640, 640, Bitmap.Config.ARGB_8888)
+            
+            // 使用 YOLO 检测
+            val rawResults = yolov11Ncnn.detectBitmap(bitmap, currentModel, if (useGpu) 1 else 0)
+            
+            // 处理检测结果
+            val objects = mutableListOf<DetectedObject>()
+            var i = 0
+            while (i + 5 < rawResults.size) {
+                val x = rawResults[i].toFloat()
+                val y = rawResults[i + 1].toFloat()
+                val w = rawResults[i + 2].toFloat()
+                val h = rawResults[i + 3].toFloat()
+                val labelIndex = rawResults[i + 4]
+                val confidence = rawResults[i + 5] / 1000f
+
+                val label = if (labelIndex in cachedLabels.indices) cachedLabels[labelIndex] else "unknown"
+
+                objects.add(
+                    DetectedObject(
+                        label = label,
+                        labelIndex = labelIndex,
+                        confidence = confidence,
+                        bbox = BoundingBox(x, y, w, h)
+                    )
+                )
+                i += 6
+            }
+
+            // 更新 YOLO 追踪器
+            objects.forEach { obj ->
+                yoloTracker.addDetection(obj.label, obj.confidence)
+            }
+
+            runOnUiThread {
+                updateResultSummary()
+            }
+        } catch (e: Exception) {
+            Log.e(TAG, "Frame analysis failed", e)
+        }
+    }
+
     private suspend fun callAiModel() {
         try {
-            // 将当前 YOLO 检测结果作为上下文传给 AI
             val yoloSummary = yoloTracker.getSortedSummary()
             val contextPrompt = if (yoloSummary.isNotEmpty()) {
                 val yoloText = yoloSummary.joinToString("、") { "${it.name}(${it.count}个)" }
@@ -240,43 +345,6 @@ class RealtimeDetectActivity : AppCompatActivity(), SurfaceHolder.Callback {
             }
         } catch (e: Exception) {
             Log.e(TAG, "AI call failed", e)
-        }
-    }
-
-    private fun processDetectionResult(rawResults: IntArray) {
-        val objects = mutableListOf<DetectedObject>()
-        val labels = cachedLabels
-
-        var i = 0
-        while (i + 5 < rawResults.size) {
-            val x = rawResults[i].toFloat()
-            val y = rawResults[i + 1].toFloat()
-            val w = rawResults[i + 2].toFloat()
-            val h = rawResults[i + 3].toFloat()
-            val labelIndex = rawResults[i + 4]
-            val confidence = rawResults[i + 5] / 1000f
-
-            val label = if (labelIndex in labels.indices) labels[labelIndex] else "unknown"
-
-            objects.add(
-                DetectedObject(
-                    label = label,
-                    labelIndex = labelIndex,
-                    confidence = confidence,
-                    bbox = BoundingBox(x, y, w, h)
-                )
-            )
-            i += 6
-        }
-
-        // Update YOLO tracker
-        objects.forEach { obj ->
-            yoloTracker.addDetection(obj.label, obj.confidence)
-        }
-
-        runOnUiThread {
-            overlayView.setResults(objects, overlayView.width, overlayView.height)
-            updateResultSummary()
         }
     }
 
@@ -327,54 +395,6 @@ class RealtimeDetectActivity : AppCompatActivity(), SurfaceHolder.Callback {
         textCombinedCount.text = "${combinedMap.size} 类"
     }
 
-    private fun toggleFullscreen() {
-        isFullscreen = !isFullscreen
-        val controller = WindowInsetsControllerCompat(window, window.decorView)
-
-        if (isFullscreen) {
-            // Hide system bars
-            controller.hide(WindowInsetsCompat.Type.systemBars())
-            controller.systemBarsBehavior = WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
-
-            // Animate UI elements out
-            animateViewOut(findViewById(R.id.topStatusBar))
-            animateViewOut(findViewById(R.id.rightControlPanel))
-            animateViewOut(findViewById(R.id.resultSummaryCard))
-        } else {
-            // Show system bars
-            controller.show(WindowInsetsCompat.Type.systemBars())
-
-            // Animate UI elements in
-            animateViewIn(findViewById(R.id.topStatusBar))
-            animateViewIn(findViewById(R.id.rightControlPanel))
-            animateViewIn(findViewById(R.id.resultSummaryCard))
-        }
-    }
-
-    private fun animateViewOut(view: View) {
-        val alpha = ObjectAnimator.ofFloat(view, "alpha", 1f, 0f)
-        val translationY = ObjectAnimator.ofFloat(view, "translationY", 0f, -view.height.toFloat())
-        val set = AnimatorSet()
-        set.playTogether(alpha, translationY)
-        set.duration = 300
-        set.interpolator = DecelerateInterpolator()
-        set.start()
-    }
-
-    private fun animateViewIn(view: View) {
-        view.alpha = 0f
-        view.translationY = -view.height.toFloat()
-        view.visibility = View.VISIBLE
-
-        val alpha = ObjectAnimator.ofFloat(view, "alpha", 0f, 1f)
-        val translationY = ObjectAnimator.ofFloat(view, "translationY", -view.height.toFloat(), 0f)
-        val set = AnimatorSet()
-        set.playTogether(alpha, translationY)
-        set.duration = 300
-        set.interpolator = DecelerateInterpolator()
-        set.start()
-    }
-
     private fun loadLabels(modelName: String): List<String> {
         return try {
             assets.open("models/$modelName/labels.txt").use { it.bufferedReader().readLines().filter { line -> line.isNotBlank() } }
@@ -398,6 +418,7 @@ class RealtimeDetectActivity : AppCompatActivity(), SurfaceHolder.Callback {
         yolov11Ncnn.openCamera(facing)
         if (isAiEnabled) {
             startAiCallLoop()
+            startScreenshotAnalysis()
         }
     }
 
@@ -405,5 +426,6 @@ class RealtimeDetectActivity : AppCompatActivity(), SurfaceHolder.Callback {
         super.onPause()
         yolov11Ncnn.closeCamera()
         stopAiCallLoop()
+        stopScreenshotAnalysis()
     }
 }
