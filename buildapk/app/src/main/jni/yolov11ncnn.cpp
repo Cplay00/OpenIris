@@ -284,23 +284,19 @@ JNIEXPORT jboolean JNICALL Java_com_yolo_openiris_Yolov11Ncnn_loadModel(JNIEnv* 
 
         if (use_gpu && ncnn::get_gpu_count() == 0)
         {
-            // no gpu
+            __android_log_print(ANDROID_LOG_WARN, "ncnn", "GPU requested but no Vulkan GPU available, falling back to CPU");
+            use_gpu = false;
+        }
+
+        if (!g_yolo) {
+            g_yolo = new Inference;
+        }
+        int ret = g_yolo->loadNcnnNetwork(mgr, modeltype, target_size, mean_vals[(int)modelid], norm_vals[(int)modelid], use_gpu);
+        if (ret != 0) {
+            __android_log_print(ANDROID_LOG_ERROR, "ncnn", "Failed to load model: %s (ret=%d)", modeltype, ret);
             delete g_yolo;
             g_yolo = 0;
             return JNI_FALSE;
-        }
-        else
-        {
-            if (!g_yolo) {
-                g_yolo = new Inference;
-            }
-            bool loaded = g_yolo->loadNcnnNetwork(mgr, modeltype, target_size, mean_vals[(int)modelid], norm_vals[(int)modelid], use_gpu);
-            if (!loaded) {
-                __android_log_print(ANDROID_LOG_ERROR, "ncnn", "Failed to load model: %s", modeltype);
-                delete g_yolo;
-                g_yolo = 0;
-                return JNI_FALSE;
-            }
         }
     }
 
