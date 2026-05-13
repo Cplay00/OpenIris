@@ -423,8 +423,24 @@ JNIEXPORT jboolean JNICALL Java_com_yolo_openiris_Yolov11Ncnn_captureFrame(JNIEn
     cv::Mat rgba;
     cv::cvtColor(frame, rgba, cv::COLOR_BGR2RGBA);
 
+    // 检查转换结果
+    if (rgba.empty() || rgba.data == nullptr)
+    {
+        __android_log_print(ANDROID_LOG_ERROR, "ncnn", "Failed to convert frame to RGBA");
+        AndroidBitmap_unlockPixels(env, bitmap);
+        return JNI_FALSE;
+    }
+
     // 复制像素
-    memcpy(pixels, rgba.data, rgba.total() * rgba.elemSize());
+    size_t copySize = rgba.total() * rgba.elemSize();
+    size_t bitmapSize = info.stride * info.height;
+    if (copySize > bitmapSize)
+    {
+        __android_log_print(ANDROID_LOG_ERROR, "ncnn", "Frame size exceeds bitmap size");
+        AndroidBitmap_unlockPixels(env, bitmap);
+        return JNI_FALSE;
+    }
+    memcpy(pixels, rgba.data, copySize);
 
     AndroidBitmap_unlockPixels(env, bitmap);
 

@@ -205,7 +205,12 @@ NdkCamera::NdkCamera(int width, int height)
 void NdkCamera::setupImageReader()
 {
     // setup imagereader and its surface
-    AImageReader_new(image_reader_width, image_reader_height, AIMAGE_FORMAT_YUV_420_888, /*maxImages*/2, &image_reader);
+    media_status_t status = AImageReader_new(image_reader_width, image_reader_height, AIMAGE_FORMAT_YUV_420_888, /*maxImages*/2, &image_reader);
+    if (status != AMEDIA_OK || image_reader == nullptr)
+    {
+        __android_log_print(ANDROID_LOG_ERROR, "NdkCamera", "Failed to create AImageReader: %d", status);
+        return;
+    }
 
     AImageReader_ImageListener listener;
     listener.context = this;
@@ -215,11 +220,25 @@ void NdkCamera::setupImageReader()
 
     AImageReader_getWindow(image_reader, &image_reader_surface);
 
-    ANativeWindow_acquire(image_reader_surface);
+    if (image_reader_surface != nullptr)
+    {
+        ANativeWindow_acquire(image_reader_surface);
+    }
+    else
+    {
+        __android_log_print(ANDROID_LOG_ERROR, "NdkCamera", "Failed to get image reader surface");
+    }
 }
 
 void NdkCamera::setResolution(int width, int height)
 {
+    // 验证分辨率范围
+    if (width < 160 || height < 120 || width > 4096 || height > 4096)
+    {
+        __android_log_print(ANDROID_LOG_ERROR, "NdkCamera", "Invalid resolution: %dx%d (min 160x120, max 4096x4096)", width, height);
+        return;
+    }
+
     if (width == image_reader_width && height == image_reader_height)
         return;
 
