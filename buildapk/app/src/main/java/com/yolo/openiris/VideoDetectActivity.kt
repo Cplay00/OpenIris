@@ -446,11 +446,11 @@ class VideoDetectActivity : AppCompatActivity() {
             controller.hide(WindowInsetsCompat.Type.systemBars())
             controller.systemBarsBehavior = WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
             animateBottomPanelOut(bottomPanel)
-            animateTopToolbarOut(topToolbar)
+            animateToolbarOut(topToolbar)
         } else {
             controller.show(WindowInsetsCompat.Type.systemBars())
             animateBottomPanelIn(bottomPanel)
-            animateTopToolbarIn(topToolbar)
+            animateToolbarIn(topToolbar)
         }
     }
 
@@ -476,26 +476,17 @@ class VideoDetectActivity : AppCompatActivity() {
         set.start()
     }
 
-    private fun animateTopToolbarOut(view: View) {
+    private fun animateToolbarOut(view: View) {
         val alpha = ObjectAnimator.ofFloat(view, "alpha", 1f, 0f)
-        val translationY = ObjectAnimator.ofFloat(view, "translationY", 0f, -view.height.toFloat())
-        val set = AnimatorSet()
-        set.playTogether(alpha, translationY)
-        set.duration = 350
-        set.interpolator = DecelerateInterpolator(1.5f)
-        set.start()
+        alpha.duration = 300
+        alpha.start()
     }
 
-    private fun animateTopToolbarIn(view: View) {
+    private fun animateToolbarIn(view: View) {
         view.alpha = 0f
-        view.translationY = -view.height.toFloat()
         val alpha = ObjectAnimator.ofFloat(view, "alpha", 0f, 1f)
-        val translationY = ObjectAnimator.ofFloat(view, "translationY", -view.height.toFloat(), 0f)
-        val set = AnimatorSet()
-        set.playTogether(alpha, translationY)
-        set.duration = 350
-        set.interpolator = DecelerateInterpolator(1.5f)
-        set.start()
+        alpha.duration = 300
+        alpha.start()
     }
 
     private fun exportJson() {
