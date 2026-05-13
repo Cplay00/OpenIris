@@ -43,7 +43,14 @@ class ModelSettingsDialog : BottomSheetDialogFragment() {
                                      customHeaders: Map<String, String>, customBody: Map<String, Any>)
     }
 
-    var listener: OnModelSettingsListener? = null
+    // 使用WeakReference避免内存泄漏
+    private var listenerRef: java.lang.ref.WeakReference<OnModelSettingsListener>? = null
+    
+    var listener: OnModelSettingsListener?
+        get() = listenerRef?.get()
+        set(value) {
+            listenerRef = if (value != null) java.lang.ref.WeakReference(value) else null
+        }
 
     private lateinit var tabLayout: TabLayout
     private lateinit var viewPager: ViewPager2

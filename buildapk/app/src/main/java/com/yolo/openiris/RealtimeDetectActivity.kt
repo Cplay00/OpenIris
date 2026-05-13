@@ -275,7 +275,26 @@ class RealtimeDetectActivity : AppCompatActivity(), SurfaceHolder.Callback {
         Log.d(TAG, "Screenshot saved: ${file.absolutePath}")
     }
 
+    private var capturePreviewDialog: com.google.android.material.bottomsheet.BottomSheetDialog? = null
+    private val capturePreviewHandler = android.os.Handler(android.os.Looper.getMainLooper())
+    private val capturePreviewRunnable = Runnable {
+        capturePreviewDialog?.let { dialog ->
+            if (dialog.isShowing && !isFinishing && !isDestroyed) {
+                dialog.dismiss()
+            }
+        }
+        capturePreviewDialog = null
+    }
+
     private fun showCapturePreview(bitmap: Bitmap) {
+        // 先关闭之前的对话框
+        capturePreviewDialog?.let { dialog ->
+            if (dialog.isShowing) {
+                dialog.dismiss()
+            }
+        }
+        capturePreviewHandler.removeCallbacks(capturePreviewRunnable)
+
         val dialog = com.google.android.material.bottomsheet.BottomSheetDialog(this)
         dialog.setContentView(R.layout.layout_capture_preview)
         
@@ -293,14 +312,11 @@ class RealtimeDetectActivity : AppCompatActivity(), SurfaceHolder.Callback {
             textDetections?.text = "无检测结果"
         }
         
+        capturePreviewDialog = dialog
         dialog.show()
         
         // 2秒后自动关闭
-        android.os.Handler(mainLooper).postDelayed({
-            if (dialog.isShowing) {
-                dialog.dismiss()
-            }
-        }, 2000)
+        capturePreviewHandler.postDelayed(capturePreviewRunnable, 2000)
     }
 
     private fun startAiCallLoop() {
@@ -552,5 +568,14 @@ class RealtimeDetectActivity : AppCompatActivity(), SurfaceHolder.Callback {
         yolov11Ncnn.closeCamera()
         stopAiCallLoop()
         stopScreenshotAnalysis()
+        
+        // 清理浮窗
+        capturePreviewHandler.removeCallbacks(capturePreviewRunnable)
+        capturePreviewDialog?.let { dialog ->
+            if (dialog.isShowing) {
+                dialog.dismiss()
+            }
+        }
+        capturePreviewDialog = null
     }
 }
