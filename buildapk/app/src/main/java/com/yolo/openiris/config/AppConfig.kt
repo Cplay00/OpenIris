@@ -21,7 +21,14 @@ data class AppConfig(
     val enableLlmFusion: Boolean = true,
     val enableJsonExport: Boolean = true,
     val enableImageExport: Boolean = true,
-    val enableVideoExport: Boolean = false
+    val enableVideoExport: Boolean = false,
+    // 摄像头分辨率配置
+    val cameraResolutionWidth: Int = DEFAULT_CAMERA_WIDTH,
+    val cameraResolutionHeight: Int = DEFAULT_CAMERA_HEIGHT,
+    // 自定义分辨率列表（格式：["1280x720", "1920x1080"]）
+    val customResolutions: List<String> = emptyList(),
+    // 实时抓取后简短展示原图
+    val showCapturePreview: Boolean = false
 ) {
     companion object {
         const val DEFAULT_API_BASE_URL = "https://api.openai.com/v1"
@@ -32,6 +39,17 @@ data class AppConfig(
         const val MAX_VLM_INTERVAL = 300
 
         val VLM_INTERVAL_OPTIONS = listOf(2, 5, 10, 30)
+        
+        // 摄像头分辨率默认值
+        const val DEFAULT_CAMERA_WIDTH = 640
+        const val DEFAULT_CAMERA_HEIGHT = 480
+        
+        // 预设分辨率选项
+        val PRESET_RESOLUTIONS = listOf(
+            "480x360",
+            "640x480",
+            "1280x720"
+        )
     }
 
     /**

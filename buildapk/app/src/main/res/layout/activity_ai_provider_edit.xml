@@ -27,6 +27,48 @@
             android:orientation="vertical"
             android:padding="16dp">
 
+            <!-- 提供商类型选择 -->
+            <com.google.android.material.textview.MaterialTextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="提供商类型"
+                android:textAppearance="?attr/textAppearanceLabelMedium"
+                android:layout_marginBottom="8dp" />
+
+            <com.google.android.material.button.MaterialButtonToggleGroup
+                android:id="@+id/toggleGroupApiFormat"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="12dp"
+                app:singleSelection="true"
+                app:selectionRequired="true">
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/buttonOpenAi"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:text="OpenAI"
+                    style="@style/Widget.Material3.Button.OutlinedButton" />
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/buttonAnthropic"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:text="Anthropic"
+                    style="@style/Widget.Material3.Button.OutlinedButton" />
+            </com.google.android.material.button.MaterialButtonToggleGroup>
+
+            <!-- 是否启用 -->
+            <com.google.android.material.materialswitch.MaterialSwitch
+                android:id="@+id/switchEnabled"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="启用此提供商"
+                android:checked="true"
+                android:layout_marginBottom="12dp" />
+
             <!-- 提供商名称 -->
             <com.google.android.material.textfield.TextInputLayout
                 android:layout_width="match_parent"
@@ -42,11 +84,27 @@
                     android:inputType="text" />
             </com.google.android.material.textfield.TextInputLayout>
 
-            <!-- Base URL -->
+            <!-- API Key -->
             <com.google.android.material.textfield.TextInputLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:hint="API Base URL"
+                android:hint="API Key"
+                android:layout_marginBottom="12dp"
+                app:endIconMode="password_toggle"
+                style="@style/Widget.Material3.TextInputLayout.OutlinedBox">
+
+                <com.google.android.material.textfield.TextInputEditText
+                    android:id="@+id/editApiKey"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:inputType="textPassword" />
+            </com.google.android.material.textfield.TextInputLayout>
+
+            <!-- API Base Url -->
+            <com.google.android.material.textfield.TextInputLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:hint="API Base Url"
                 android:layout_marginBottom="12dp"
                 style="@style/Widget.Material3.TextInputLayout.OutlinedBox">
 
@@ -58,21 +116,31 @@
                     android:text="https://api.openai.com/v1" />
             </com.google.android.material.textfield.TextInputLayout>
 
-            <!-- API Key -->
+            <!-- API 路径 -->
             <com.google.android.material.textfield.TextInputLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:hint="API Key"
-                android:layout_marginBottom="16dp"
-                app:endIconMode="password_toggle"
+                android:hint="API 路径"
+                android:layout_marginBottom="12dp"
                 style="@style/Widget.Material3.TextInputLayout.OutlinedBox">
 
                 <com.google.android.material.textfield.TextInputEditText
-                    android:id="@+id/editApiKey"
+                    android:id="@+id/editApiPath"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:inputType="textPassword" />
+                    android:inputType="text"
+                    android:text="/chat/completions" />
             </com.google.android.material.textfield.TextInputLayout>
+
+            <!-- Response API 开关（仅 OpenAI 格式显示） -->
+            <com.google.android.material.materialswitch.MaterialSwitch
+                android:id="@+id/switchResponseApi"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="使用 Response API"
+                android:checked="false"
+                android:visibility="gone"
+                android:layout_marginBottom="12dp" />
 
             <!-- 获取模型列表按钮 -->
             <com.google.android.material.button.MaterialButton

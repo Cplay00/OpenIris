@@ -1,0 +1,43 @@
+OpenIris Android 项目构建包
+==========================
+
+目录大小: 29.98 MB
+文件总数: 572 个
+
+目录结构:
+---------
+- app/: Android 应用模块
+- docs/: 项目文档
+- tools/: 工具脚本
+- gradle/: Gradle Wrapper
+
+主要文件:
+---------
+- app/build.gradle: 应用构建配置
+- app/src/main/AndroidManifest.xml: 应用清单
+- app/src/main/java/com/yolo/openiris/: Kotlin 源码
+- app/src/main/jni/: C++ JNI 源码
+- app/src/main/assets/models/: 模型文件
+- app/src/main/res/: Android 资源
+- app/src/test/: 单元测试
+
+快速开始:
+---------
+1. 用 Android Studio 打开此目录
+2. 等待 Gradle 同步完成
+3. 配置 NCNN 和 OpenCV 库
+4. 运行 ./gradlew assembleDebug 构建
+5. 安装到设备测试
+
+详细说明请查看 BUILD_INSTRUCTIONS.md
+
+项目文档:
+---------
+- README.md: 项目概述
+- docs/project_completion_summary.md: 完成总结
+- docs/wave6_research_report.md: 技术调研
+- docs/project_structure.md: 结构规范
+- docs/data_structures.md: 数据结构
+- docs/testing_strategy.md: 测试策略
+
+生成时间: 2025-04-27

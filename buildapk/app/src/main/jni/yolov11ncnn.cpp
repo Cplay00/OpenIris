@@ -115,6 +115,10 @@ static int draw_fps(cv::Mat& rgb)
 static Inference* g_yolo = 0;
 static ncnn::Mutex lock;
 
+// 用于保存最后一帧的静态变量
+static cv::Mat g_last_frame;
+static ncnn::Mutex frame_lock;
+
 class MyNdkCamera : public NdkCameraWindow
 {
 public:
@@ -123,6 +127,12 @@ public:
 
 void MyNdkCamera::on_image_render(cv::Mat& rgb) const
 {
+    // 保存当前帧（用于截图）
+    {
+        ncnn::MutexLockGuard g(frame_lock);
+        g_last_frame = rgb.clone();
+    }
+
     // nanodet
     {
         ncnn::MutexLockGuard g(lock);
@@ -342,6 +352,84 @@ JNIEXPORT jintArray JNICALL Java_com_yolo_openiris_Yolov11Ncnn_detectBitmap(JNIE
 
     __android_log_print(ANDROID_LOG_DEBUG, "ncnn", "Detected %d objects", num_objects);
     return result;
+}
+
+// public native boolean setCameraResolution(int width, int height);
+JNIEXPORT jboolean JNICALL Java_com_yolo_openiris_Yolov11Ncnn_setCameraResolution(JNIEnv* env, jobject thiz, jint width, jint height)
+{
+    if (width <= 0 || height <= 0)
+    {
+        __android_log_print(ANDROID_LOG_ERROR, "ncnn", "Invalid resolution: %dx%d", width, height);
+        return JNI_FALSE;
+    }
+
+    __android_log_print(ANDROID_LOG_DEBUG, "ncnn", "setCameraResolution %dx%d", width, height);
+
+    // 保存当前 facing
+    int facing = g_camera->camera_facing;
+
+    // 设置新分辨率（会自动关闭摄像头并重新创建 ImageReader）
+    g_camera->setResolution(width, height);
+
+    // 重新打开摄像头
+    g_camera->open(facing);
+
+    return JNI_TRUE;
+}
+
+// public native boolean captureFrame(Bitmap bitmap);
+JNIEXPORT jboolean JNICALL Java_com_yolo_openiris_Yolov11Ncnn_captureFrame(JNIEnv* env, jobject thiz, jobject bitmap)
+{
+    ncnn::MutexLockGuard g(frame_lock);
+
+    if (g_last_frame.empty())
+    {
+        __android_log_print(ANDROID_LOG_ERROR, "ncnn", "No frame available for capture");
+        return JNI_FALSE;
+    }
+
+    AndroidBitmapInfo info;
+    if (AndroidBitmap_getInfo(env, bitmap, &info) != ANDROID_BITMAP_RESULT_SUCCESS)
+    {
+        __android_log_print(ANDROID_LOG_ERROR, "ncnn", "Failed to get bitmap info");
+        return JNI_FALSE;
+    }
+
+    if (info.format != ANDROID_BITMAP_FORMAT_RGBA_8888)
+    {
+        __android_log_print(ANDROID_LOG_ERROR, "ncnn", "Unsupported bitmap format");
+        return JNI_FALSE;
+    }
+
+    // 确保帧尺寸与 Bitmap 匹配
+    cv::Mat frame;
+    if (g_last_frame.cols != (int)info.width || g_last_frame.rows != (int)info.height)
+    {
+        cv::resize(g_last_frame, frame, cv::Size(info.width, info.height));
+    }
+    else
+    {
+        frame = g_last_frame;
+    }
+
+    void* pixels;
+    if (AndroidBitmap_lockPixels(env, bitmap, &pixels) != ANDROID_BITMAP_RESULT_SUCCESS)
+    {
+        __android_log_print(ANDROID_LOG_ERROR, "ncnn", "Failed to lock bitmap pixels");
+        return JNI_FALSE;
+    }
+
+    // BGR -> RGBA
+    cv::Mat rgba;
+    cv::cvtColor(frame, rgba, cv::COLOR_BGR2RGBA);
+
+    // 复制像素
+    memcpy(pixels, rgba.data, rgba.total() * rgba.elemSize());
+
+    AndroidBitmap_unlockPixels(env, bitmap);
+
+    __android_log_print(ANDROID_LOG_DEBUG, "ncnn", "Frame captured: %dx%d", frame.cols, frame.rows);
+    return JNI_TRUE;
 }
 
 }
