@@ -166,6 +166,8 @@ NdkCamera::NdkCamera()
 {
     camera_facing = 0;
     camera_orientation = 0;
+    image_reader_width = 640;
+    image_reader_height = 480;
 
     camera_manager = 0;
     camera_device = 0;
@@ -177,21 +179,75 @@ NdkCamera::NdkCamera()
     capture_session_output = 0;
     capture_session = 0;
 
+    setupImageReader();
+}
 
+NdkCamera::NdkCamera(int width, int height)
+{
+    camera_facing = 0;
+    camera_orientation = 0;
+    image_reader_width = width;
+    image_reader_height = height;
+
+    camera_manager = 0;
+    camera_device = 0;
+    image_reader = 0;
+    image_reader_surface = 0;
+    image_reader_target = 0;
+    capture_request = 0;
+    capture_session_output_container = 0;
+    capture_session_output = 0;
+    capture_session = 0;
+
+    setupImageReader();
+}
+
+void NdkCamera::setupImageReader()
+{
     // setup imagereader and its surface
+    AImageReader_new(image_reader_width, image_reader_height, AIMAGE_FORMAT_YUV_420_888, /*maxImages*/2, &image_reader);
+
+    AImageReader_ImageListener listener;
+    listener.context = this;
+    listener.onImageAvailable = onImageAvailable;
+
+    AImageReader_setImageListener(image_reader, &listener);
+
+    AImageReader_getWindow(image_reader, &image_reader_surface);
+
+    ANativeWindow_acquire(image_reader_surface);
+}
+
+void NdkCamera::setResolution(int width, int height)
+{
+    if (width == image_reader_width && height == image_reader_height)
+        return;
+
+    __android_log_print(ANDROID_LOG_WARN, "NdkCamera", "setResolution %dx%d -> %dx%d", 
+        image_reader_width, image_reader_height, width, height);
+
+    // 关闭当前摄像头
+    close();
+
+    // 删除旧的 ImageReader
+    if (image_reader)
     {
-        AImageReader_new(640, 480, AIMAGE_FORMAT_YUV_420_888, /*maxImages*/2, &image_reader);
-
-        AImageReader_ImageListener listener;
-        listener.context = this;
-        listener.onImageAvailable = onImageAvailable;
-
-        AImageReader_setImageListener(image_reader, &listener);
-
-        AImageReader_getWindow(image_reader, &image_reader_surface);
-
-        ANativeWindow_acquire(image_reader_surface);
+        AImageReader_delete(image_reader);
+        image_reader = 0;
     }
+
+    if (image_reader_surface)
+    {
+        ANativeWindow_release(image_reader_surface);
+        image_reader_surface = 0;
+    }
+
+    // 更新分辨率
+    image_reader_width = width;
+    image_reader_height = height;
+
+    // 重新创建 ImageReader
+    setupImageReader();
 }
 
 NdkCamera::~NdkCamera()

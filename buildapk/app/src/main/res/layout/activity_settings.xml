@@ -85,6 +85,79 @@
                         android:inputType="none" />
                 </com.google.android.material.textfield.TextInputLayout>
 
+                <!-- 摄像头分辨率选择 -->
+                <com.google.android.material.textfield.TextInputLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:hint="摄像头分辨率"
+                    android:layout_marginBottom="12dp"
+                    style="@style/Widget.Material3.TextInputLayout.OutlinedBox.ExposedDropdownMenu">
+
+                    <AutoCompleteTextView
+                        android:id="@+id/spinnerResolution"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:inputType="none" />
+                </com.google.android.material.textfield.TextInputLayout>
+
+                <!-- 自定义分辨率输入 -->
+                <LinearLayout
+                    android:id="@+id/layoutCustomResolution"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:visibility="gone"
+                    android:layout_marginBottom="12dp">
+
+                    <com.google.android.material.textfield.TextInputLayout
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:hint="宽度"
+                        android:layout_marginEnd="8dp"
+                        style="@style/Widget.Material3.TextInputLayout.OutlinedBox">
+
+                        <com.google.android.material.textfield.TextInputEditText
+                            android:id="@+id/editCustomWidth"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:inputType="number" />
+                    </com.google.android.material.textfield.TextInputLayout>
+
+                    <com.google.android.material.textfield.TextInputLayout
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:hint="高度"
+                        style="@style/Widget.Material3.TextInputLayout.OutlinedBox">
+
+                        <com.google.android.material.textfield.TextInputEditText
+                            android:id="@+id/editCustomHeight"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:inputType="number" />
+                    </com.google.android.material.textfield.TextInputLayout>
+                </LinearLayout>
+
+                <!-- 添加自定义分辨率按钮 -->
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/buttonAddResolution"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="添加自定义分辨率"
+                    android:visibility="gone"
+                    android:layout_marginBottom="12dp"
+                    style="@style/Widget.Material3.Button.TonalButton" />
+
+                <!-- 实时抓取后展示原图开关 -->
+                <com.google.android.material.materialswitch.MaterialSwitch
+                    android:id="@+id/switchShowCapturePreview"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="实时抓取后展示原图"
+                    android:checked="false"
+                    android:layout_marginBottom="12dp" />
+
                 <!-- 模型描述 -->
                 <com.google.android.material.textview.MaterialTextView
                     android:id="@+id/textModelDescription"

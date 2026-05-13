@@ -40,26 +40,26 @@
             android:contentDescription="返回"
             app:tint="@android:color/white" />
 
-        <!-- FPS 显示 -->
+        <!-- 标题 -->
         <com.google.android.material.textview.MaterialTextView
-            android:id="@+id/textFps"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_weight="1"
-            android:text="FPS: --"
+            android:text="实时检测"
             android:textColor="#FFFFFF"
-            android:textAppearance="?attr/textAppearanceLabelMedium"
+            android:textAppearance="?attr/textAppearanceTitleMedium"
             android:gravity="center" />
 
-        <!-- AI 状态指示器 -->
-        <com.google.android.material.textview.MaterialTextView
-            android:id="@+id/textAiStatus"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="AI: 关闭"
-            android:textColor="#AAAAAA"
-            android:textAppearance="?attr/textAppearanceLabelSmall"
-            android:layout_marginEnd="8dp" />
+        <!-- 显示抓取图按钮 -->
+        <ImageButton
+            android:id="@+id/buttonShowCapture"
+            android:layout_width="40dp"
+            android:layout_height="40dp"
+            android:src="@android:drawable/ic_menu_gallery"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:contentDescription="显示抓取图"
+            android:layout_marginEnd="8dp"
+            app:tint="@android:color/white" />
 
         <!-- 全屏按钮 -->
         <ImageButton

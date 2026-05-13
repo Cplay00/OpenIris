@@ -54,11 +54,10 @@ class RealtimeDetectActivity : AppCompatActivity(), SurfaceHolder.Callback {
     // UI components
     private lateinit var cameraView: SurfaceView
     private lateinit var overlayView: OverlayView
-    private lateinit var textFps: MaterialTextView
-    private lateinit var textAiStatus: MaterialTextView
     private lateinit var buttonBack: ImageButton
     private lateinit var buttonCapture: ImageButton
     private lateinit var buttonFullscreen: ImageButton
+    private lateinit var buttonShowCapture: ImageButton
 
     // Card buttons
     private lateinit var cardSwitchCamera: MaterialCardView
@@ -118,11 +117,10 @@ class RealtimeDetectActivity : AppCompatActivity(), SurfaceHolder.Callback {
         overlayView = findViewById(R.id.overlayView)
 
         // Top status bar
-        textFps = findViewById(R.id.textFps)
-        textAiStatus = findViewById(R.id.textAiStatus)
         buttonBack = findViewById(R.id.buttonBack)
         buttonCapture = findViewById(R.id.buttonCapture)
         buttonFullscreen = findViewById(R.id.buttonFullscreen)
+        buttonShowCapture = findViewById(R.id.buttonShowCapture)
 
         // Card buttons
         cardSwitchCamera = findViewById(R.id.cardSwitchCamera)
@@ -170,7 +168,6 @@ class RealtimeDetectActivity : AppCompatActivity(), SurfaceHolder.Callback {
         cardToggleAi.setOnClickListener {
             isAiEnabled = !isAiEnabled
             updateAiButton()
-            updateAiStatus()
             if (isAiEnabled) {
                 startAiCallLoop()
                 startScreenshotAnalysis()
@@ -236,22 +233,28 @@ class RealtimeDetectActivity : AppCompatActivity(), SurfaceHolder.Callback {
         textAiStatusBtn.setTextColor(getContrastColor(color))
     }
 
-    private fun updateAiStatus() {
-        if (isAiEnabled) {
-            textAiStatus.text = "AI: 开启"
-            textAiStatus.setTextColor(getColor(R.color.btn_ai_enabled))
-        } else {
-            textAiStatus.text = "AI: 关闭"
-            textAiStatus.setTextColor(getColor(android.R.color.darker_gray))
-        }
-    }
-
     // 截图并保存
     private fun captureAndSave() {
         try {
-            val bitmap = Bitmap.createBitmap(cameraView.width, cameraView.height, Bitmap.Config.ARGB_8888)
-            saveBitmap(bitmap)
-            Toast.makeText(this, "截图已保存", Toast.LENGTH_SHORT).show()
+            val config = configManager.loadConfig()
+            val bitmap = Bitmap.createBitmap(
+                config.cameraResolutionWidth,
+                config.cameraResolutionHeight,
+                Bitmap.Config.ARGB_8888
+            )
+            
+            if (yolov11Ncnn.captureFrame(bitmap)) {
+                saveBitmap(bitmap)
+                
+                // 如果开启了截图预览，显示浮窗
+                if (config.showCapturePreview) {
+                    showCapturePreview(bitmap)
+                }
+                
+                Toast.makeText(this, "截图已保存", Toast.LENGTH_SHORT).show()
+            } else {
+                Toast.makeText(this, "截图失败：无法获取当前帧", Toast.LENGTH_SHORT).show()
+            }
         } catch (e: Exception) {
             Log.e(TAG, "Capture failed", e)
             Toast.makeText(this, "截图失败: ${e.message}", Toast.LENGTH_SHORT).show()
@@ -270,6 +273,34 @@ class RealtimeDetectActivity : AppCompatActivity(), SurfaceHolder.Callback {
         }
 
         Log.d(TAG, "Screenshot saved: ${file.absolutePath}")
+    }
+
+    private fun showCapturePreview(bitmap: Bitmap) {
+        val dialog = com.google.android.material.bottomsheet.BottomSheetDialog(this)
+        dialog.setContentView(R.layout.layout_capture_preview)
+        
+        val imageView = dialog.findViewById<android.widget.ImageView>(R.id.imageCapturePreview)
+        val textDetections = dialog.findViewById<MaterialTextView>(R.id.textCaptureDetections)
+        
+        imageView?.setImageBitmap(bitmap)
+        
+        // 显示当前检测结果摘要
+        val yoloSummary = yoloTracker.getSortedSummary()
+        if (yoloSummary.isNotEmpty()) {
+            val summaryText = yoloSummary.take(3).joinToString("、") { "${it.name} x${it.count}" }
+            textDetections?.text = summaryText
+        } else {
+            textDetections?.text = "无检测结果"
+        }
+        
+        dialog.show()
+        
+        // 2秒后自动关闭
+        android.os.Handler(mainLooper).postDelayed({
+            if (dialog.isShowing) {
+                dialog.dismiss()
+            }
+        }, 2000)
     }
 
     private fun startAiCallLoop() {
@@ -504,6 +535,11 @@ class RealtimeDetectActivity : AppCompatActivity(), SurfaceHolder.Callback {
 
     override fun onResume() {
         super.onResume()
+        
+        // 应用分辨率配置
+        val config = configManager.loadConfig()
+        yolov11Ncnn.setCameraResolution(config.cameraResolutionWidth, config.cameraResolutionHeight)
+        
         yolov11Ncnn.openCamera(facing)
         if (isAiEnabled) {
             startAiCallLoop()

@@ -29,11 +29,15 @@ class NdkCamera
 {
 public:
     NdkCamera();
+    NdkCamera(int width, int height);
     virtual ~NdkCamera();
 
     // facing 0=front 1=back
     int open(int camera_facing = 0);
     void close();
+
+    // 设置分辨率（需要重新打开摄像头生效）
+    void setResolution(int width, int height);
 
     virtual void on_image(const cv::Mat& rgb) const;
 
@@ -42,8 +46,12 @@ public:
 public:
     int camera_facing;
     int camera_orientation;
+    int image_reader_width;
+    int image_reader_height;
 
 private:
+    void setupImageReader();
+
     ACameraManager* camera_manager;
     ACameraDevice* camera_device;
     AImageReader* image_reader;
