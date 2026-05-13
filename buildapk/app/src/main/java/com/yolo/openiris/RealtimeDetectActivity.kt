@@ -235,9 +235,10 @@ class RealtimeDetectActivity : AppCompatActivity(), SurfaceHolder.Callback {
 
     // 截图并保存
     private fun captureAndSave() {
+        var bitmap: Bitmap? = null
         try {
             val config = configManager.loadConfig()
-            val bitmap = Bitmap.createBitmap(
+            bitmap = Bitmap.createBitmap(
                 config.cameraResolutionWidth,
                 config.cameraResolutionHeight,
                 Bitmap.Config.ARGB_8888
@@ -249,6 +250,7 @@ class RealtimeDetectActivity : AppCompatActivity(), SurfaceHolder.Callback {
                 // 如果开启了截图预览，显示浮窗
                 if (config.showCapturePreview) {
                     showCapturePreview(bitmap)
+                    bitmap = null // dialog会持有bitmap引用，不在这里回收
                 }
                 
                 Toast.makeText(this, "截图已保存", Toast.LENGTH_SHORT).show()
@@ -258,6 +260,9 @@ class RealtimeDetectActivity : AppCompatActivity(), SurfaceHolder.Callback {
         } catch (e: Exception) {
             Log.e(TAG, "Capture failed", e)
             Toast.makeText(this, "截图失败: ${e.message}", Toast.LENGTH_SHORT).show()
+        } finally {
+            // 如果bitmap没有被dialog持有，则回收
+            bitmap?.recycle()
         }
     }
 

@@ -363,10 +363,23 @@ JNIEXPORT jboolean JNICALL Java_com_yolo_openiris_Yolov11Ncnn_setCameraResolutio
         return JNI_FALSE;
     }
 
+    // 验证分辨率范围
+    if (width < 160 || height < 120 || width > 4096 || height > 4096)
+    {
+        __android_log_print(ANDROID_LOG_ERROR, "ncnn", "Resolution out of range: %dx%d", width, height);
+        return JNI_FALSE;
+    }
+
     __android_log_print(ANDROID_LOG_DEBUG, "ncnn", "setCameraResolution %dx%d", width, height);
+
+    // 使用锁保护分辨率切换，避免与captureFrame并发问题
+    ncnn::MutexLockGuard g(frame_lock);
 
     // 保存当前 facing
     int facing = g_camera->camera_facing;
+
+    // 清除旧帧
+    g_last_frame.release();
 
     // 设置新分辨率（会自动关闭摄像头并重新创建 ImageReader）
     g_camera->setResolution(width, height);
