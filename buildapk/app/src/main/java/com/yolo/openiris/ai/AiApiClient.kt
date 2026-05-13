@@ -48,18 +48,44 @@ class AiApiClient {
     private val gson = Gson()
 
     /**
+     * 构建请求头
+     */
+    private fun buildHeaders(provider: AiProvider, model: AiModel): Map<String, String> {
+        val headers = mutableMapOf<String, String>()
+        
+        // 根据 API 格式设置认证头
+        when (provider.apiFormat) {
+            ApiFormat.ANTHROPIC -> {
+                headers["x-api-key"] = provider.apiKey
+                headers["anthropic-version"] = "2023-06-01"
+            }
+            else -> {
+                headers["Authorization"] = "Bearer ${provider.apiKey}"
+            }
+        }
+        
+        headers["Content-Type"] = "application/json"
+        
+        // 合并自定义 Headers
+        model.customHeaders.forEach { (key, value) ->
+            headers[key] = value
+        }
+        
+        return headers
+    }
+
+    /**
      * 获取提供商的模型列表
      */
     fun fetchModelList(provider: AiProvider): Result<List<String>> {
         return try {
             val url = "${provider.getEffectiveBaseUrl()}/models"
-            val request = Request.Builder()
-                .url(url)
-                .addHeader("Authorization", "Bearer ${provider.apiKey}")
-                .addHeader("Content-Type", "application/json")
-                .build()
-
-            client.newCall(request).execute().use { response ->
+            val headers = buildHeaders(provider, AiModel(providerId = provider.id, modelId = "", displayName = ""))
+            
+            val requestBuilder = Request.Builder().url(url)
+            headers.forEach { (key, value) -> requestBuilder.addHeader(key, value) }
+            
+            client.newCall(requestBuilder.build()).execute().use { response ->
                 if (response.isSuccessful) {
                     val body = response.body?.string() ?: ""
                     val jsonObject = JsonParser.parseString(body).asJsonObject
@@ -94,45 +120,26 @@ class AiApiClient {
         val startTime = System.currentTimeMillis()
 
         return try {
-            val url = "${provider.getEffectiveBaseUrl()}/chat/completions"
-
-            val messages = mutableListOf<Map<String, String>>()
-
-            // 添加系统提示
-            messages.add(mapOf(
-                "role" to "system",
-                "content" to (systemPrompt ?: DEFAULT_SYSTEM_PROMPT)
-            ))
-
-            // 添加用户提示
-            messages.add(mapOf(
-                "role" to "user",
-                "content" to prompt
-            ))
-
-            val requestBody = mapOf(
-                "model" to model.modelId,
-                "messages" to messages,
-                "temperature" to 0.7,
-                "max_tokens" to 1024
-            )
+            val url = "${provider.getEffectiveBaseUrl()}${provider.getEffectiveApiPath()}"
+            val headers = buildHeaders(provider, model)
+            
+            val requestBody = when (provider.apiFormat) {
+                ApiFormat.ANTHROPIC -> buildAnthropicRequestBody(model, prompt, systemPrompt, false, null)
+                else -> buildOpenAIRequestBody(model, prompt, systemPrompt, false, null)
+            }
 
             val jsonBody = gson.toJson(requestBody)
                 .toRequestBody("application/json".toMediaType())
 
-            val request = Request.Builder()
-                .url(url)
-                .addHeader("Authorization", "Bearer ${provider.apiKey}")
-                .addHeader("Content-Type", "application/json")
-                .post(jsonBody)
-                .build()
+            val requestBuilder = Request.Builder().url(url).post(jsonBody)
+            headers.forEach { (key, value) -> requestBuilder.addHeader(key, value) }
 
-            client.newCall(request).execute().use { response ->
+            client.newCall(requestBuilder.build()).execute().use { response ->
                 val duration = System.currentTimeMillis() - startTime
 
                 if (response.isSuccessful) {
                     val body = response.body?.string() ?: ""
-                    val result = parseResponse(body, model)
+                    val result = parseResponse(body, provider.apiFormat)
                     AiResult.success(
                         modelId = model.id,
                         modelName = model.displayName,
@@ -183,57 +190,26 @@ class AiApiClient {
                 )
             }
 
-            val url = "${provider.getEffectiveBaseUrl()}/chat/completions"
-
-            val messages = mutableListOf<Map<String, Any>>()
-
-            // 添加系统提示
-            messages.add(mapOf(
-                "role" to "system",
-                "content" to (systemPrompt ?: DEFAULT_SYSTEM_PROMPT)
-            ))
-
-            // 添加用户消息（带图片）
-            val userContent = listOf(
-                mapOf(
-                    "type" to "text",
-                    "text" to prompt
-                ),
-                mapOf(
-                    "type" to "image_url",
-                    "image_url" to mapOf(
-                        "url" to "data:image/jpeg;base64,$imageBase64"
-                    )
-                )
-            )
-            messages.add(mapOf(
-                "role" to "user",
-                "content" to userContent
-            ))
-
-            val requestBody = mapOf(
-                "model" to model.modelId,
-                "messages" to messages,
-                "temperature" to 0.7,
-                "max_tokens" to 1024
-            )
+            val url = "${provider.getEffectiveBaseUrl()}${provider.getEffectiveApiPath()}"
+            val headers = buildHeaders(provider, model)
+            
+            val requestBody = when (provider.apiFormat) {
+                ApiFormat.ANTHROPIC -> buildAnthropicRequestBody(model, prompt, systemPrompt, true, imageBase64)
+                else -> buildOpenAIRequestBody(model, prompt, systemPrompt, true, imageBase64)
+            }
 
             val jsonBody = gson.toJson(requestBody)
                 .toRequestBody("application/json".toMediaType())
 
-            val request = Request.Builder()
-                .url(url)
-                .addHeader("Authorization", "Bearer ${provider.apiKey}")
-                .addHeader("Content-Type", "application/json")
-                .post(jsonBody)
-                .build()
+            val requestBuilder = Request.Builder().url(url).post(jsonBody)
+            headers.forEach { (key, value) -> requestBuilder.addHeader(key, value) }
 
-            client.newCall(request).execute().use { response ->
+            client.newCall(requestBuilder.build()).execute().use { response ->
                 val duration = System.currentTimeMillis() - startTime
 
                 if (response.isSuccessful) {
                     val body = response.body?.string() ?: ""
-                    val result = parseResponse(body, model)
+                    val result = parseResponse(body, provider.apiFormat)
                     AiResult.success(
                         modelId = model.id,
                         modelName = model.displayName,
@@ -264,27 +240,146 @@ class AiApiClient {
     }
 
     /**
+     * 构建 OpenAI 兼容格式请求体
+     */
+    private fun buildOpenAIRequestBody(
+        model: AiModel,
+        prompt: String,
+        systemPrompt: String?,
+        withImage: Boolean,
+        imageBase64: String?
+    ): Map<String, Any> {
+        val messages = mutableListOf<Map<String, Any>>()
+
+        // 添加系统提示
+        messages.add(mapOf(
+            "role" to "system",
+            "content" to (systemPrompt ?: DEFAULT_SYSTEM_PROMPT)
+        ))
+
+        // 添加用户消息
+        if (withImage && imageBase64 != null) {
+            val userContent = listOf(
+                mapOf("type" to "text", "text" to prompt),
+                mapOf("type" to "image_url", "image_url" to mapOf("url" to "data:image/jpeg;base64,$imageBase64"))
+            )
+            messages.add(mapOf("role" to "user", "content" to userContent))
+        } else {
+            messages.add(mapOf("role" to "user", "content" to prompt))
+        }
+
+        val body = mutableMapOf<String, Any>(
+            "model" to model.modelId,
+            "messages" to messages,
+            "temperature" to 0.7,
+            "max_tokens" to 1024
+        )
+
+        // 推理/思考开关
+        if (!model.enableReasoning) {
+            body["thinking"] = mapOf("type" to "disabled")
+        }
+
+        // 合并自定义 Body
+        model.customBody.forEach { (key, value) ->
+            body[key] = value
+        }
+
+        return body
+    }
+
+    /**
+     * 构建 Anthropic 格式请求体
+     */
+    private fun buildAnthropicRequestBody(
+        model: AiModel,
+        prompt: String,
+        systemPrompt: String?,
+        withImage: Boolean,
+        imageBase64: String?
+    ): Map<String, Any> {
+        val messages = mutableListOf<Map<String, Any>>()
+
+        // 添加用户消息
+        if (withImage && imageBase64 != null) {
+            val userContent = listOf(
+                mapOf("type" to "image", "source" to mapOf("type" to "base64", "media_type" to "image/jpeg", "data" to imageBase64)),
+                mapOf("type" to "text", "text" to prompt)
+            )
+            messages.add(mapOf("role" to "user", "content" to userContent))
+        } else {
+            messages.add(mapOf("role" to "user", "content" to prompt))
+        }
+
+        val body = mutableMapOf<String, Any>(
+            "model" to model.modelId,
+            "messages" to messages,
+            "max_tokens" to 1024
+        )
+
+        // Anthropic 的 system 是顶级字段
+        if (systemPrompt != null) {
+            body["system"] = systemPrompt
+        } else {
+            body["system"] = DEFAULT_SYSTEM_PROMPT
+        }
+
+        // 推理/思考开关
+        if (!model.enableReasoning) {
+            body["thinking"] = mapOf("type" to "disabled")
+        }
+
+        // 合并自定义 Body
+        model.customBody.forEach { (key, value) ->
+            body[key] = value
+        }
+
+        return body
+    }
+
+    /**
      * 解析 API 响应
      */
-    private fun parseResponse(responseBody: String, model: AiModel): Pair<String, StructuredOutput?> {
+    private fun parseResponse(responseBody: String, apiFormat: ApiFormat): Pair<String, StructuredOutput?> {
         return try {
-            val jsonObject = JsonParser.parseString(responseBody).asJsonObject
-            val choices = jsonObject.getAsJsonArray("choices")
-            if (choices != null && choices.size() > 0) {
-                val message = choices[0].asJsonObject.getAsJsonObject("message")
-                val content = message?.get("content")?.asString ?: ""
-
-                // 尝试解析结构化输出
-                val structuredOutput = tryParseStructuredOutput(content)
-
-                Pair(content, structuredOutput)
-            } else {
-                Pair("No response", null)
+            when (apiFormat) {
+                ApiFormat.ANTHROPIC -> parseAnthropicResponse(responseBody)
+                else -> parseOpenAIResponse(responseBody)
             }
         } catch (e: Exception) {
             Log.e(TAG, "Failed to parse response", e)
             Pair(responseBody, null)
         }
+    }
+
+    /**
+     * 解析 OpenAI 兼容格式响应
+     */
+    private fun parseOpenAIResponse(responseBody: String): Pair<String, StructuredOutput?> {
+        val jsonObject = JsonParser.parseString(responseBody).asJsonObject
+        val choices = jsonObject.getAsJsonArray("choices")
+        if (choices != null && choices.size() > 0) {
+            val message = choices[0].asJsonObject.getAsJsonObject("message")
+            val content = message?.get("content")?.asString ?: ""
+            val structuredOutput = tryParseStructuredOutput(content)
+            return Pair(content, structuredOutput)
+        }
+        return Pair("No response", null)
+    }
+
+    /**
+     * 解析 Anthropic 格式响应
+     */
+    private fun parseAnthropicResponse(responseBody: String): Pair<String, StructuredOutput?> {
+        val jsonObject = JsonParser.parseString(responseBody).asJsonObject
+        val contentArray = jsonObject.getAsJsonArray("content")
+        if (contentArray != null && contentArray.size() > 0) {
+            val textBlock = contentArray[0].asJsonObject
+            val content = textBlock.get("text")?.asString ?: ""
+            val structuredOutput = tryParseStructuredOutput(content)
+            return Pair(content, structuredOutput)
+        }
+        return Pair("No response", null)
     }
 
     /**
