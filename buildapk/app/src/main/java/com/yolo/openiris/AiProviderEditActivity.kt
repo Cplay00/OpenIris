@@ -319,7 +319,7 @@ class AiProviderEditActivity : AppCompatActivity(), ModelSettingsDialog.OnModelS
     override fun onModelSettingsConfirmed(
         modelId: String, displayName: String, hasVision: Boolean,
         enableReasoning: Boolean, assignedTasks: List<String>,
-        customHeaders: Map<String, String>, customBody: Map<String, Any>
+        customHeaders: Map<String, String>, customBody: Map<String, String>
     ) {
         val index = selectedModels.indexOfFirst { it.id == modelId }
         if (index >= 0) {

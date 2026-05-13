@@ -182,10 +182,11 @@ class ImageDetectActivity : AppCompatActivity() {
     private fun createImageFile(): File {
         val timeStamp = SimpleDateFormat("yyyyMMdd_HHmmss", Locale.getDefault()).format(Date())
         val configPath = configManager.getImageExportPath()
-        val storageDir = if (configPath.isNotBlank()) {
-            File(getExternalFilesDir(null), configPath).apply { mkdirs() }
+        // 使用公共存储目录
+        val storageDir = if (configPath.isNotBlank() && configPath != "Pictures") {
+            File(Environment.getExternalStorageDirectory(), configPath).apply { mkdirs() }
         } else {
-            getExternalFilesDir(Environment.DIRECTORY_PICTURES)
+            File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_PICTURES), "OpenIris").apply { mkdirs() }
         }
         return File.createTempFile("JPEG_${timeStamp}_", ".jpg", storageDir)
     }

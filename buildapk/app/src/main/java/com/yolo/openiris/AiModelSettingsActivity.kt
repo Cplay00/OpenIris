@@ -68,6 +68,18 @@ class AiModelSettingsActivity : AppCompatActivity() {
         // 提示词输入框
         editVisualPrompt = findViewById(R.id.editVisualPrompt)
         editSummaryPrompt = findViewById(R.id.editSummaryPrompt)
+        
+        // 修复提示词滚动：阻止父容器拦截触摸事件
+        editVisualPrompt.setOnTouchListener { v, event ->
+            v.parent.requestDisallowInterceptTouchEvent(true)
+            v.onTouchEvent(event)
+            true
+        }
+        editSummaryPrompt.setOnTouchListener { v, event ->
+            v.parent.requestDisallowInterceptTouchEvent(true)
+            v.onTouchEvent(event)
+            true
+        }
 
         // 提供商列表
         recyclerProviders = findViewById(R.id.recyclerProviders)

@@ -17,7 +17,7 @@ data class AiModel(
     val enableReasoning: Boolean = false,
     val assignedTasks: List<String> = emptyList(),
     val customHeaders: Map<String, String> = emptyMap(),
-    val customBody: Map<String, Any> = emptyMap()
+    val customBody: Map<String, String> = emptyMap()
 ) {
     companion object {
         const val TASK_VISUAL_RECOGNITION = "visual_recognition"

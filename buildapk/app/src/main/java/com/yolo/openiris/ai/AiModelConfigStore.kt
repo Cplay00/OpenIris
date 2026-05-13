@@ -145,9 +145,8 @@ class AiModelConfigStore(context: Context) {
 
             result
         } catch (e: Exception) {
-            Log.e(TAG, "Failed to load providers", e)
-            // 尝试恢复：清除损坏的数据
-            prefs.edit().remove(KEY_PROVIDERS).apply()
+            Log.e(TAG, "Failed to load providers, but keeping data intact", e)
+            // 不清除数据，返回空列表但保留原始数据
             emptyList()
         }
     }

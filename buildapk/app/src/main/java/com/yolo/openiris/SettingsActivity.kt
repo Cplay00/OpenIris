@@ -42,7 +42,6 @@ class SettingsActivity : AppCompatActivity() {
     private lateinit var buttonAiModelSettings: MaterialButton
     private lateinit var editImageExportPath: TextInputEditText
     private lateinit var editJsonExportPath: TextInputEditText
-    private lateinit var buttonSave: MaterialButton
 
     private var currentModel = 0
     private var currentCpuGpu = 0
@@ -117,10 +116,16 @@ class SettingsActivity : AppCompatActivity() {
         spinnerCPUGPU.setAdapter(cpuGpuAdapter)
         spinnerCPUGPU.setOnItemClickListener { _, _, position, _ ->
             currentCpuGpu = position
+            saveProcessorSetting()
         }
 
         // 分辨率选择
         setupResolutionSpinner()
+
+        // 截图预览开关 - 即时保存
+        switchShowCapturePreview.setOnCheckedChangeListener { _, isChecked ->
+            saveCapturePreviewSetting(isChecked)
+        }
 
         buttonAiModelSettings = findViewById(R.id.buttonAiModelSettings)
         buttonAiModelSettings.setOnClickListener {
@@ -135,8 +140,19 @@ class SettingsActivity : AppCompatActivity() {
         editImageExportPath.isFocusable = false
         editJsonExportPath.isFocusable = false
 
-        buttonSave = findViewById(R.id.buttonSave)
-        buttonSave.setOnClickListener { saveConfig() }
+        // 导出路径 - 失去焦点时保存
+        editImageExportPath.setOnFocusChangeListener { _, hasFocus ->
+            if (!hasFocus) {
+                val path = editImageExportPath.text?.toString()?.trim() ?: ""
+                configManager.setImageExportPath(path)
+            }
+        }
+        editJsonExportPath.setOnFocusChangeListener { _, hasFocus ->
+            if (!hasFocus) {
+                val path = editJsonExportPath.text?.toString()?.trim() ?: ""
+                configManager.setJsonExportPath(path)
+            }
+        }
 
         updateModelSpinner()
     }
@@ -208,6 +224,8 @@ class SettingsActivity : AppCompatActivity() {
             val isCustom = position >= presetResolutions.size + customResolutions.size
             layoutCustomResolution.visibility = if (isCustom) View.VISIBLE else View.GONE
             buttonAddResolution.visibility = if (isCustom) View.VISIBLE else View.GONE
+            // 即时保存分辨率设置
+            saveResolutionSetting()
         }
 
         buttonAddResolution.setOnClickListener { addCustomResolution() }
@@ -288,6 +306,8 @@ class SettingsActivity : AppCompatActivity() {
                 spinnerModel.setText(modelAdapter.getItem(currentModel).toString(), false)
             } else {
                 currentModel = position
+                // 即时保存模型设置
+                saveModelSetting()
             }
         }
 
@@ -355,37 +375,31 @@ class SettingsActivity : AppCompatActivity() {
         jsonExportUri = prefs.getString(KEY_JSON_EXPORT_URI, null)?.let { Uri.parse(it) }
     }
 
-    private fun saveConfig() {
+    // 即时保存方法
+    private fun saveModelSetting() {
         val selectedModel = if (currentModel == 0) "yolov11n" else customModels.getOrElse(currentModel - 1) { "yolov11n" }
+        val config = configManager.loadConfig().copy(selectedModel = selectedModel)
+        configManager.saveConfig(config)
+    }
+
+    private fun saveProcessorSetting() {
         val useGpu = currentCpuGpu == 1
+        val config = configManager.loadConfig().copy(useGpu = useGpu)
+        configManager.saveConfig(config)
+    }
 
-        val imageExportPath = editImageExportPath.text?.toString()?.trim() ?: ""
-        val jsonExportPath = editJsonExportPath.text?.toString()?.trim() ?: ""
-
-        // 获取当前选择的分辨率
+    private fun saveResolutionSetting() {
         val resolution = getResolutionFromIndex(currentResolutionIndex)
-        val showCapturePreview = switchShowCapturePreview.isChecked
-
         val config = configManager.loadConfig().copy(
-            selectedModel = selectedModel,
-            useGpu = useGpu,
             cameraResolutionWidth = resolution.first,
             cameraResolutionHeight = resolution.second,
-            customResolutions = customResolutions.toList(),
-            showCapturePreview = showCapturePreview
+            customResolutions = customResolutions.toList()
         )
         configManager.saveConfig(config)
-        configManager.setImageExportPath(imageExportPath)
-        configManager.setJsonExportPath(jsonExportPath)
+    }
 
-        val prefs = getSharedPreferences(PREFS_CUSTOM_MODELS, MODE_PRIVATE)
-        prefs.edit().apply {
-            imageExportUri?.let { putString(KEY_IMAGE_EXPORT_URI, it.toString()) }
-            jsonExportUri?.let { putString(KEY_JSON_EXPORT_URI, it.toString()) }
-            apply()
-        }
-
-        Toast.makeText(this, "设置已保存", Toast.LENGTH_SHORT).show()
-        finish()
+    private fun saveCapturePreviewSetting(isChecked: Boolean) {
+        val config = configManager.loadConfig().copy(showCapturePreview = isChecked)
+        configManager.saveConfig(config)
     }
 }

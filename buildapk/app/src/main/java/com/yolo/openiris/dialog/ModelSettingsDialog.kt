@@ -40,7 +40,7 @@ class ModelSettingsDialog : BottomSheetDialogFragment() {
     interface OnModelSettingsListener {
         fun onModelSettingsConfirmed(modelId: String, displayName: String, hasVision: Boolean, 
                                      enableReasoning: Boolean, assignedTasks: List<String>,
-                                     customHeaders: Map<String, String>, customBody: Map<String, Any>)
+                                     customHeaders: Map<String, String>, customBody: Map<String, String>)
     }
 
     // 使用WeakReference避免内存泄漏
@@ -256,8 +256,8 @@ class ModelSettingsDialog : BottomSheetDialogFragment() {
             return result
         }
 
-        fun getCustomBody(): Map<String, Any> {
-            val result = mutableMapOf<String, Any>()
+        fun getCustomBody(): Map<String, String> {
+            val result = mutableMapOf<String, String>()
             bodyParams.forEach { (key, value) ->
                 if (key.isNotBlank() && value.isNotBlank()) {
                     result[key] = value

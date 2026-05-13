@@ -306,11 +306,12 @@ class RealtimeDetectActivity : AppCompatActivity(), SurfaceHolder.Callback {
         val timeStamp = SimpleDateFormat("yyyyMMdd_HHmmss", Locale.getDefault()).format(Date())
         val fileName = "OpenIris_${timeStamp}.jpg"
 
+        // 使用公共存储目录
         val configPath = configManager.getImageExportPath()
-        val storageDir = if (configPath.isNotBlank()) {
-            File(getExternalFilesDir(null), configPath).apply { mkdirs() }
+        val storageDir = if (configPath.isNotBlank() && configPath != "Pictures") {
+            File(Environment.getExternalStorageDirectory(), configPath).apply { mkdirs() }
         } else {
-            getExternalFilesDir(Environment.DIRECTORY_PICTURES)
+            File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_PICTURES), "OpenIris").apply { mkdirs() }
         }
         val file = File(storageDir, fileName)
 
