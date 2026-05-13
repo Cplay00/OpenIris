@@ -3,6 +3,14 @@ package com.yolo.openiris.ai
 import java.util.UUID
 
 /**
+ * API 格式枚举
+ */
+enum class ApiFormat {
+    OPENAI_COMPATIBLE,    // OpenAI兼容API（默认）
+    ANTHROPIC             // Anthropic兼容API
+}
+
+/**
  * AI 提供商数据模型
  */
 data class AiProvider(
@@ -11,18 +19,50 @@ data class AiProvider(
     val baseUrl: String,
     val apiKey: String,
     val models: List<AiModel> = emptyList(),
-    val isEnabled: Boolean = true
+    val isEnabled: Boolean = true,
+    val apiFormat: ApiFormat = ApiFormat.OPENAI_COMPATIBLE,
+    val apiPath: String = "/chat/completions",
+    val useResponseApi: Boolean = false
 ) {
     /**
-     * 获取有效的 API Base URL（确保以 /v1 结尾，避免重复追加）
+     * 获取有效的 API Base URL
      */
     fun getEffectiveBaseUrl(): String {
         val url = baseUrl.trimEnd('/')
-        // 如果已经以 /v1 结尾，直接返回
+        // Anthropic 格式不需要追加 /v1
+        if (apiFormat == ApiFormat.ANTHROPIC) return url
+        // OpenAI 兼容格式
         if (url.endsWith("/v1")) return url
-        // 如果包含 /v1/ 后面还有路径段，说明已经有版本路径，直接返回
         if (url.contains("/v1/")) return url
         return "$url/v1"
+    }
+
+    /**
+     * 获取完整的 API 路径
+     */
+    fun getEffectiveApiPath(): String {
+        return apiPath
+    }
+
+    /**
+     * 获取默认的 Base URL
+     */
+    fun getDefaultBaseUrl(): String {
+        return when (apiFormat) {
+            ApiFormat.OPENAI_COMPATIBLE -> "https://api.openai.com/v1"
+            ApiFormat.ANTHROPIC -> "https://api.anthropic.com"
+        }
+    }
+
+    /**
+     * 获取默认的 API 路径
+     */
+    fun getDefaultApiPath(): String {
+        return when {
+            apiFormat == ApiFormat.ANTHROPIC -> "/v1/messages"
+            useResponseApi -> "/responses"
+            else -> "/chat/completions"
+        }
     }
 
     /**

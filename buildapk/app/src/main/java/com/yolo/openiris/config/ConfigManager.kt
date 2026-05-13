@@ -28,6 +28,12 @@ class ConfigManager private constructor(context: Context) {
         private const val KEY_ENABLE_VIDEO_EXPORT = "enable_video_export"
         private const val KEY_IMAGE_EXPORT_PATH = "image_export_path"
         private const val KEY_JSON_EXPORT_PATH = "json_export_path"
+        
+        // 摄像头分辨率配置
+        private const val KEY_CAMERA_RESOLUTION_WIDTH = "camera_resolution_width"
+        private const val KEY_CAMERA_RESOLUTION_HEIGHT = "camera_resolution_height"
+        private const val KEY_CUSTOM_RESOLUTIONS = "custom_resolutions"
+        private const val KEY_SHOW_CAPTURE_PREVIEW = "show_capture_preview"
 
         @Volatile
         private var instance: ConfigManager? = null
@@ -97,6 +103,11 @@ class ConfigManager private constructor(context: Context) {
             putBoolean(KEY_ENABLE_JSON_EXPORT, config.enableJsonExport)
             putBoolean(KEY_ENABLE_IMAGE_EXPORT, config.enableImageExport)
             putBoolean(KEY_ENABLE_VIDEO_EXPORT, config.enableVideoExport)
+            // 摄像头分辨率配置
+            putInt(KEY_CAMERA_RESOLUTION_WIDTH, config.cameraResolutionWidth)
+            putInt(KEY_CAMERA_RESOLUTION_HEIGHT, config.cameraResolutionHeight)
+            putString(KEY_CUSTOM_RESOLUTIONS, config.customResolutions.joinToString(","))
+            putBoolean(KEY_SHOW_CAPTURE_PREVIEW, config.showCapturePreview)
             apply()
         }
     }
@@ -112,6 +123,13 @@ class ConfigManager private constructor(context: Context) {
      * 加载不包含 API Key 的普通配置。
      */
     fun loadNonSensitiveConfig(): AppConfig {
+        val customResolutionsStr = encryptedPrefs.getString(KEY_CUSTOM_RESOLUTIONS, "") ?: ""
+        val customResolutions = if (customResolutionsStr.isBlank()) {
+            emptyList()
+        } else {
+            customResolutionsStr.split(",").filter { it.isNotBlank() }
+        }
+        
         return AppConfig(
             apiBaseUrl = encryptedPrefs.getString(KEY_API_BASE_URL, defaults.apiBaseUrl)
                 ?: defaults.apiBaseUrl,
@@ -127,7 +145,12 @@ class ConfigManager private constructor(context: Context) {
             enableLlmFusion = encryptedPrefs.getBoolean(KEY_ENABLE_LLM_FUSION, defaults.enableLlmFusion),
             enableJsonExport = encryptedPrefs.getBoolean(KEY_ENABLE_JSON_EXPORT, defaults.enableJsonExport),
             enableImageExport = encryptedPrefs.getBoolean(KEY_ENABLE_IMAGE_EXPORT, defaults.enableImageExport),
-            enableVideoExport = encryptedPrefs.getBoolean(KEY_ENABLE_VIDEO_EXPORT, defaults.enableVideoExport)
+            enableVideoExport = encryptedPrefs.getBoolean(KEY_ENABLE_VIDEO_EXPORT, defaults.enableVideoExport),
+            // 摄像头分辨率配置
+            cameraResolutionWidth = encryptedPrefs.getInt(KEY_CAMERA_RESOLUTION_WIDTH, AppConfig.DEFAULT_CAMERA_WIDTH),
+            cameraResolutionHeight = encryptedPrefs.getInt(KEY_CAMERA_RESOLUTION_HEIGHT, AppConfig.DEFAULT_CAMERA_HEIGHT),
+            customResolutions = customResolutions,
+            showCapturePreview = encryptedPrefs.getBoolean(KEY_SHOW_CAPTURE_PREVIEW, false)
         )
     }
 

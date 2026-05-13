@@ -5,6 +5,7 @@ import android.net.Uri
 import android.os.Bundle
 import android.provider.DocumentsContract
 import android.provider.OpenableColumns
+import android.view.View
 import android.widget.ArrayAdapter
 import android.widget.AutoCompleteTextView
 import android.widget.Toast
@@ -14,7 +15,9 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import com.google.android.material.button.MaterialButton
+import com.google.android.material.materialswitch.MaterialSwitch
 import com.google.android.material.textfield.TextInputEditText
+import com.yolo.openiris.config.AppConfig
 import com.yolo.openiris.config.ConfigManager
 
 class SettingsActivity : AppCompatActivity() {
@@ -30,6 +33,12 @@ class SettingsActivity : AppCompatActivity() {
 
     private lateinit var spinnerModel: AutoCompleteTextView
     private lateinit var spinnerCPUGPU: AutoCompleteTextView
+    private lateinit var spinnerResolution: AutoCompleteTextView
+    private lateinit var layoutCustomResolution: View
+    private lateinit var editCustomWidth: TextInputEditText
+    private lateinit var editCustomHeight: TextInputEditText
+    private lateinit var buttonAddResolution: MaterialButton
+    private lateinit var switchShowCapturePreview: MaterialSwitch
     private lateinit var buttonAiModelSettings: MaterialButton
     private lateinit var editImageExportPath: TextInputEditText
     private lateinit var editJsonExportPath: TextInputEditText
@@ -37,7 +46,9 @@ class SettingsActivity : AppCompatActivity() {
 
     private var currentModel = 0
     private var currentCpuGpu = 0
+    private var currentResolutionIndex = 1 // 默认640x480
     private val customModels = mutableListOf<String>()
+    private val customResolutions = mutableListOf<String>()
 
     private var imageExportUri: Uri? = null
     private var jsonExportUri: Uri? = null
@@ -93,6 +104,12 @@ class SettingsActivity : AppCompatActivity() {
     private fun initViews() {
         spinnerModel = findViewById(R.id.spinnerModel)
         spinnerCPUGPU = findViewById(R.id.spinnerCPUGPU)
+        spinnerResolution = findViewById(R.id.spinnerResolution)
+        layoutCustomResolution = findViewById(R.id.layoutCustomResolution)
+        editCustomWidth = findViewById(R.id.editCustomWidth)
+        editCustomHeight = findViewById(R.id.editCustomHeight)
+        buttonAddResolution = findViewById(R.id.buttonAddResolution)
+        switchShowCapturePreview = findViewById(R.id.switchShowCapturePreview)
 
         val cpuGpuOptions = listOf("CPU (兼容性好)", "GPU (速度快)")
         val cpuGpuAdapter = ArrayAdapter(this, android.R.layout.simple_list_item_1, cpuGpuOptions)
@@ -100,6 +117,9 @@ class SettingsActivity : AppCompatActivity() {
         spinnerCPUGPU.setOnItemClickListener { _, _, position, _ ->
             currentCpuGpu = position
         }
+
+        // 分辨率选择
+        setupResolutionSpinner()
 
         buttonAiModelSettings = findViewById(R.id.buttonAiModelSettings)
         buttonAiModelSettings.setOnClickListener {
@@ -172,6 +192,80 @@ class SettingsActivity : AppCompatActivity() {
         return name
     }
 
+    private fun setupResolutionSpinner() {
+        val resolutions = getResolutionOptions()
+        val resolutionAdapter = ArrayAdapter(this, android.R.layout.simple_list_item_1, resolutions)
+        spinnerResolution.setAdapter(resolutionAdapter)
+        spinnerResolution.setOnItemClickListener { _, _, position, _ ->
+            currentResolutionIndex = position
+            val isCustom = position >= AppConfig.PRESET_RESOLUTIONS.size + customResolutions.size
+            layoutCustomResolution.visibility = if (isCustom) View.VISIBLE else View.GONE
+            buttonAddResolution.visibility = if (isCustom) View.VISIBLE else View.GONE
+        }
+
+        buttonAddResolution.setOnClickListener { addCustomResolution() }
+    }
+
+    private fun getResolutionOptions(): List<String> {
+        val options = mutableListOf<String>()
+        options.addAll(AppConfig.PRESET_RESOLUTIONS.map { "${it} (预设)" })
+        options.addAll(customResolutions.map { "$it (自定义)" })
+        options.add("+ 自定义分辨率")
+        return options
+    }
+
+    private fun addCustomResolution() {
+        val width = editCustomWidth.text?.toString()?.trim()?.toIntOrNull() ?: 0
+        val height = editCustomHeight.text?.toString()?.trim()?.toIntOrNull() ?: 0
+
+        if (width <= 0 || height <= 0) {
+            Toast.makeText(this, "请输入有效的分辨率", Toast.LENGTH_SHORT).show()
+            return
+        }
+
+        if (width > 4096 || height > 4096) {
+            Toast.makeText(this, "分辨率不能超过4096", Toast.LENGTH_SHORT).show()
+            return
+        }
+
+        val resolution = "${width}x${height}"
+        if (customResolutions.contains(resolution) || AppConfig.PRESET_RESOLUTIONS.contains(resolution)) {
+            Toast.makeText(this, "该分辨率已存在", Toast.LENGTH_SHORT).show()
+            return
+        }
+
+        customResolutions.add(resolution)
+        currentResolutionIndex = AppConfig.PRESET_RESOLUTIONS.size + customResolutions.size - 1
+        
+        // 刷新下拉列表
+        val resolutions = getResolutionOptions()
+        val resolutionAdapter = ArrayAdapter(this, android.R.layout.simple_list_item_1, resolutions)
+        spinnerResolution.setAdapter(resolutionAdapter)
+        spinnerResolution.setText(resolutions[currentResolutionIndex], false)
+        
+        layoutCustomResolution.visibility = View.GONE
+        buttonAddResolution.visibility = View.GONE
+        editCustomWidth.text?.clear()
+        editCustomHeight.text?.clear()
+        
+        Toast.makeText(this, "已添加分辨率: $resolution", Toast.LENGTH_SHORT).show()
+    }
+
+    private fun getResolutionFromIndex(index: Int): Pair<Int, Int> {
+        return when {
+            index < AppConfig.PRESET_RESOLUTIONS.size -> {
+                val parts = AppConfig.PRESET_RESOLUTIONS[index].split("x")
+                Pair(parts[0].toInt(), parts[1].toInt())
+            }
+            index < AppConfig.PRESET_RESOLUTIONS.size + customResolutions.size -> {
+                val customIndex = index - AppConfig.PRESET_RESOLUTIONS.size
+                val parts = customResolutions[customIndex].split("x")
+                Pair(parts[0].toInt(), parts[1].toInt())
+            }
+            else -> Pair(AppConfig.DEFAULT_CAMERA_WIDTH, AppConfig.DEFAULT_CAMERA_HEIGHT)
+        }
+    }
+
     private fun updateModelSpinner() {
         val modelOptions = mutableListOf("YOLOv11n (轻量级，实时检测)")
         modelOptions.addAll(customModels.map { "$it (自定义)" })
@@ -214,6 +308,30 @@ class SettingsActivity : AppCompatActivity() {
         currentCpuGpu = if (config.useGpu) 1 else 0
         spinnerCPUGPU.setText(spinnerCPUGPU.adapter.getItem(currentCpuGpu).toString(), false)
 
+        // 加载自定义分辨率列表
+        customResolutions.clear()
+        customResolutions.addAll(config.customResolutions)
+
+        // 设置当前分辨率
+        val currentResolution = "${config.cameraResolutionWidth}x${config.cameraResolutionHeight}"
+        val presetIndex = AppConfig.PRESET_RESOLUTIONS.indexOf(currentResolution)
+        currentResolutionIndex = if (presetIndex >= 0) {
+            presetIndex
+        } else {
+            val customIndex = customResolutions.indexOf(currentResolution)
+            if (customIndex >= 0) AppConfig.PRESET_RESOLUTIONS.size + customIndex else 1
+        }
+        
+        // 刷新分辨率下拉列表并设置当前值
+        setupResolutionSpinner()
+        val resolutions = getResolutionOptions()
+        if (currentResolutionIndex < resolutions.size) {
+            spinnerResolution.setText(resolutions[currentResolutionIndex], false)
+        }
+
+        // 加载截图预览开关
+        switchShowCapturePreview.isChecked = config.showCapturePreview
+
         editImageExportPath.setText(configManager.getImageExportPath())
         editJsonExportPath.setText(configManager.getJsonExportPath())
 
@@ -229,9 +347,17 @@ class SettingsActivity : AppCompatActivity() {
         val imageExportPath = editImageExportPath.text?.toString()?.trim() ?: ""
         val jsonExportPath = editJsonExportPath.text?.toString()?.trim() ?: ""
 
+        // 获取当前选择的分辨率
+        val resolution = getResolutionFromIndex(currentResolutionIndex)
+        val showCapturePreview = switchShowCapturePreview.isChecked
+
         val config = configManager.loadConfig().copy(
             selectedModel = selectedModel,
-            useGpu = useGpu
+            useGpu = useGpu,
+            cameraResolutionWidth = resolution.first,
+            cameraResolutionHeight = resolution.second,
+            customResolutions = customResolutions.toList(),
+            showCapturePreview = showCapturePreview
         )
         configManager.saveConfig(config)
         configManager.setImageExportPath(imageExportPath)
