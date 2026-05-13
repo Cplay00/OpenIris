@@ -88,19 +88,11 @@ object ImageExporter {
 
     fun export(context: Context, bitmap: Bitmap): ExportResult {
         return try {
-            val configManager = ConfigManager.getInstance(context)
-            val imagePath = configManager.getImageExportPath()
-
             val timestamp = getTimestamp()
             val fileName = "openiris_annotated_${timestamp}.jpg"
 
-            // 使用公共存储目录
-            val baseDir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_PICTURES)
-            val exportDir = if (imagePath.isNotBlank() && imagePath != "Pictures") {
-                File(Environment.getExternalStorageDirectory(), imagePath)
-            } else {
-                File(baseDir, "OpenIris")
-            }
+            // 默认导出到公共 Pictures 目录
+            val exportDir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_PICTURES)
             exportDir.mkdirs()
 
             val file = File(exportDir, fileName)

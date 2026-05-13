@@ -142,6 +142,26 @@
                 android:visibility="gone"
                 android:layout_marginBottom="12dp" />
 
+            <!-- 流式输出开关 -->
+            <com.google.android.material.materialswitch.MaterialSwitch
+                android:id="@+id/switchEnableStream"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="启用流式输出"
+                android:checked="true"
+                android:layout_marginBottom="12dp" />
+
+            <!-- 测试连接按钮 -->
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/buttonTestConnection"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="测试连接"
+                app:icon="@android:drawable/ic_menu_send"
+                app:iconGravity="textStart"
+                android:layout_marginBottom="16dp"
+                style="@style/Widget.Material3.Button.OutlinedButton" />
+
             <!-- 获取模型列表按钮 -->
             <com.google.android.material.button.MaterialButton
                 android:id="@+id/buttonFetchModels"
@@ -207,6 +227,36 @@
                             android:layout_height="wrap_content"
                             android:inputType="text" />
                     </com.google.android.material.textfield.TextInputLayout>
+
+                    <!-- 手动输入模型ID -->
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal"
+                        android:layout_marginBottom="8dp">
+
+                        <com.google.android.material.textfield.TextInputLayout
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:hint="手动输入模型ID"
+                            android:layout_marginEnd="8dp"
+                            style="@style/Widget.Material3.TextInputLayout.OutlinedBox">
+
+                            <com.google.android.material.textfield.TextInputEditText
+                                android:id="@+id/editManualModelId"
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:inputType="text" />
+                        </com.google.android.material.textfield.TextInputLayout>
+
+                        <com.google.android.material.button.MaterialButton
+                            android:id="@+id/buttonAddManualModel"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="添加"
+                            style="@style/Widget.Material3.Button.TonalButton" />
+                    </LinearLayout>
 
                     <!-- 可用模型列表（固定高度，独立滚动） -->
                     <androidx.recyclerview.widget.RecyclerView

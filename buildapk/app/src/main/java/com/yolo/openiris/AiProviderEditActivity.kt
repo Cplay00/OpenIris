@@ -23,6 +23,7 @@ import com.yolo.openiris.ai.AiModel
 import com.yolo.openiris.ai.AiModelManager
 import com.yolo.openiris.ai.AiProvider
 import com.yolo.openiris.ai.ApiFormat
+import com.yolo.openiris.dialog.ConnectionTestDialog
 import com.yolo.openiris.dialog.ModelSettingsDialog
 import kotlinx.coroutines.launch
 import java.util.UUID
@@ -38,7 +39,10 @@ class AiProviderEditActivity : AppCompatActivity(), ModelSettingsDialog.OnModelS
     private lateinit var editBaseUrl: TextInputEditText
     private lateinit var editApiPath: TextInputEditText
     private lateinit var switchResponseApi: MaterialSwitch
+    private lateinit var switchEnableStream: MaterialSwitch
     private lateinit var editSearchModel: TextInputEditText
+    private lateinit var editManualModelId: TextInputEditText
+    private lateinit var buttonAddManualModel: MaterialButton
     private lateinit var buttonFetchModels: MaterialButton
     private lateinit var recyclerModels: RecyclerView
     private lateinit var recyclerSelectedModels: RecyclerView
@@ -105,8 +109,20 @@ class AiProviderEditActivity : AppCompatActivity(), ModelSettingsDialog.OnModelS
             }
         }
 
+        // 流式输出开关
+        switchEnableStream = findViewById(R.id.switchEnableStream)
+
         buttonFetchModels = findViewById(R.id.buttonFetchModels)
         buttonFetchModels.setOnClickListener { fetchModelList() }
+
+        // 测试连接按钮
+        val buttonTestConnection = findViewById<MaterialButton>(R.id.buttonTestConnection)
+        buttonTestConnection.setOnClickListener { showConnectionTestDialog() }
+
+        // 手动输入模型ID
+        editManualModelId = findViewById(R.id.editManualModelId)
+        buttonAddManualModel = findViewById(R.id.buttonAddManualModel)
+        buttonAddManualModel.setOnClickListener { addManualModel() }
 
         recyclerModels = findViewById(R.id.recyclerModels)
         recyclerModels.layoutManager = LinearLayoutManager(this)
@@ -165,6 +181,7 @@ class AiProviderEditActivity : AppCompatActivity(), ModelSettingsDialog.OnModelS
                 editApiPath.setText(provider.apiPath)
                 switchEnabled.isChecked = provider.isEnabled
                 switchResponseApi.isChecked = provider.useResponseApi
+                switchEnableStream.isChecked = provider.enableStream
 
                 // 设置 API 格式
                 currentApiFormat = provider.apiFormat
@@ -254,9 +271,43 @@ class AiProviderEditActivity : AppCompatActivity(), ModelSettingsDialog.OnModelS
             },
             onSettingsClick = { model ->
                 showModelSettingsDialog(model)
+            },
+            onDeleteClick = { model ->
+                deleteModel(model)
+            },
+            onModelIdChange = { model, newModelId ->
+                updateModelId(model, newModelId)
             }
         )
         recyclerSelectedModels.adapter = adapter
+    }
+
+    private fun deleteModel(model: AiModel) {
+        selectedModels.removeAll { it.id == model.id }
+        updateSelectedModelsList()
+        updateAvailableModelsList()
+        Toast.makeText(this, "已删除模型: ${model.displayName}", Toast.LENGTH_SHORT).show()
+    }
+
+    private fun addManualModel() {
+        val modelId = editManualModelId.text?.toString()?.trim() ?: ""
+        if (modelId.isBlank()) {
+            Toast.makeText(this, "请输入模型ID", Toast.LENGTH_SHORT).show()
+            return
+        }
+        addModel(modelId)
+        editManualModelId.text?.clear()
+    }
+
+    private fun updateModelId(model: AiModel, newModelId: String) {
+        val index = selectedModels.indexOfFirst { it.id == model.id }
+        if (index >= 0) {
+            selectedModels[index] = model.copy(
+                modelId = newModelId,
+                displayName = if (model.displayName == model.modelId) newModelId else model.displayName
+            )
+            Toast.makeText(this, "模型ID已更新: $newModelId", Toast.LENGTH_SHORT).show()
+        }
     }
 
     private fun addModel(modelId: String) {
@@ -287,6 +338,7 @@ class AiProviderEditActivity : AppCompatActivity(), ModelSettingsDialog.OnModelS
         val apiPath = editApiPath.text.toString().trim()
         val isEnabled = switchEnabled.isChecked
         val useResponseApi = switchResponseApi.isChecked
+        val enableStream = switchEnableStream.isChecked
 
         if (name.isEmpty() || baseUrl.isEmpty() || apiKey.isEmpty()) {
             Toast.makeText(this, "请填写完整信息", Toast.LENGTH_SHORT).show()
@@ -302,7 +354,8 @@ class AiProviderEditActivity : AppCompatActivity(), ModelSettingsDialog.OnModelS
             isEnabled = isEnabled,
             apiFormat = currentApiFormat,
             apiPath = apiPath,
-            useResponseApi = useResponseApi
+            useResponseApi = useResponseApi,
+            enableStream = enableStream
         )
 
         if (existingProvider != null) {
@@ -374,7 +427,9 @@ class AiProviderEditActivity : AppCompatActivity(), ModelSettingsDialog.OnModelS
     inner class SelectedModelsAdapter(
         private val models: List<AiModel>,
         private val onDefaultToggle: (AiModel, Boolean) -> Unit,
-        private val onSettingsClick: (AiModel) -> Unit
+        private val onSettingsClick: (AiModel) -> Unit,
+        private val onDeleteClick: (AiModel) -> Unit,
+        private val onModelIdChange: (AiModel, String) -> Unit
     ) : RecyclerView.Adapter<SelectedModelsAdapter.ViewHolder>() {
 
         override fun onCreateViewHolder(parent: android.view.ViewGroup, viewType: Int): ViewHolder {
@@ -394,16 +449,18 @@ class AiProviderEditActivity : AppCompatActivity(), ModelSettingsDialog.OnModelS
             private val imageProvider: android.widget.ImageView = itemView.findViewById(R.id.imageProvider)
             private val textInitial: android.widget.TextView = itemView.findViewById(R.id.textInitial)
             private val textModelName: android.widget.TextView = itemView.findViewById(R.id.textModelName)
-            private val textModelId: android.widget.TextView = itemView.findViewById(R.id.textModelId)
+            private val editModelId: TextInputEditText = itemView.findViewById(R.id.editModelId)
             private val iconVision: android.widget.ImageView = itemView.findViewById(R.id.iconVision)
             private val buttonSettings: ImageButton = itemView.findViewById(R.id.buttonSettings)
+            private val buttonDelete: ImageButton = itemView.findViewById(R.id.buttonDelete)
 
             fun bind(model: AiModel) {
                 textModelName.text = model.displayName
-                textModelId.text = model.modelId
+                editModelId.setText(model.modelId)
 
                 // 设置默认模型 RadioButton
                 radioDefault.isChecked = model.isDefault
+                radioDefault.contentDescription = if (model.isDefault) "当前默认模型" else "设为默认调用模型"
                 radioDefault.setOnClickListener { onDefaultToggle(model, !model.isDefault) }
 
                 // 设置供应商图标
@@ -414,6 +471,19 @@ class AiProviderEditActivity : AppCompatActivity(), ModelSettingsDialog.OnModelS
 
                 // 设置高级选项按钮
                 buttonSettings.setOnClickListener { onSettingsClick(model) }
+
+                // 设置删除按钮
+                buttonDelete.setOnClickListener { onDeleteClick(model) }
+
+                // 模型ID编辑失去焦点时保存
+                editModelId.setOnFocusChangeListener { _, hasFocus ->
+                    if (!hasFocus) {
+                        val newModelId = editModelId.text?.toString()?.trim() ?: ""
+                        if (newModelId.isNotBlank() && newModelId != model.modelId) {
+                            onModelIdChange(model, newModelId)
+                        }
+                    }
+                }
             }
 
             private fun setProviderIcon(modelId: String) {
@@ -452,5 +522,15 @@ class AiProviderEditActivity : AppCompatActivity(), ModelSettingsDialog.OnModelS
         val dialog = ModelSettingsDialog.newInstance(model)
         dialog.listener = this
         dialog.show(supportFragmentManager, "ModelSettingsDialog")
+    }
+
+    private fun showConnectionTestDialog() {
+        val currentProviderId = providerId
+        if (currentProviderId == null) {
+            Toast.makeText(this, "请先保存提供商", Toast.LENGTH_SHORT).show()
+            return
+        }
+        val dialog = ConnectionTestDialog.newInstance(currentProviderId)
+        dialog.show(supportFragmentManager, "ConnectionTestDialog")
     }
 }

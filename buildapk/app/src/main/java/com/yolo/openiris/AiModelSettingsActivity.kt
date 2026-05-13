@@ -29,6 +29,8 @@ class AiModelSettingsActivity : AppCompatActivity() {
     private lateinit var editCallInterval: TextInputEditText
     private lateinit var editVisualPrompt: TextInputEditText
     private lateinit var editSummaryPrompt: TextInputEditText
+    private lateinit var buttonSaveVisualPrompt: MaterialButton
+    private lateinit var buttonSaveSummaryPrompt: MaterialButton
     private lateinit var recyclerProviders: RecyclerView
     private lateinit var buttonAddProvider: MaterialButton
 
@@ -80,6 +82,12 @@ class AiModelSettingsActivity : AppCompatActivity() {
             v.onTouchEvent(event)
             true
         }
+
+        // 提示词保存按钮
+        buttonSaveVisualPrompt = findViewById(R.id.buttonSaveVisualPrompt)
+        buttonSaveSummaryPrompt = findViewById(R.id.buttonSaveSummaryPrompt)
+        buttonSaveVisualPrompt.setOnClickListener { saveVisualPrompt() }
+        buttonSaveSummaryPrompt.setOnClickListener { saveSummaryPrompt() }
 
         // 提供商列表
         recyclerProviders = findViewById(R.id.recyclerProviders)
@@ -137,15 +145,25 @@ class AiModelSettingsActivity : AppCompatActivity() {
         // 保存调用间隔
         val interval = (editCallInterval.text?.toString()?.toIntOrNull() ?: 5).coerceAtLeast(1)
         aiModelManager.setCallIntervalSeconds(interval)
+    }
 
-        // 保存提示词
-        val visualPrompt = editVisualPrompt.text?.toString()?.trim() ?: ""
-        val summaryPrompt = editSummaryPrompt.text?.toString()?.trim() ?: ""
-        if (visualPrompt.isNotBlank()) {
-            aiModelManager.setVisualRecognitionPrompt(visualPrompt)
+    private fun saveVisualPrompt() {
+        val prompt = editVisualPrompt.text?.toString()?.trim() ?: ""
+        if (prompt.isNotBlank()) {
+            aiModelManager.setVisualRecognitionPrompt(prompt)
+            Toast.makeText(this, "视觉识别提示词已保存", Toast.LENGTH_SHORT).show()
+        } else {
+            Toast.makeText(this, "提示词不能为空", Toast.LENGTH_SHORT).show()
         }
-        if (summaryPrompt.isNotBlank()) {
-            aiModelManager.setDetectionSummaryPrompt(summaryPrompt)
+    }
+
+    private fun saveSummaryPrompt() {
+        val prompt = editSummaryPrompt.text?.toString()?.trim() ?: ""
+        if (prompt.isNotBlank()) {
+            aiModelManager.setDetectionSummaryPrompt(prompt)
+            Toast.makeText(this, "检测总结提示词已保存", Toast.LENGTH_SHORT).show()
+        } else {
+            Toast.makeText(this, "提示词不能为空", Toast.LENGTH_SHORT).show()
         }
     }
 

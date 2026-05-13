@@ -7,6 +7,7 @@ import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.OkHttpClient
 import okhttp3.Request
 import okhttp3.RequestBody.Companion.toRequestBody
+import okio.BufferedSource
 import java.util.concurrent.TimeUnit
 
 /**
@@ -307,6 +308,92 @@ class AiApiClient {
                 error = e.message ?: "Unknown error",
                 durationMs = duration
             )
+        }
+    }
+
+    /**
+     * 流式调用 AI 模型（纯文本）
+     * @return Pair<完整内容, 错误信息?>
+     */
+    fun callModelStream(
+        provider: AiProvider,
+        model: AiModel,
+        prompt: String,
+        systemPrompt: String? = null,
+        onToken: ((String) -> Unit)? = null
+    ): Pair<String?, String?> {
+        // 输入验证
+        if (provider.baseUrl.isBlank()) {
+            return Pair(null, "提供商 Base URL 为空")
+        }
+        if (model.modelId.isBlank()) {
+            return Pair(null, "模型 ID 为空")
+        }
+        if (prompt.isBlank()) {
+            return Pair(null, "提示词为空")
+        }
+
+        return try {
+            val url = "${provider.getEffectiveBaseUrl()}${provider.getEffectiveApiPath()}"
+            val headers = buildHeaders(provider, model)
+
+            val requestBody = when (provider.apiFormat) {
+                ApiFormat.ANTHROPIC -> buildAnthropicRequestBody(model, prompt, systemPrompt, false, null)
+                else -> buildOpenAIRequestBody(model, prompt, systemPrompt, false, null)
+            }.toMutableMap()
+
+            // 添加流式标记
+            requestBody["stream"] = true
+
+            val jsonBody = gson.toJson(requestBody)
+                .toRequestBody("application/json".toMediaType())
+
+            val requestBuilder = Request.Builder().url(url).post(jsonBody)
+            headers.forEach { (key, value) -> requestBuilder.addHeader(key, value) }
+
+            client.newCall(requestBuilder.build()).execute().use { response ->
+                if (!response.isSuccessful) {
+                    val errorBody = response.body?.string() ?: "Unknown error"
+                    return Pair(null, "HTTP ${response.code}: $errorBody")
+                }
+
+                val fullContent = StringBuilder()
+                val source = response.body?.source() ?: return Pair(null, "Empty response body")
+
+                while (!source.exhausted()) {
+                    val line = source.readUtf8Line() ?: break
+
+                    if (line.startsWith("data: ")) {
+                        val data = line.substring(6).trim()
+
+                        if (data == "[DONE]") {
+                            break
+                        }
+
+                        try {
+                            val jsonObject = JsonParser.parseString(data).asJsonObject
+                            val choices = jsonObject.getAsJsonArray("choices")
+
+                            if (choices != null && choices.size() > 0) {
+                                val delta = choices[0].asJsonObject.getAsJsonObject("delta")
+                                val content = delta?.get("content")?.asString
+
+                                if (content != null) {
+                                    fullContent.append(content)
+                                    onToken?.invoke(content)
+                                }
+                            }
+                        } catch (e: Exception) {
+                            Log.w(TAG, "Failed to parse stream chunk: $data", e)
+                        }
+                    }
+                }
+
+                Pair(fullContent.toString(), null)
+            }
+        } catch (e: Exception) {
+            Log.e(TAG, "Failed to call model stream", e)
+            Pair(null, e.message ?: "Unknown error")
         }
     }
 

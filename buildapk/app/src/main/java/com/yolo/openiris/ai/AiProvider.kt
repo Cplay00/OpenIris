@@ -22,7 +22,8 @@ data class AiProvider(
     val isEnabled: Boolean = true,
     val apiFormat: ApiFormat = ApiFormat.OPENAI_COMPATIBLE,
     val apiPath: String = "/chat/completions",
-    val useResponseApi: Boolean = false
+    val useResponseApi: Boolean = false,
+    val enableStream: Boolean = true
 ) {
     /**
      * 获取有效的 API Base URL

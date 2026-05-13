@@ -14,6 +14,7 @@ class AiModelManager private constructor(context: Context) {
 
     companion object {
         private const val TAG = "AiModelManager"
+        private const val STREAM_TIMEOUT_MS = 20_000L  // 流式调用超时20秒
 
         @Volatile
         private var instance: AiModelManager? = null
@@ -74,6 +75,7 @@ class AiModelManager private constructor(context: Context) {
 
     /**
      * 调用指定模型（纯文本）
+     * 如果提供商启用流式输出，先尝试流式调用，超时20秒自动降级到非流式
      */
     suspend fun callModel(
         model: AiModel,
@@ -87,11 +89,37 @@ class AiModelManager private constructor(context: Context) {
                 error = "提供商不存在"
             )
 
+        // 如果提供商启用流式，先尝试流式调用
+        if (provider.enableStream) {
+            val startTime = System.currentTimeMillis()
+            val streamResult = withTimeoutOrNull(STREAM_TIMEOUT_MS) {
+                val (content, error) = apiClient.callModelStream(provider, model, prompt, systemPrompt)
+                if (content != null) {
+                    AiResult.success(
+                        modelId = model.id,
+                        modelName = model.displayName,
+                        content = content,
+                        durationMs = System.currentTimeMillis() - startTime
+                    )
+                } else {
+                    null
+                }
+            }
+
+            if (streamResult != null) {
+                return@withContext streamResult
+            }
+
+            Log.w(TAG, "Stream timeout or failed, falling back to non-stream for model: ${model.modelId}")
+        }
+
+        // 非流式调用
         apiClient.callModel(provider, model, prompt, systemPrompt)
     }
 
     /**
      * 调用指定模型（带图片）
+     * 如果提供商启用流式输出，先尝试流式调用，超时20秒自动降级到非流式
      */
     suspend fun callModelWithImage(
         model: AiModel,
@@ -106,6 +134,7 @@ class AiModelManager private constructor(context: Context) {
                 error = "提供商不存在"
             )
 
+        // 流式调用目前不支持带图片，直接使用非流式
         apiClient.callModelWithImage(provider, model, prompt, imageBase64, systemPrompt)
     }
 
@@ -346,4 +375,49 @@ class AiModelManager private constructor(context: Context) {
     fun setDetectionSummaryPrompt(prompt: String) {
         configStore.setDetectionSummaryPrompt(prompt)
     }
+
+    /**
+     * 测试模型连接（非流式）
+     */
+    suspend fun testConnectionNonStream(model: AiModel): TestResult = withContext(Dispatchers.IO) {
+        val provider = configStore.getProvider(model.providerId)
+            ?: return@withContext TestResult(false, 0, "提供商不存在")
+
+        val startTime = System.currentTimeMillis()
+        val result = apiClient.callModel(provider, model, "Hello, respond with 'OK'")
+        val duration = System.currentTimeMillis() - startTime
+
+        if (result.success) {
+            TestResult(true, duration, "成功")
+        } else {
+            TestResult(false, duration, result.error ?: "未知错误")
+        }
+    }
+
+    /**
+     * 测试模型连接（流式）
+     */
+    suspend fun testConnectionStream(model: AiModel): TestResult = withContext(Dispatchers.IO) {
+        val provider = configStore.getProvider(model.providerId)
+            ?: return@withContext TestResult(false, 0, "提供商不存在")
+
+        val startTime = System.currentTimeMillis()
+        val (content, error) = apiClient.callModelStream(provider, model, "Hello, respond with 'OK'")
+        val duration = System.currentTimeMillis() - startTime
+
+        if (content != null) {
+            TestResult(true, duration, "成功")
+        } else {
+            TestResult(false, duration, error ?: "流式调用失败")
+        }
+    }
 }
+
+/**
+ * 测试结果数据类
+ */
+data class TestResult(
+    val success: Boolean,
+    val durationMs: Long,
+    val message: String
+)

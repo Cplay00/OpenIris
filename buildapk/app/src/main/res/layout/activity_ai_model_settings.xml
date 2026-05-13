@@ -167,7 +167,7 @@
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:hint="视觉识别提示词"
-                        android:layout_marginBottom="16dp"
+                        android:layout_marginBottom="8dp"
                         style="@style/Widget.Material3.TextInputLayout.OutlinedBox">
 
                         <com.google.android.material.textfield.TextInputEditText
@@ -181,6 +181,15 @@
                             android:nestedScrollingEnabled="true" />
                     </com.google.android.material.textfield.TextInputLayout>
 
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/buttonSaveVisualPrompt"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="保存视觉识别提示词"
+                        android:layout_gravity="end"
+                        android:layout_marginBottom="16dp"
+                        style="@style/Widget.Material3.Button.TextButton" />
+
                     <!-- 检测总结提示词 -->
                     <com.google.android.material.textview.MaterialTextView
                         android:layout_width="wrap_content"
@@ -193,6 +202,7 @@
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:hint="检测总结提示词"
+                        android:layout_marginBottom="8dp"
                         style="@style/Widget.Material3.TextInputLayout.OutlinedBox">
 
                         <com.google.android.material.textfield.TextInputEditText
@@ -205,6 +215,14 @@
                             android:gravity="top"
                             android:nestedScrollingEnabled="true" />
                     </com.google.android.material.textfield.TextInputLayout>
+
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/buttonSaveSummaryPrompt"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="保存检测总结提示词"
+                        android:layout_gravity="end"
+                        style="@style/Widget.Material3.Button.TextButton" />
                 </LinearLayout>
             </com.google.android.material.card.MaterialCardView>
         </LinearLayout>
