@@ -318,4 +318,32 @@ class AiModelManager private constructor(context: Context) {
     fun getProvider(providerId: String): AiProvider? {
         return configStore.getProvider(providerId)
     }
+
+    /**
+     * 获取视觉识别提示词
+     */
+    fun getVisualRecognitionPrompt(): String {
+        return configStore.getVisualRecognitionPrompt()
+    }
+
+    /**
+     * 设置视觉识别提示词
+     */
+    fun setVisualRecognitionPrompt(prompt: String) {
+        configStore.setVisualRecognitionPrompt(prompt)
+    }
+
+    /**
+     * 获取检测总结提示词
+     */
+    fun getDetectionSummaryPrompt(): String {
+        return configStore.getDetectionSummaryPrompt()
+    }
+
+    /**
+     * 设置检测总结提示词
+     */
+    fun setDetectionSummaryPrompt(prompt: String) {
+        configStore.setDetectionSummaryPrompt(prompt)
+    }
 }

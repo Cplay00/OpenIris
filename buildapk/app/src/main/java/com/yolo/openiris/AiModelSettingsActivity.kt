@@ -27,6 +27,8 @@ class AiModelSettingsActivity : AppCompatActivity() {
     private lateinit var aiModelManager: AiModelManager
     private lateinit var switchAiEnabled: MaterialSwitch
     private lateinit var editCallInterval: TextInputEditText
+    private lateinit var editVisualPrompt: TextInputEditText
+    private lateinit var editSummaryPrompt: TextInputEditText
     private lateinit var recyclerProviders: RecyclerView
     private lateinit var buttonAddProvider: MaterialButton
 
@@ -62,6 +64,10 @@ class AiModelSettingsActivity : AppCompatActivity() {
 
         // 调用间隔
         editCallInterval = findViewById(R.id.editCallInterval)
+
+        // 提示词输入框
+        editVisualPrompt = findViewById(R.id.editVisualPrompt)
+        editSummaryPrompt = findViewById(R.id.editSummaryPrompt)
 
         // 提供商列表
         recyclerProviders = findViewById(R.id.recyclerProviders)
@@ -100,6 +106,10 @@ class AiModelSettingsActivity : AppCompatActivity() {
         // 加载调用间隔
         editCallInterval.setText(aiModelManager.getCallIntervalSeconds().toString())
 
+        // 加载提示词
+        editVisualPrompt.setText(aiModelManager.getVisualRecognitionPrompt())
+        editSummaryPrompt.setText(aiModelManager.getDetectionSummaryPrompt())
+
         // 加载提供商列表
         val providers = aiModelManager.getProviders()
         providerAdapter.submitList(providers)
@@ -115,6 +125,16 @@ class AiModelSettingsActivity : AppCompatActivity() {
         // 保存调用间隔
         val interval = (editCallInterval.text?.toString()?.toIntOrNull() ?: 5).coerceAtLeast(1)
         aiModelManager.setCallIntervalSeconds(interval)
+
+        // 保存提示词
+        val visualPrompt = editVisualPrompt.text?.toString()?.trim() ?: ""
+        val summaryPrompt = editSummaryPrompt.text?.toString()?.trim() ?: ""
+        if (visualPrompt.isNotBlank()) {
+            aiModelManager.setVisualRecognitionPrompt(visualPrompt)
+        }
+        if (summaryPrompt.isNotBlank()) {
+            aiModelManager.setDetectionSummaryPrompt(summaryPrompt)
+        }
     }
 
     /**
