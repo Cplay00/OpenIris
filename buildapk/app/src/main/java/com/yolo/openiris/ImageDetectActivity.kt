@@ -1,6 +1,7 @@
 package com.yolo.openiris
 
 import android.Manifest
+import android.animation.AnimatorSet
 import android.animation.ObjectAnimator
 import android.content.pm.PackageManager
 import android.graphics.Bitmap
@@ -13,6 +14,7 @@ import android.os.Environment
 import android.provider.MediaStore
 import android.util.Log
 import android.view.View
+import android.view.animation.DecelerateInterpolator
 import android.widget.ImageButton
 import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
@@ -411,26 +413,57 @@ class ImageDetectActivity : AppCompatActivity() {
         if (isFullscreen) {
             controller.hide(WindowInsetsCompat.Type.systemBars())
             controller.systemBarsBehavior = WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
-            animateViewOut(bottomPanel)
-            animateViewOut(topToolbar)
+            animateBottomPanelOut(bottomPanel)
+            animateTopToolbarOut(topToolbar)
         } else {
             controller.show(WindowInsetsCompat.Type.systemBars())
-            animateViewIn(bottomPanel)
-            animateViewIn(topToolbar)
+            animateBottomPanelIn(bottomPanel)
+            animateTopToolbarIn(topToolbar)
         }
     }
 
-    private fun animateViewOut(view: View) {
+    private fun animateBottomPanelOut(view: View) {
         val alpha = ObjectAnimator.ofFloat(view, "alpha", 1f, 0f)
-        alpha.duration = 300
-        alpha.start()
+        val translationY = ObjectAnimator.ofFloat(view, "translationY", 0f, view.height.toFloat())
+        val set = AnimatorSet()
+        set.playTogether(alpha, translationY)
+        set.duration = 350
+        set.interpolator = DecelerateInterpolator(1.5f)
+        set.start()
     }
 
-    private fun animateViewIn(view: View) {
+    private fun animateBottomPanelIn(view: View) {
         view.alpha = 0f
+        view.translationY = view.height.toFloat()
         val alpha = ObjectAnimator.ofFloat(view, "alpha", 0f, 1f)
-        alpha.duration = 300
-        alpha.start()
+        val translationY = ObjectAnimator.ofFloat(view, "translationY", view.height.toFloat(), 0f)
+        val set = AnimatorSet()
+        set.playTogether(alpha, translationY)
+        set.duration = 350
+        set.interpolator = DecelerateInterpolator(1.5f)
+        set.start()
+    }
+
+    private fun animateTopToolbarOut(view: View) {
+        val alpha = ObjectAnimator.ofFloat(view, "alpha", 1f, 0f)
+        val translationY = ObjectAnimator.ofFloat(view, "translationY", 0f, -view.height.toFloat())
+        val set = AnimatorSet()
+        set.playTogether(alpha, translationY)
+        set.duration = 350
+        set.interpolator = DecelerateInterpolator(1.5f)
+        set.start()
+    }
+
+    private fun animateTopToolbarIn(view: View) {
+        view.alpha = 0f
+        view.translationY = -view.height.toFloat()
+        val alpha = ObjectAnimator.ofFloat(view, "alpha", 0f, 1f)
+        val translationY = ObjectAnimator.ofFloat(view, "translationY", -view.height.toFloat(), 0f)
+        val set = AnimatorSet()
+        set.playTogether(alpha, translationY)
+        set.duration = 350
+        set.interpolator = DecelerateInterpolator(1.5f)
+        set.start()
     }
 
     private fun exportJson() {
