@@ -22,9 +22,8 @@ class SlidingWindowTracker(private val windowDurationMs: Long = 15000) {
      */
     data class ObjectStats(
         val name: String,
-        var count: Int = 0,
-        var totalConfidence: Float = 0f,
-        val detections: MutableList<TimestampedDetection> = mutableListOf()
+        val count: Int = 0,
+        val totalConfidence: Float = 0f
     ) {
         val avgConfidence: Float
             get() = if (count > 0) totalConfidence / count else 0f
@@ -33,8 +32,15 @@ class SlidingWindowTracker(private val windowDurationMs: Long = 15000) {
     // 存储所有检测记录
     private val detections = mutableListOf<TimestampedDetection>()
 
-    // 按对象名称分组的统计
-    private val objectStatsMap = ConcurrentHashMap<String, ObjectStats>()
+    // 按对象名称分组的统计（内部使用可变版本）
+    private data class MutableObjectStats(
+        val name: String,
+        var count: Int = 0,
+        var totalConfidence: Float = 0f,
+        val detections: MutableList<TimestampedDetection> = mutableListOf()
+    )
+
+    private val objectStatsMap = ConcurrentHashMap<String, MutableObjectStats>()
 
     /**
      * 添加检测结果
@@ -45,7 +51,7 @@ class SlidingWindowTracker(private val windowDurationMs: Long = 15000) {
         detections.add(detection)
 
         // 更新统计
-        val stats = objectStatsMap.getOrPut(label) { ObjectStats(label) }
+        val stats = objectStatsMap.getOrPut(label) { MutableObjectStats(label) }
         stats.count++
         stats.totalConfidence += confidence
         stats.detections.add(detection)
@@ -99,7 +105,9 @@ class SlidingWindowTracker(private val windowDurationMs: Long = 15000) {
     @Synchronized
     fun getSummary(): Map<String, ObjectStats> {
         cleanup()
-        return objectStatsMap.toMap()
+        return objectStatsMap.mapValues { (_, stats) ->
+            ObjectStats(stats.name, stats.count, stats.totalConfidence)
+        }
     }
 
     /**
@@ -151,6 +159,8 @@ class SlidingWindowTracker(private val windowDurationMs: Long = 15000) {
     @Synchronized
     fun getSortedSummary(): List<ObjectStats> {
         cleanup()
-        return objectStatsMap.values.sortedByDescending { it.count }
+        return objectStatsMap.values
+            .sortedByDescending { it.count }
+            .map { stats -> ObjectStats(stats.name, stats.count, stats.totalConfidence) }
     }
 }
