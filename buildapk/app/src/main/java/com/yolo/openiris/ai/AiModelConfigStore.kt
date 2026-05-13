@@ -28,6 +28,63 @@ class AiModelConfigStore(context: Context) {
         private const val KEY_DEFAULT_MODEL_ID = "default_model_id"
         private const val KEY_AI_ENABLED = "ai_enabled"
         private const val KEY_CALL_INTERVAL_SECONDS = "call_interval_seconds"
+        private const val KEY_VISUAL_PROMPT = "visual_recognition_prompt"
+        private const val KEY_SUMMARY_PROMPT = "detection_summary_prompt"
+
+        // 默认视觉识别提示词
+        const val DEFAULT_VISUAL_PROMPT = """# 视觉识别任务
+
+请识别图片中的物体，以JSON格式返回结果。
+
+## 输出格式
+
+```json
+{
+  "objects": [
+    {
+      "name": "物体英文名",
+      "name_cn": "物体中文名",
+      "count": 数量,
+      "confidence": 置信度(0-1)
+    }
+  ],
+  "summary": "简要描述"
+}
+```
+
+## 要求
+- 尽可能识别所有物体
+- 置信度低于0.3的物体可以忽略
+- 保持输出格式严格符合JSON"""
+
+        // 默认检测总结提示词
+        const val DEFAULT_SUMMARY_PROMPT = """# 检测总结任务
+
+请根据以下YOLO检测结果，生成简要的检测总结。
+
+## YOLO检测结果
+{yolo_results}
+
+## 输出格式
+
+```json
+{
+  "objects": [
+    {
+      "name": "物体英文名",
+      "name_cn": "物体中文名",
+      "count": 数量,
+      "confidence": 平均置信度
+    }
+  ],
+  "summary": "一句话总结检测结果"
+}
+```
+
+## 要求
+- 合并YOLO检测到的物体
+- 补充识别画面中可能遗漏的物体
+- 保持输出格式严格符合JSON"""
     }
 
     /**
@@ -178,6 +235,34 @@ class AiModelConfigStore(context: Context) {
      */
     fun setCallIntervalSeconds(seconds: Int) {
         prefs.edit().putInt(KEY_CALL_INTERVAL_SECONDS, seconds).apply()
+    }
+
+    /**
+     * 获取视觉识别提示词
+     */
+    fun getVisualRecognitionPrompt(): String {
+        return prefs.getString(KEY_VISUAL_PROMPT, DEFAULT_VISUAL_PROMPT) ?: DEFAULT_VISUAL_PROMPT
+    }
+
+    /**
+     * 设置视觉识别提示词
+     */
+    fun setVisualRecognitionPrompt(prompt: String) {
+        prefs.edit().putString(KEY_VISUAL_PROMPT, prompt).apply()
+    }
+
+    /**
+     * 获取检测总结提示词
+     */
+    fun getDetectionSummaryPrompt(): String {
+        return prefs.getString(KEY_SUMMARY_PROMPT, DEFAULT_SUMMARY_PROMPT) ?: DEFAULT_SUMMARY_PROMPT
+    }
+
+    /**
+     * 设置检测总结提示词
+     */
+    fun setDetectionSummaryPrompt(prompt: String) {
+        prefs.edit().putString(KEY_SUMMARY_PROMPT, prompt).apply()
     }
 
     /**
