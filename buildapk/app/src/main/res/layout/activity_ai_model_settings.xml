@@ -177,7 +177,8 @@
                             android:inputType="textMultiLine"
                             android:minLines="3"
                             android:maxLines="10"
-                            android:gravity="top" />
+                            android:gravity="top"
+                            android:nestedScrollingEnabled="true" />
                     </com.google.android.material.textfield.TextInputLayout>
 
                     <!-- 检测总结提示词 -->
@@ -201,7 +202,8 @@
                             android:inputType="textMultiLine"
                             android:minLines="3"
                             android:maxLines="10"
-                            android:gravity="top" />
+                            android:gravity="top"
+                            android:nestedScrollingEnabled="true" />
                     </com.google.android.material.textfield.TextInputLayout>
                 </LinearLayout>
             </com.google.android.material.card.MaterialCardView>

@@ -120,7 +120,21 @@ class AiModelConfigStore(context: Context) {
                     apiKey = provider.apiKey
                     needMigration = true
                 }
-                provider.copy(apiKey = apiKey)
+                // 确保新字段有默认值
+                provider.copy(
+                    apiKey = apiKey,
+                    apiFormat = provider.apiFormat,
+                    apiPath = provider.apiPath.ifBlank { "/chat/completions" },
+                    useResponseApi = provider.useResponseApi,
+                    models = provider.models.map { model ->
+                        model.copy(
+                            enableReasoning = model.enableReasoning,
+                            assignedTasks = model.assignedTasks,
+                            customHeaders = model.customHeaders,
+                            customBody = model.customBody
+                        )
+                    }
+                )
             }
 
             // 迁移后清理明文
@@ -132,6 +146,8 @@ class AiModelConfigStore(context: Context) {
             result
         } catch (e: Exception) {
             Log.e(TAG, "Failed to load providers", e)
+            // 尝试恢复：清除损坏的数据
+            prefs.edit().remove(KEY_PROVIDERS).apply()
             emptyList()
         }
     }

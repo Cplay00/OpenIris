@@ -41,15 +41,34 @@ data class AppConfig(
         val VLM_INTERVAL_OPTIONS = listOf(2, 5, 10, 30)
         
         // 摄像头分辨率默认值
-        const val DEFAULT_CAMERA_WIDTH = 640
-        const val DEFAULT_CAMERA_HEIGHT = 480
+        const val DEFAULT_CAMERA_WIDTH = 480
+        const val DEFAULT_CAMERA_HEIGHT = 640
         
-        // 预设分辨率选项
-        val PRESET_RESOLUTIONS = listOf(
-            "480x360",
-            "640x480",
-            "1280x720"
-        )
+        // 预设档位
+        const val RESOLUTION_480P = 0
+        const val RESOLUTION_720P = 1
+        const val RESOLUTION_1080P = 2
+        const val RESOLUTION_NATIVE = 3
+        
+        /**
+         * 获取预设分辨率列表（根据屏幕比例动态计算）
+         */
+        fun getPresetResolutions(screenWidth: Int, screenHeight: Int): List<Pair<Int, Int>> {
+            val aspectRatio = screenHeight.toFloat() / screenWidth.toFloat()
+            return listOf(
+                Pair(480, (480 * aspectRatio).toInt()),      // 480P
+                Pair(720, (720 * aspectRatio).toInt()),      // 720P
+                Pair(1080, (1080 * aspectRatio).toInt()),    // 1080P
+                Pair(screenWidth, screenHeight)               // 原生分辨率
+            )
+        }
+        
+        /**
+         * 获取预设分辨率显示名称
+         */
+        fun getPresetResolutionNames(): List<String> {
+            return listOf("480P", "720P", "1080P", "原生分辨率")
+        }
     }
 
     /**

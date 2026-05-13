@@ -30,6 +30,7 @@ import com.yolo.openiris.config.ConfigManager
 import com.yolo.openiris.detection.BoundingBox
 import com.yolo.openiris.detection.DetectedObject
 import com.yolo.openiris.detection.SlidingWindowTracker
+import com.yolo.openiris.utils.ImageUtils
 import com.yolo.openiris.ui.CapsuleView
 import com.yolo.openiris.ui.OverlayView
 import kotlinx.coroutines.Job
@@ -245,11 +246,17 @@ class RealtimeDetectActivity : AppCompatActivity(), SurfaceHolder.Callback {
             )
             
             if (yolov11Ncnn.captureFrame(bitmap)) {
-                saveBitmap(bitmap)
+                // 运行YOLO检测获取检测框
+                val detections = runYoloDetection(bitmap)
+                
+                // 在帧上绘制检测框
+                val annotatedBitmap = ImageUtils.drawDetections(bitmap, detections)
+                
+                saveBitmap(annotatedBitmap)
                 
                 // 如果开启了截图预览，显示浮窗
                 if (config.showCapturePreview) {
-                    showCapturePreview(bitmap)
+                    showCapturePreview(annotatedBitmap)
                     bitmap = null // dialog会持有bitmap引用，不在这里回收
                 }
                 
@@ -265,12 +272,46 @@ class RealtimeDetectActivity : AppCompatActivity(), SurfaceHolder.Callback {
             bitmap?.recycle()
         }
     }
+    
+    private fun runYoloDetection(bitmap: Bitmap): List<DetectedObject> {
+        val rawResults = yolov11Ncnn.detectBitmap(bitmap, currentModel, if (useGpu) 1 else 0)
+        val objects = mutableListOf<DetectedObject>()
+        
+        var i = 0
+        while (i + 5 < rawResults.size) {
+            val x = rawResults[i].toFloat()
+            val y = rawResults[i + 1].toFloat()
+            val w = rawResults[i + 2].toFloat()
+            val h = rawResults[i + 3].toFloat()
+            val labelIndex = rawResults[i + 4]
+            val confidence = rawResults[i + 5] / 1000f
+            
+            val label = if (labelIndex in cachedLabels.indices) cachedLabels[labelIndex] else "unknown"
+            
+            objects.add(
+                DetectedObject(
+                    label = label,
+                    labelIndex = labelIndex,
+                    confidence = confidence,
+                    bbox = BoundingBox(x, y, w, h)
+                )
+            )
+            i += 6
+        }
+        
+        return objects
+    }
 
     private fun saveBitmap(bitmap: Bitmap) {
         val timeStamp = SimpleDateFormat("yyyyMMdd_HHmmss", Locale.getDefault()).format(Date())
         val fileName = "OpenIris_${timeStamp}.jpg"
 
-        val storageDir = getExternalFilesDir(Environment.DIRECTORY_PICTURES)
+        val configPath = configManager.getImageExportPath()
+        val storageDir = if (configPath.isNotBlank()) {
+            File(getExternalFilesDir(null), configPath).apply { mkdirs() }
+        } else {
+            getExternalFilesDir(Environment.DIRECTORY_PICTURES)
+        }
         val file = File(storageDir, fileName)
 
         file.outputStream().use { out ->

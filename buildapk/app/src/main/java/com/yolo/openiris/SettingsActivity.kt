@@ -46,9 +46,10 @@ class SettingsActivity : AppCompatActivity() {
 
     private var currentModel = 0
     private var currentCpuGpu = 0
-    private var currentResolutionIndex = 1 // 默认640x480
+    private var currentResolutionIndex = 0 // 默认480P
     private val customModels = mutableListOf<String>()
     private val customResolutions = mutableListOf<String>()
+    private var presetResolutions = listOf<Pair<Int, Int>>()
 
     private var imageExportUri: Uri? = null
     private var jsonExportUri: Uri? = null
@@ -193,12 +194,18 @@ class SettingsActivity : AppCompatActivity() {
     }
 
     private fun setupResolutionSpinner() {
+        // 获取屏幕分辨率
+        val displayMetrics = resources.displayMetrics
+        val screenWidth = displayMetrics.widthPixels
+        val screenHeight = displayMetrics.heightPixels
+        presetResolutions = AppConfig.getPresetResolutions(screenWidth, screenHeight)
+        
         val resolutions = getResolutionOptions()
         val resolutionAdapter = ArrayAdapter(this, android.R.layout.simple_list_item_1, resolutions)
         spinnerResolution.setAdapter(resolutionAdapter)
         spinnerResolution.setOnItemClickListener { _, _, position, _ ->
             currentResolutionIndex = position
-            val isCustom = position >= AppConfig.PRESET_RESOLUTIONS.size + customResolutions.size
+            val isCustom = position >= presetResolutions.size + customResolutions.size
             layoutCustomResolution.visibility = if (isCustom) View.VISIBLE else View.GONE
             buttonAddResolution.visibility = if (isCustom) View.VISIBLE else View.GONE
         }
@@ -208,7 +215,10 @@ class SettingsActivity : AppCompatActivity() {
 
     private fun getResolutionOptions(): List<String> {
         val options = mutableListOf<String>()
-        options.addAll(AppConfig.PRESET_RESOLUTIONS.map { "${it} (预设)" })
+        val presetNames = AppConfig.getPresetResolutionNames()
+        presetResolutions.forEachIndexed { index, (width, height) ->
+            options.add("${presetNames[index]} (${width}x${height})")
+        }
         options.addAll(customResolutions.map { "$it (自定义)" })
         options.add("+ 自定义分辨率")
         return options
@@ -229,13 +239,13 @@ class SettingsActivity : AppCompatActivity() {
         }
 
         val resolution = "${width}x${height}"
-        if (customResolutions.contains(resolution) || AppConfig.PRESET_RESOLUTIONS.contains(resolution)) {
+        if (customResolutions.contains(resolution)) {
             Toast.makeText(this, "该分辨率已存在", Toast.LENGTH_SHORT).show()
             return
         }
 
         customResolutions.add(resolution)
-        currentResolutionIndex = AppConfig.PRESET_RESOLUTIONS.size + customResolutions.size - 1
+        currentResolutionIndex = presetResolutions.size + customResolutions.size - 1
         
         // 刷新下拉列表
         val resolutions = getResolutionOptions()
@@ -253,12 +263,11 @@ class SettingsActivity : AppCompatActivity() {
 
     private fun getResolutionFromIndex(index: Int): Pair<Int, Int> {
         return when {
-            index < AppConfig.PRESET_RESOLUTIONS.size -> {
-                val parts = AppConfig.PRESET_RESOLUTIONS[index].split("x")
-                Pair(parts[0].toInt(), parts[1].toInt())
+            index < presetResolutions.size -> {
+                presetResolutions[index]
             }
-            index < AppConfig.PRESET_RESOLUTIONS.size + customResolutions.size -> {
-                val customIndex = index - AppConfig.PRESET_RESOLUTIONS.size
+            index < presetResolutions.size + customResolutions.size -> {
+                val customIndex = index - presetResolutions.size
                 val parts = customResolutions[customIndex].split("x")
                 Pair(parts[0].toInt(), parts[1].toInt())
             }
@@ -312,14 +321,20 @@ class SettingsActivity : AppCompatActivity() {
         customResolutions.clear()
         customResolutions.addAll(config.customResolutions)
 
+        // 获取屏幕分辨率
+        val displayMetrics = resources.displayMetrics
+        val screenWidth = displayMetrics.widthPixels
+        val screenHeight = displayMetrics.heightPixels
+        presetResolutions = AppConfig.getPresetResolutions(screenWidth, screenHeight)
+
         // 设置当前分辨率
         val currentResolution = "${config.cameraResolutionWidth}x${config.cameraResolutionHeight}"
-        val presetIndex = AppConfig.PRESET_RESOLUTIONS.indexOf(currentResolution)
+        val presetIndex = presetResolutions.indexOfFirst { "${it.first}x${it.second}" == currentResolution }
         currentResolutionIndex = if (presetIndex >= 0) {
             presetIndex
         } else {
             val customIndex = customResolutions.indexOf(currentResolution)
-            if (customIndex >= 0) AppConfig.PRESET_RESOLUTIONS.size + customIndex else 1
+            if (customIndex >= 0) presetResolutions.size + customIndex else 0
         }
         
         // 刷新分辨率下拉列表并设置当前值
