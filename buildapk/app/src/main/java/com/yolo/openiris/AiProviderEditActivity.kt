@@ -137,6 +137,12 @@ class AiProviderEditActivity : AppCompatActivity(), ModelSettingsDialog.OnModelS
                 if (editBaseUrl.text.toString().isEmpty() || editBaseUrl.text.toString().contains("anthropic")) {
                     editBaseUrl.setText("https://api.openai.com/v1")
                 }
+                // 只有启用 Response API 时才使用 /responses
+                if (switchResponseApi.isChecked) {
+                    editApiPath.setText("/responses")
+                } else {
+                    editApiPath.setText("/chat/completions")
+                }
             }
             ApiFormat.ANTHROPIC -> {
                 switchResponseApi.visibility = View.GONE

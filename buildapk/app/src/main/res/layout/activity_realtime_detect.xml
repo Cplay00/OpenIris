@@ -98,7 +98,7 @@
         <!-- 切换摄像头卡片 -->
         <com.google.android.material.card.MaterialCardView
             android:id="@+id/cardSwitchCamera"
-            android:layout_width="wrap_content"
+            android:layout_width="64dp"
             android:layout_height="wrap_content"
             app:cardCornerRadius="12dp"
             app:cardElevation="0dp"
@@ -108,7 +108,7 @@
             android:focusable="true">
             
             <LinearLayout
-                android:layout_width="wrap_content"
+                android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:orientation="vertical"
                 android:gravity="center"
@@ -134,7 +134,7 @@
         <!-- GPU/CPU 切换卡片 -->
         <com.google.android.material.card.MaterialCardView
             android:id="@+id/cardToggleGpu"
-            android:layout_width="wrap_content"
+            android:layout_width="64dp"
             android:layout_height="wrap_content"
             app:cardCornerRadius="12dp"
             app:cardElevation="0dp"
@@ -144,7 +144,7 @@
             android:focusable="true">
             
             <LinearLayout
-                android:layout_width="wrap_content"
+                android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:orientation="vertical"
                 android:gravity="center"
@@ -172,7 +172,7 @@
         <!-- AI 开关卡片 -->
         <com.google.android.material.card.MaterialCardView
             android:id="@+id/cardToggleAi"
-            android:layout_width="wrap_content"
+            android:layout_width="64dp"
             android:layout_height="wrap_content"
             app:cardCornerRadius="12dp"
             app:cardElevation="0dp"
@@ -181,7 +181,7 @@
             android:focusable="true">
             
             <LinearLayout
-                android:layout_width="wrap_content"
+                android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:orientation="vertical"
                 android:gravity="center"

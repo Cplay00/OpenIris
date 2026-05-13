@@ -181,7 +181,12 @@ class ImageDetectActivity : AppCompatActivity() {
 
     private fun createImageFile(): File {
         val timeStamp = SimpleDateFormat("yyyyMMdd_HHmmss", Locale.getDefault()).format(Date())
-        val storageDir = getExternalFilesDir(Environment.DIRECTORY_PICTURES)
+        val configPath = configManager.getImageExportPath()
+        val storageDir = if (configPath.isNotBlank()) {
+            File(getExternalFilesDir(null), configPath).apply { mkdirs() }
+        } else {
+            getExternalFilesDir(Environment.DIRECTORY_PICTURES)
+        }
         return File.createTempFile("JPEG_${timeStamp}_", ".jpg", storageDir)
     }
 
