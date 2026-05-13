@@ -1,7 +1,5 @@
 package com.yolo.openiris
 
-import android.animation.AnimatorSet
-import android.animation.ObjectAnimator
 import android.graphics.Bitmap
 import android.graphics.Color
 import android.graphics.PixelFormat
@@ -12,7 +10,6 @@ import android.view.SurfaceHolder
 import android.view.SurfaceView
 import android.view.View
 import android.view.WindowManager
-import android.view.animation.DecelerateInterpolator
 import android.widget.ImageButton
 import android.widget.TextView
 import android.widget.Toast

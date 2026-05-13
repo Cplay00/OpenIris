@@ -1,7 +1,6 @@
 package com.yolo.openiris
 
 import android.Manifest
-import android.animation.AnimatorSet
 import android.animation.ObjectAnimator
 import android.content.pm.PackageManager
 import android.graphics.Bitmap
@@ -14,9 +13,7 @@ import android.os.Environment
 import android.provider.MediaStore
 import android.util.Log
 import android.view.View
-import android.view.animation.DecelerateInterpolator
 import android.widget.ImageButton
-import android.widget.ImageView
 import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.enableEdgeToEdge
@@ -35,6 +32,7 @@ import com.yolo.openiris.config.ConfigManager
 import com.yolo.openiris.detection.*
 import com.yolo.openiris.export.ImageExporter
 import com.yolo.openiris.export.JsonExporter
+import com.github.chrisbanes.photoview.PhotoView
 import com.yolo.openiris.ui.CapsuleView
 import com.yolo.openiris.utils.ImageUtils
 import kotlinx.coroutines.Dispatchers
@@ -57,7 +55,7 @@ class ImageDetectActivity : AppCompatActivity() {
     private lateinit var aiModelManager: AiModelManager
 
     // UI components
-    private lateinit var imageView: ImageView
+    private lateinit var imageView: PhotoView
     private lateinit var textStatus: MaterialTextView
     private lateinit var buttonBack: ImageButton
     private lateinit var buttonFullscreen: ImageButton
@@ -424,25 +422,15 @@ class ImageDetectActivity : AppCompatActivity() {
 
     private fun animateViewOut(view: View) {
         val alpha = ObjectAnimator.ofFloat(view, "alpha", 1f, 0f)
-        val translationY = ObjectAnimator.ofFloat(view, "translationY", 0f, view.height.toFloat())
-        val set = AnimatorSet()
-        set.playTogether(alpha, translationY)
-        set.duration = 300
-        set.interpolator = DecelerateInterpolator()
-        set.start()
+        alpha.duration = 300
+        alpha.start()
     }
 
     private fun animateViewIn(view: View) {
         view.alpha = 0f
-        view.translationY = view.height.toFloat()
-
         val alpha = ObjectAnimator.ofFloat(view, "alpha", 0f, 1f)
-        val translationY = ObjectAnimator.ofFloat(view, "translationY", view.height.toFloat(), 0f)
-        val set = AnimatorSet()
-        set.playTogether(alpha, translationY)
-        set.duration = 300
-        set.interpolator = DecelerateInterpolator()
-        set.start()
+        alpha.duration = 300
+        alpha.start()
     }
 
     private fun exportJson() {

@@ -1,13 +1,11 @@
 package com.yolo.openiris
 
-import android.animation.AnimatorSet
 import android.animation.ObjectAnimator
 import android.media.MediaMetadataRetriever
 import android.net.Uri
 import android.os.Bundle
 import android.util.Log
 import android.view.View
-import android.view.animation.DecelerateInterpolator
 import android.widget.ImageButton
 import android.widget.Toast
 import android.widget.VideoView
@@ -458,25 +456,15 @@ class VideoDetectActivity : AppCompatActivity() {
 
     private fun animateViewOut(view: View) {
         val alpha = ObjectAnimator.ofFloat(view, "alpha", 1f, 0f)
-        val translationY = ObjectAnimator.ofFloat(view, "translationY", 0f, view.height.toFloat())
-        val set = AnimatorSet()
-        set.playTogether(alpha, translationY)
-        set.duration = 300
-        set.interpolator = DecelerateInterpolator()
-        set.start()
+        alpha.duration = 300
+        alpha.start()
     }
 
     private fun animateViewIn(view: View) {
         view.alpha = 0f
-        view.translationY = view.height.toFloat()
-
         val alpha = ObjectAnimator.ofFloat(view, "alpha", 0f, 1f)
-        val translationY = ObjectAnimator.ofFloat(view, "translationY", view.height.toFloat(), 0f)
-        val set = AnimatorSet()
-        set.playTogether(alpha, translationY)
-        set.duration = 300
-        set.interpolator = DecelerateInterpolator()
-        set.start()
+        alpha.duration = 300
+        alpha.start()
     }
 
     private fun exportJson() {
