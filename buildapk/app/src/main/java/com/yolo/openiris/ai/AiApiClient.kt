@@ -66,9 +66,19 @@ class AiApiClient {
         
         headers["Content-Type"] = "application/json"
         
-        // 合并自定义 Headers
+        // 禁止覆盖的安全头列表
+        val blockedHeaders = setOf(
+            "authorization", "x-api-key", "host", "content-length", 
+            "content-type", "transfer-encoding", "connection"
+        )
+        
+        // 合并自定义 Headers（过滤危险头）
         model.customHeaders.forEach { (key, value) ->
-            headers[key] = value
+            if (key.lowercase() !in blockedHeaders && key.isNotBlank() && value.isNotBlank()) {
+                headers[key] = value
+            } else {
+                Log.w(TAG, "Blocked potentially dangerous header: $key")
+            }
         }
         
         return headers
