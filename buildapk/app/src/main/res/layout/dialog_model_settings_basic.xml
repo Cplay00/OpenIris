@@ -1,0 +1,103 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:padding="16dp">
+
+        <!-- 模型ID（只读） -->
+        <com.google.android.material.textfield.TextInputLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="模型 ID"
+            android:layout_marginBottom="12dp"
+            app:endIconMode="clear_text"
+            style="@style/Widget.Material3.TextInputLayout.OutlinedBox">
+
+            <com.google.android.material.textfield.TextInputEditText
+                android:id="@+id/editModelId"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:inputType="text"
+                android:enabled="false" />
+        </com.google.android.material.textfield.TextInputLayout>
+
+        <!-- 模型名称 -->
+        <com.google.android.material.textfield.TextInputLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="模型名称"
+            android:layout_marginBottom="16dp"
+            style="@style/Widget.Material3.TextInputLayout.OutlinedBox">
+
+            <com.google.android.material.textfield.TextInputEditText
+                android:id="@+id/editModelName"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:inputType="text" />
+        </com.google.android.material.textfield.TextInputLayout>
+
+        <!-- 启用视觉开关 -->
+        <com.google.android.material.materialswitch.MaterialSwitch
+            android:id="@+id/switchVision"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="启用视觉"
+            android:checked="false"
+            android:layout_marginBottom="12dp" />
+
+        <!-- 启用推理/思考开关 -->
+        <com.google.android.material.materialswitch.MaterialSwitch
+            android:id="@+id/switchReasoning"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="启用推理/思考"
+            android:checked="false"
+            android:layout_marginBottom="16dp" />
+
+        <!-- 分配任务 -->
+        <com.google.android.material.card.MaterialCardView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            app:cardCornerRadius="12dp"
+            app:cardElevation="0dp"
+            app:strokeWidth="1dp"
+            app:strokeColor="?attr/colorOutlineVariant">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:padding="12dp">
+
+                <com.google.android.material.textview.MaterialTextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="分配任务"
+                    android:textAppearance="?attr/textAppearanceTitleSmall"
+                    android:layout_marginBottom="8dp" />
+
+                <CheckBox
+                    android:id="@+id/checkboxVisualRecognition"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="视觉识别"
+                    android:checked="false"
+                    android:layout_marginBottom="4dp" />
+
+                <CheckBox
+                    android:id="@+id/checkboxDetectionSummary"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="检测总结"
+                    android:checked="false" />
+            </LinearLayout>
+        </com.google.android.material.card.MaterialCardView>
+    </LinearLayout>
+</ScrollView>
