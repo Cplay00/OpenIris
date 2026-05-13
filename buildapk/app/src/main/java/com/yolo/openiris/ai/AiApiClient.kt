@@ -129,6 +129,32 @@ class AiApiClient {
     ): AiResult {
         val startTime = System.currentTimeMillis()
 
+        // 输入验证
+        if (provider.baseUrl.isBlank()) {
+            return AiResult.failure(
+                modelId = model.id,
+                modelName = model.displayName,
+                error = "提供商 Base URL 为空",
+                durationMs = 0
+            )
+        }
+        if (model.modelId.isBlank()) {
+            return AiResult.failure(
+                modelId = model.id,
+                modelName = model.displayName,
+                error = "模型 ID 为空",
+                durationMs = 0
+            )
+        }
+        if (prompt.isBlank()) {
+            return AiResult.failure(
+                modelId = model.id,
+                modelName = model.displayName,
+                error = "提示词为空",
+                durationMs = 0
+            )
+        }
+
         return try {
             val url = "${provider.getEffectiveBaseUrl()}${provider.getEffectiveApiPath()}"
             val headers = buildHeaders(provider, model)
@@ -191,12 +217,47 @@ class AiApiClient {
     ): AiResult {
         val startTime = System.currentTimeMillis()
 
+        // 输入验证
+        if (provider.baseUrl.isBlank()) {
+            return AiResult.failure(
+                modelId = model.id,
+                modelName = model.displayName,
+                error = "提供商 Base URL 为空",
+                durationMs = 0
+            )
+        }
+        if (model.modelId.isBlank()) {
+            return AiResult.failure(
+                modelId = model.id,
+                modelName = model.displayName,
+                error = "模型 ID 为空",
+                durationMs = 0
+            )
+        }
+        if (prompt.isBlank()) {
+            return AiResult.failure(
+                modelId = model.id,
+                modelName = model.displayName,
+                error = "提示词为空",
+                durationMs = 0
+            )
+        }
+        if (imageBase64.isBlank()) {
+            return AiResult.failure(
+                modelId = model.id,
+                modelName = model.displayName,
+                error = "图片数据为空",
+                durationMs = 0
+            )
+        }
+
         return try {
             if (!model.hasVision) {
                 return AiResult.failure(
                     modelId = model.id,
                     modelName = model.displayName,
-                    error = "该模型不支持视觉输入"
+                    error = "该模型不支持视觉输入",
+                    durationMs = 0
                 )
             }
 
