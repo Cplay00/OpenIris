@@ -118,7 +118,7 @@
                     android:layout_width="28dp"
                     android:layout_height="28dp"
                     android:src="@android:drawable/ic_menu_camera"
-                    android:tint="#FFFFFF"
+                    app:tint="#FFFFFF"
                     android:contentDescription="切换摄像头" />
                 
                 <TextView
