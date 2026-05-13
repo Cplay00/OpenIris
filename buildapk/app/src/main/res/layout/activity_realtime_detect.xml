@@ -61,6 +61,17 @@
             android:textAppearance="?attr/textAppearanceLabelSmall"
             android:layout_marginEnd="8dp" />
 
+        <!-- 全屏按钮 -->
+        <ImageButton
+            android:id="@+id/buttonFullscreen"
+            android:layout_width="40dp"
+            android:layout_height="40dp"
+            android:src="@android:drawable/ic_menu_crop"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:contentDescription="全屏"
+            android:layout_marginEnd="8dp"
+            app:tint="@android:color/white" />
+
         <!-- 截图按钮 -->
         <ImageButton
             android:id="@+id/buttonCapture"

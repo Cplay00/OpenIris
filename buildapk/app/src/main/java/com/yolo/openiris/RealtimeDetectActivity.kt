@@ -1,5 +1,7 @@
 package com.yolo.openiris
 
+import android.animation.AnimatorSet
+import android.animation.ObjectAnimator
 import android.graphics.Bitmap
 import android.graphics.Color
 import android.graphics.PixelFormat
@@ -10,6 +12,7 @@ import android.view.SurfaceHolder
 import android.view.SurfaceView
 import android.view.View
 import android.view.WindowManager
+import android.view.animation.DecelerateInterpolator
 import android.widget.ImageButton
 import android.widget.TextView
 import android.widget.Toast
@@ -55,6 +58,7 @@ class RealtimeDetectActivity : AppCompatActivity(), SurfaceHolder.Callback {
     private lateinit var textAiStatus: MaterialTextView
     private lateinit var buttonBack: ImageButton
     private lateinit var buttonCapture: ImageButton
+    private lateinit var buttonFullscreen: ImageButton
 
     // Card buttons
     private lateinit var cardSwitchCamera: MaterialCardView
@@ -118,6 +122,7 @@ class RealtimeDetectActivity : AppCompatActivity(), SurfaceHolder.Callback {
         textAiStatus = findViewById(R.id.textAiStatus)
         buttonBack = findViewById(R.id.buttonBack)
         buttonCapture = findViewById(R.id.buttonCapture)
+        buttonFullscreen = findViewById(R.id.buttonFullscreen)
 
         // Card buttons
         cardSwitchCamera = findViewById(R.id.cardSwitchCamera)
@@ -147,6 +152,8 @@ class RealtimeDetectActivity : AppCompatActivity(), SurfaceHolder.Callback {
         // Set click listeners
         buttonBack.setOnClickListener { finish() }
         buttonCapture.setOnClickListener { captureAndSave() }
+        buttonFullscreen.setOnClickListener { toggleFullscreen() }
+        cameraView.setOnClickListener { toggleFullscreen() }
 
         cardSwitchCamera.setOnClickListener {
             facing = 1 - facing
@@ -428,6 +435,62 @@ class RealtimeDetectActivity : AppCompatActivity(), SurfaceHolder.Callback {
             Log.e(TAG, "Failed to load labels", e)
             emptyList()
         }
+    }
+
+    private fun toggleFullscreen() {
+        isFullscreen = !isFullscreen
+        val controller = WindowInsetsControllerCompat(window, window.decorView)
+        val resultSummaryCard = findViewById<View>(R.id.resultSummaryCard)
+        val topStatusBar = findViewById<View>(R.id.topStatusBar)
+        val rightControlPanel = findViewById<View>(R.id.rightControlPanel)
+
+        if (isFullscreen) {
+            controller.hide(WindowInsetsCompat.Type.systemBars())
+            controller.systemBarsBehavior = WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
+            animateBottomPanelOut(resultSummaryCard)
+            animateToolbarOut(topStatusBar)
+            animateToolbarOut(rightControlPanel)
+        } else {
+            controller.show(WindowInsetsCompat.Type.systemBars())
+            animateBottomPanelIn(resultSummaryCard)
+            animateToolbarIn(topStatusBar)
+            animateToolbarIn(rightControlPanel)
+        }
+    }
+
+    private fun animateBottomPanelOut(view: View) {
+        val alpha = ObjectAnimator.ofFloat(view, "alpha", 1f, 0f)
+        val translationY = ObjectAnimator.ofFloat(view, "translationY", 0f, view.height.toFloat())
+        val set = AnimatorSet()
+        set.playTogether(alpha, translationY)
+        set.duration = 350
+        set.interpolator = DecelerateInterpolator(1.5f)
+        set.start()
+    }
+
+    private fun animateBottomPanelIn(view: View) {
+        view.alpha = 0f
+        view.translationY = view.height.toFloat()
+        val alpha = ObjectAnimator.ofFloat(view, "alpha", 0f, 1f)
+        val translationY = ObjectAnimator.ofFloat(view, "translationY", view.height.toFloat(), 0f)
+        val set = AnimatorSet()
+        set.playTogether(alpha, translationY)
+        set.duration = 350
+        set.interpolator = DecelerateInterpolator(1.5f)
+        set.start()
+    }
+
+    private fun animateToolbarOut(view: View) {
+        val alpha = ObjectAnimator.ofFloat(view, "alpha", 1f, 0f)
+        alpha.duration = 300
+        alpha.start()
+    }
+
+    private fun animateToolbarIn(view: View) {
+        view.alpha = 0f
+        val alpha = ObjectAnimator.ofFloat(view, "alpha", 0f, 1f)
+        alpha.duration = 300
+        alpha.start()
     }
 
     // SurfaceHolder.Callback
