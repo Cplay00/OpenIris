@@ -3,6 +3,7 @@ package com.yolo.openiris
 import android.os.Bundle
 import android.text.Editable
 import android.text.TextWatcher
+import android.view.View
 import android.widget.ImageButton
 import android.widget.Toast
 import androidx.activity.enableEdgeToEdge
@@ -14,22 +15,29 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.google.android.material.appbar.MaterialToolbar
 import com.google.android.material.button.MaterialButton
+import com.google.android.material.button.MaterialButtonToggleGroup
 import com.google.android.material.materialswitch.MaterialSwitch
 import com.google.android.material.textfield.TextInputEditText
 import com.google.android.material.textview.MaterialTextView
 import com.yolo.openiris.ai.AiModel
 import com.yolo.openiris.ai.AiModelManager
 import com.yolo.openiris.ai.AiProvider
+import com.yolo.openiris.ai.ApiFormat
+import com.yolo.openiris.dialog.ModelSettingsDialog
 import kotlinx.coroutines.launch
 import java.util.UUID
 
-class AiProviderEditActivity : AppCompatActivity() {
+class AiProviderEditActivity : AppCompatActivity(), ModelSettingsDialog.OnModelSettingsListener {
 
     private lateinit var aiModelManager: AiModelManager
 
+    private lateinit var toggleGroupApiFormat: MaterialButtonToggleGroup
+    private lateinit var switchEnabled: MaterialSwitch
     private lateinit var editProviderName: TextInputEditText
-    private lateinit var editBaseUrl: TextInputEditText
     private lateinit var editApiKey: TextInputEditText
+    private lateinit var editBaseUrl: TextInputEditText
+    private lateinit var editApiPath: TextInputEditText
+    private lateinit var switchResponseApi: MaterialSwitch
     private lateinit var editSearchModel: TextInputEditText
     private lateinit var buttonFetchModels: MaterialButton
     private lateinit var recyclerModels: RecyclerView
@@ -42,6 +50,7 @@ class AiProviderEditActivity : AppCompatActivity() {
     private var allAvailableModels: MutableList<String> = mutableListOf()
     private var filteredModels: MutableList<String> = mutableListOf()
     private var selectedModels: MutableList<AiModel> = mutableListOf()
+    private var currentApiFormat: ApiFormat = ApiFormat.OPENAI_COMPATIBLE
 
     override fun onCreate(savedInstanceState: Bundle?) {
         enableEdgeToEdge()
@@ -66,10 +75,35 @@ class AiProviderEditActivity : AppCompatActivity() {
         val toolbar = findViewById<MaterialToolbar>(R.id.toolbar)
         toolbar.setNavigationOnClickListener { finish() }
 
+        // API 格式选择
+        toggleGroupApiFormat = findViewById(R.id.toggleGroupApiFormat)
+        toggleGroupApiFormat.addOnButtonCheckedListener { _, checkedId, isChecked ->
+            if (isChecked) {
+                currentApiFormat = when (checkedId) {
+                    R.id.buttonOpenAi -> ApiFormat.OPENAI_COMPATIBLE
+                    R.id.buttonAnthropic -> ApiFormat.ANTHROPIC
+                    else -> ApiFormat.OPENAI_COMPATIBLE
+                }
+                updateApiFormatUI()
+            }
+        }
+
+        switchEnabled = findViewById(R.id.switchEnabled)
         editProviderName = findViewById(R.id.editProviderName)
-        editBaseUrl = findViewById(R.id.editBaseUrl)
         editApiKey = findViewById(R.id.editApiKey)
+        editBaseUrl = findViewById(R.id.editBaseUrl)
+        editApiPath = findViewById(R.id.editApiPath)
+        switchResponseApi = findViewById(R.id.switchResponseApi)
         editSearchModel = findViewById(R.id.editSearchModel)
+
+        // Response API 开关监听
+        switchResponseApi.setOnCheckedChangeListener { _, isChecked ->
+            if (isChecked) {
+                editApiPath.setText("/responses")
+            } else {
+                editApiPath.setText("/chat/completions")
+            }
+        }
 
         buttonFetchModels = findViewById(R.id.buttonFetchModels)
         buttonFetchModels.setOnClickListener { fetchModelList() }
@@ -95,6 +129,26 @@ class AiProviderEditActivity : AppCompatActivity() {
         })
     }
 
+    private fun updateApiFormatUI() {
+        when (currentApiFormat) {
+            ApiFormat.OPENAI_COMPATIBLE -> {
+                switchResponseApi.visibility = View.VISIBLE
+                editBaseUrl.hint = "API Base Url"
+                if (editBaseUrl.text.toString().isEmpty() || editBaseUrl.text.toString().contains("anthropic")) {
+                    editBaseUrl.setText("https://api.openai.com/v1")
+                }
+            }
+            ApiFormat.ANTHROPIC -> {
+                switchResponseApi.visibility = View.GONE
+                editBaseUrl.hint = "API Base Url"
+                if (editBaseUrl.text.toString().isEmpty() || editBaseUrl.text.toString().contains("openai")) {
+                    editBaseUrl.setText("https://api.anthropic.com")
+                }
+                editApiPath.setText("/v1/messages")
+            }
+        }
+    }
+
     private fun loadProviderData() {
         if (providerId != null) {
             existingProvider = aiModelManager.getProvider(providerId!!)
@@ -102,6 +156,17 @@ class AiProviderEditActivity : AppCompatActivity() {
                 editProviderName.setText(provider.name)
                 editBaseUrl.setText(provider.baseUrl)
                 editApiKey.setText(provider.apiKey)
+                editApiPath.setText(provider.apiPath)
+                switchEnabled.isChecked = provider.isEnabled
+                switchResponseApi.isChecked = provider.useResponseApi
+
+                // 设置 API 格式
+                currentApiFormat = provider.apiFormat
+                when (currentApiFormat) {
+                    ApiFormat.OPENAI_COMPATIBLE -> toggleGroupApiFormat.check(R.id.buttonOpenAi)
+                    ApiFormat.ANTHROPIC -> toggleGroupApiFormat.check(R.id.buttonAnthropic)
+                }
+
                 selectedModels = provider.models.toMutableList()
                 updateSelectedModelsList()
             }
@@ -168,17 +233,6 @@ class AiProviderEditActivity : AppCompatActivity() {
     private fun updateSelectedModelsList() {
         val adapter = SelectedModelsAdapter(
             models = selectedModels,
-            onRemoveClick = { model ->
-                selectedModels.remove(model)
-                updateSelectedModelsList()
-                updateAvailableModelsList()
-            },
-            onVisionToggle = { model, hasVision ->
-                val index = selectedModels.indexOfFirst { it.id == model.id }
-                if (index >= 0) {
-                    selectedModels[index] = model.copy(hasVision = hasVision)
-                }
-            },
             onDefaultToggle = { model, isDefault ->
                 if (isDefault) {
                     selectedModels.forEachIndexed { index, m ->
@@ -192,28 +246,8 @@ class AiProviderEditActivity : AppCompatActivity() {
                 }
                 updateSelectedModelsList()
             },
-            onMoveUp = { model ->
-                val index = selectedModels.indexOfFirst { it.id == model.id }
-                if (index > 0) {
-                    selectedModels.removeAt(index)
-                    selectedModels.add(index - 1, model)
-                    updateSelectedModelsList()
-                }
-            },
-            onMoveDown = { model ->
-                val index = selectedModels.indexOfFirst { it.id == model.id }
-                if (index < selectedModels.size - 1) {
-                    selectedModels.removeAt(index)
-                    selectedModels.add(index + 1, model)
-                    updateSelectedModelsList()
-                }
-            },
-            onNameChange = { model, newName ->
-                val index = selectedModels.indexOfFirst { it.id == model.id }
-                if (index >= 0) {
-                    selectedModels[index] = model.copy(displayName = newName)
-                    updateSelectedModelsList()
-                }
+            onSettingsClick = { model ->
+                showModelSettingsDialog(model)
             }
         )
         recyclerSelectedModels.adapter = adapter
@@ -244,6 +278,9 @@ class AiProviderEditActivity : AppCompatActivity() {
         val name = editProviderName.text.toString().trim()
         val baseUrl = editBaseUrl.text.toString().trim()
         val apiKey = editApiKey.text.toString().trim()
+        val apiPath = editApiPath.text.toString().trim()
+        val isEnabled = switchEnabled.isChecked
+        val useResponseApi = switchResponseApi.isChecked
 
         if (name.isEmpty() || baseUrl.isEmpty() || apiKey.isEmpty()) {
             Toast.makeText(this, "请填写完整信息", Toast.LENGTH_SHORT).show()
@@ -255,7 +292,11 @@ class AiProviderEditActivity : AppCompatActivity() {
             name = name,
             baseUrl = baseUrl,
             apiKey = apiKey,
-            models = selectedModels
+            models = selectedModels,
+            isEnabled = isEnabled,
+            apiFormat = currentApiFormat,
+            apiPath = apiPath,
+            useResponseApi = useResponseApi
         )
 
         if (existingProvider != null) {
@@ -266,6 +307,26 @@ class AiProviderEditActivity : AppCompatActivity() {
 
         Toast.makeText(this, "保存成功", Toast.LENGTH_SHORT).show()
         finish()
+    }
+
+    // ModelSettingsDialog.OnModelSettingsListener 实现
+    override fun onModelSettingsConfirmed(
+        modelId: String, displayName: String, hasVision: Boolean,
+        enableReasoning: Boolean, assignedTasks: List<String>,
+        customHeaders: Map<String, String>, customBody: Map<String, Any>
+    ) {
+        val index = selectedModels.indexOfFirst { it.id == modelId }
+        if (index >= 0) {
+            selectedModels[index] = selectedModels[index].copy(
+                displayName = displayName,
+                hasVision = hasVision,
+                enableReasoning = enableReasoning,
+                assignedTasks = assignedTasks,
+                customHeaders = customHeaders,
+                customBody = customBody
+            )
+            updateSelectedModelsList()
+        }
     }
 
     inner class AvailableModelsAdapter(
@@ -306,17 +367,13 @@ class AiProviderEditActivity : AppCompatActivity() {
 
     inner class SelectedModelsAdapter(
         private val models: List<AiModel>,
-        private val onRemoveClick: (AiModel) -> Unit,
-        private val onVisionToggle: (AiModel, Boolean) -> Unit,
         private val onDefaultToggle: (AiModel, Boolean) -> Unit,
-        private val onMoveUp: (AiModel) -> Unit,
-        private val onMoveDown: (AiModel) -> Unit,
-        private val onNameChange: (AiModel, String) -> Unit
+        private val onSettingsClick: (AiModel) -> Unit
     ) : RecyclerView.Adapter<SelectedModelsAdapter.ViewHolder>() {
 
         override fun onCreateViewHolder(parent: android.view.ViewGroup, viewType: Int): ViewHolder {
             val view = android.view.LayoutInflater.from(parent.context)
-                .inflate(R.layout.item_selected_model, parent, false)
+                .inflate(R.layout.item_selected_model_v2, parent, false)
             return ViewHolder(view)
         }
 
@@ -327,41 +384,67 @@ class AiProviderEditActivity : AppCompatActivity() {
         override fun getItemCount() = models.size
 
         inner class ViewHolder(itemView: android.view.View) : RecyclerView.ViewHolder(itemView) {
-            private val editModelName: TextInputEditText = itemView.findViewById(R.id.editModelName)
+            private val radioDefault: android.widget.RadioButton = itemView.findViewById(R.id.radioDefault)
+            private val imageProvider: android.widget.ImageView = itemView.findViewById(R.id.imageProvider)
+            private val textInitial: android.widget.TextView = itemView.findViewById(R.id.textInitial)
+            private val textModelName: android.widget.TextView = itemView.findViewById(R.id.textModelName)
             private val textModelId: android.widget.TextView = itemView.findViewById(R.id.textModelId)
-            private val switchVision: MaterialSwitch = itemView.findViewById(R.id.switchVision)
-            private val switchDefault: MaterialSwitch = itemView.findViewById(R.id.switchDefault)
-            private val buttonRemove: ImageButton = itemView.findViewById(R.id.buttonRemove)
-            private val buttonMoveUp: ImageButton = itemView.findViewById(R.id.buttonMoveUp)
-            private val buttonMoveDown: ImageButton = itemView.findViewById(R.id.buttonMoveDown)
+            private val iconVision: android.widget.ImageView = itemView.findViewById(R.id.iconVision)
+            private val buttonSettings: ImageButton = itemView.findViewById(R.id.buttonSettings)
 
             fun bind(model: AiModel) {
-                editModelName.setText(model.displayName)
+                textModelName.text = model.displayName
                 textModelId.text = model.modelId
 
-                editModelName.setOnFocusChangeListener { _, hasFocus ->
-                    if (!hasFocus) {
-                        val newName = editModelName.text.toString().trim()
-                        if (newName.isNotEmpty() && newName != model.displayName) {
-                            onNameChange(model, newName)
-                        }
-                    }
+                // 设置默认模型 RadioButton
+                radioDefault.isChecked = model.isDefault
+                radioDefault.setOnClickListener { onDefaultToggle(model, !model.isDefault) }
+
+                // 设置供应商图标
+                setProviderIcon(model.modelId)
+
+                // 设置视觉图标
+                iconVision.alpha = if (model.hasVision) 1.0f else 0.3f
+
+                // 设置高级选项按钮
+                buttonSettings.setOnClickListener { onSettingsClick(model) }
+            }
+
+            private fun setProviderIcon(modelId: String) {
+                val lowerModelId = modelId.lowercase()
+                val iconRes = when {
+                    lowerModelId.startsWith("gpt") -> R.drawable.ic_provider_openai
+                    lowerModelId.startsWith("claude") -> R.drawable.ic_provider_claude
+                    lowerModelId.startsWith("gemini") -> R.drawable.ic_provider_gemini
+                    lowerModelId.startsWith("deepseek") -> R.drawable.ic_provider_deepseek
+                    lowerModelId.startsWith("qwen") -> R.drawable.ic_provider_qwen
+                    lowerModelId.startsWith("moonshot") -> R.drawable.ic_provider_moonshot
+                    else -> null
                 }
 
-                switchVision.isChecked = model.hasVision
-                switchVision.setOnCheckedChangeListener { _, isChecked ->
-                    onVisionToggle(model, isChecked)
-                }
+                if (iconRes != null) {
+                    imageProvider.setImageResource(iconRes)
+                    imageProvider.visibility = View.VISIBLE
+                    textInitial.visibility = View.GONE
+                } else {
+                    // 显示首字母
+                    val initial = modelId.firstOrNull()?.uppercase() ?: "?"
+                    textInitial.text = initial
+                    textInitial.visibility = View.VISIBLE
+                    imageProvider.visibility = View.GONE
 
-                switchDefault.isChecked = model.isDefault
-                switchDefault.setOnCheckedChangeListener { _, isChecked ->
-                    onDefaultToggle(model, isChecked)
+                    // 设置圆形背景颜色
+                    val colors = listOf("#4CAF50", "#2196F3", "#FF9800", "#9C27B0", "#F44336", "#00BCD4")
+                    val colorIndex = modelId.hashCode().mod(colors.size).let { if (it < 0) it + colors.size else it }
+                    textInitial.setBackgroundColor(android.graphics.Color.parseColor(colors[colorIndex]))
                 }
-
-                buttonRemove.setOnClickListener { onRemoveClick(model) }
-                buttonMoveUp.setOnClickListener { onMoveUp(model) }
-                buttonMoveDown.setOnClickListener { onMoveDown(model) }
             }
         }
+    }
+
+    private fun showModelSettingsDialog(model: AiModel) {
+        val dialog = ModelSettingsDialog.newInstance(model)
+        dialog.listener = this
+        dialog.show(supportFragmentManager, "ModelSettingsDialog")
     }
 }
