@@ -242,28 +242,35 @@ class ImageDetectActivity : AppCompatActivity() {
 
                 if (isAiEnabled) {
                     textStatus.text = "正在进行 AI 识别..."
+                    Log.d(TAG, "Starting AI detection...")
                     try {
                         val imageBase64 = aiModelManager.bitmapToBase64(bitmap)
+                        Log.d(TAG, "Image encoded to base64, length: ${imageBase64.length}")
+                        
                         val aiResult = aiModelManager.callWithFallbackAndImage(
                             prompt = "请识别图片中的物体，以JSON格式返回结果。",
                             imageBase64 = imageBase64
                         )
 
+                        Log.d(TAG, "AI result: success=${aiResult.success}, content length=${aiResult.content?.length}, structuredOutput=${aiResult.structuredOutput != null}, error=${aiResult.error}")
+
                         if (aiResult.success) {
                             if (aiResult.structuredOutput != null) {
                                 lastAiOutput = aiResult.structuredOutput
                                 displayAiResults(aiResult.structuredOutput)
+                                Log.d(TAG, "AI detection succeeded with structured output")
                             } else {
-                                // AI调用成功但无法解析为结构化输出，仍然显示成功
-                                Log.w(TAG, "AI returned non-JSON response: ${aiResult.content}")
+                                // AI调用成功但无法解析为结构化输出
+                                Log.w(TAG, "AI returned non-JSON response: ${aiResult.content?.take(200)}")
                                 textStatus.text = "AI 识别完成（非结构化结果）"
                             }
                         } else {
                             val errorMessage = aiResult.error ?: "未知错误，请检查模型配置"
+                            Log.e(TAG, "AI detection failed: $errorMessage")
                             Toast.makeText(this@ImageDetectActivity, "AI 识别失败: $errorMessage", Toast.LENGTH_SHORT).show()
                         }
                     } catch (e: Exception) {
-                        Log.e(TAG, "AI detection failed", e)
+                        Log.e(TAG, "AI detection exception", e)
                         Toast.makeText(this@ImageDetectActivity, "AI 识别异常: ${e.message ?: "未知错误"}", Toast.LENGTH_SHORT).show()
                     }
                 }

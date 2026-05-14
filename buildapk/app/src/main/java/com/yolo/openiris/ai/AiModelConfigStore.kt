@@ -110,16 +110,30 @@ class AiModelConfigStore(context: Context) {
      */
     fun loadProviders(): List<AiProvider> {
         // 如果有缓存，直接返回
-        cachedProviders?.let { return it }
+        cachedProviders?.let {
+            Log.d(TAG, "Returning cached providers: ${it.size}")
+            return it
+        }
 
-        val json = prefs.getString(KEY_PROVIDERS, null) ?: return emptyList()
+        val json = prefs.getString(KEY_PROVIDERS, null)
+        Log.d(TAG, "Loading providers from SharedPreferences, json length: ${json?.length ?: 0}")
+        
+        if (json == null) {
+            Log.w(TAG, "No providers found in SharedPreferences")
+            return emptyList()
+        }
+        
         return try {
             val type = object : TypeToken<List<AiProvider>>() {}.type
             val metadataList: List<AiProvider> = gson.fromJson(json, type) ?: emptyList()
+            Log.d(TAG, "Parsed ${metadataList.size} providers from JSON")
+            
             var needMigration = false
 
             val result = metadataList.map { provider ->
                 var apiKey = configManager.getAiProviderApiKey(provider.id)
+                Log.d(TAG, "Provider '${provider.name}' (ID: ${provider.id}): apiKey length=${apiKey.length}")
+                
                 // 旧格式迁移：加密存储为空但 JSON 中有旧 key
                 if (apiKey.isBlank() && provider.apiKey.isNotBlank()) {
                     Log.w(TAG, "Migrating apiKey for provider: ${provider.id}")
@@ -152,6 +166,7 @@ class AiModelConfigStore(context: Context) {
 
             // 缓存结果
             cachedProviders = result
+            Log.d(TAG, "Successfully loaded and cached ${result.size} providers")
             result
         } catch (e: Exception) {
             Log.e(TAG, "Failed to load providers", e)
@@ -303,7 +318,15 @@ class AiModelConfigStore(context: Context) {
      * 根据提供商 ID 获取提供商（含加密 apiKey）
      */
     fun getProvider(providerId: String): AiProvider? {
-        return loadProviders().find { it.id == providerId }
+        Log.d(TAG, "getProvider called with ID: '$providerId'")
+        val providers = loadProviders()
+        Log.d(TAG, "Loaded ${providers.size} providers, searching for ID: '$providerId'")
+        providers.forEach { p ->
+            Log.d(TAG, "  Provider: '${p.name}', ID: '${p.id}'")
+        }
+        val found = providers.find { it.id == providerId }
+        Log.d(TAG, "Found provider: ${found?.name ?: "null"}")
+        return found
     }
 
     /**

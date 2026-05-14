@@ -220,6 +220,7 @@ class AiApiClient {
 
         // 输入验证
         if (provider.baseUrl.isBlank()) {
+            Log.e(TAG, "Provider base URL is blank for provider: ${provider.name}")
             return AiResult.failure(
                 modelId = model.id,
                 modelName = model.displayName,
@@ -228,6 +229,7 @@ class AiApiClient {
             )
         }
         if (model.modelId.isBlank()) {
+            Log.e(TAG, "Model ID is blank for model: ${model.displayName}")
             return AiResult.failure(
                 modelId = model.id,
                 modelName = model.displayName,
@@ -236,6 +238,7 @@ class AiApiClient {
             )
         }
         if (prompt.isBlank()) {
+            Log.e(TAG, "Prompt is blank")
             return AiResult.failure(
                 modelId = model.id,
                 modelName = model.displayName,
@@ -244,6 +247,7 @@ class AiApiClient {
             )
         }
         if (imageBase64.isBlank()) {
+            Log.e(TAG, "Image base64 is blank")
             return AiResult.failure(
                 modelId = model.id,
                 modelName = model.displayName,
@@ -254,6 +258,7 @@ class AiApiClient {
 
         return try {
             if (!model.hasVision) {
+                Log.e(TAG, "Model does not support vision: ${model.modelId}")
                 return AiResult.failure(
                     modelId = model.id,
                     modelName = model.displayName,
@@ -263,6 +268,8 @@ class AiApiClient {
             }
 
             val url = "${provider.getEffectiveBaseUrl()}${provider.getEffectiveApiPath()}"
+            Log.d(TAG, "Calling model with image: ${model.modelId}, URL: $url, format: ${provider.apiFormat}")
+            
             val headers = buildHeaders(provider, model)
             
             val requestBody = when (provider.apiFormat) {
@@ -270,18 +277,27 @@ class AiApiClient {
                 else -> buildOpenAIRequestBody(model, prompt, systemPrompt, true, imageBase64)
             }
 
+            Log.d(TAG, "Request body keys: ${requestBody.keys}")
+
             val jsonBody = gson.toJson(requestBody)
                 .toRequestBody("application/json".toMediaType())
 
             val requestBuilder = Request.Builder().url(url).post(jsonBody)
             headers.forEach { (key, value) -> requestBuilder.addHeader(key, value) }
 
+            Log.d(TAG, "Executing HTTP request...")
+            
             client.newCall(requestBuilder.build()).execute().use { response ->
                 val duration = System.currentTimeMillis() - startTime
+                Log.d(TAG, "HTTP response: ${response.code}, duration: ${duration}ms")
 
                 if (response.isSuccessful) {
                     val body = response.body?.string() ?: ""
+                    Log.d(TAG, "Response body length: ${body.length}, first 200 chars: ${body.take(200)}")
+                    
                     val result = parseResponse(body, provider.apiFormat)
+                    Log.d(TAG, "Parsed result: content length=${result.first.length}, structuredOutput=${result.second != null}")
+                    
                     AiResult.success(
                         modelId = model.id,
                         modelName = model.displayName,
@@ -291,6 +307,7 @@ class AiApiClient {
                     )
                 } else {
                     val errorBody = response.body?.string() ?: "Unknown error"
+                    Log.e(TAG, "HTTP error: ${response.code}, body: ${errorBody.take(500)}")
                     AiResult.failure(
                         modelId = model.id,
                         modelName = model.displayName,
