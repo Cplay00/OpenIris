@@ -21,6 +21,10 @@ class AiModelConfigStore(context: Context) {
     private val configManager = ConfigManager.getInstance(context)
     private val gson = Gson()
 
+    // 提供商缓存，避免每次都从 SharedPreferences 读取
+    @Volatile
+    private var cachedProviders: List<AiProvider>? = null
+
     companion object {
         private const val TAG = "AiModelConfigStore"
         private const val PREFS_NAME = "ai_model_config"
@@ -105,6 +109,9 @@ class AiModelConfigStore(context: Context) {
      * 加载所有提供商配置（从加密存储恢复 apiKey，含旧格式迁移）
      */
     fun loadProviders(): List<AiProvider> {
+        // 如果有缓存，直接返回
+        cachedProviders?.let { return it }
+
         val json = prefs.getString(KEY_PROVIDERS, null) ?: return emptyList()
         return try {
             val type = object : TypeToken<List<AiProvider>>() {}.type
@@ -143,12 +150,21 @@ class AiModelConfigStore(context: Context) {
                 saveRawProviders(cleaned)
             }
 
+            // 缓存结果
+            cachedProviders = result
             result
         } catch (e: Exception) {
-            Log.e(TAG, "Failed to load providers, but keeping data intact", e)
+            Log.e(TAG, "Failed to load providers", e)
             // 不清除数据，返回空列表但保留原始数据
             emptyList()
         }
+    }
+
+    /**
+     * 清除缓存（在数据变更后调用）
+     */
+    private fun invalidateCache() {
+        cachedProviders = null
     }
 
     /**
@@ -162,6 +178,7 @@ class AiModelConfigStore(context: Context) {
         providers.add(provider.copy(apiKey = ""))
         saveRawProviders(providers)
         configManager.saveAiProviderApiKey(provider.id, provider.apiKey)
+        invalidateCache()
     }
 
     /**
@@ -175,6 +192,7 @@ class AiModelConfigStore(context: Context) {
             providers[index] = provider.copy(apiKey = "")
             saveRawProviders(providers)
             configManager.saveAiProviderApiKey(provider.id, provider.apiKey)
+            invalidateCache()
         }
     }
 
@@ -187,6 +205,7 @@ class AiModelConfigStore(context: Context) {
         providers.removeAll { it.id == providerId }
         saveRawProviders(providers)
         configManager.removeAiProviderApiKey(providerId)
+        invalidateCache()
     }
 
     /**

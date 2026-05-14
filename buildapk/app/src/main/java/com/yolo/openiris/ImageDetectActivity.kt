@@ -249,9 +249,15 @@ class ImageDetectActivity : AppCompatActivity() {
                             imageBase64 = imageBase64
                         )
 
-                        if (aiResult.success && aiResult.structuredOutput != null) {
-                            lastAiOutput = aiResult.structuredOutput
-                            displayAiResults(aiResult.structuredOutput)
+                        if (aiResult.success) {
+                            if (aiResult.structuredOutput != null) {
+                                lastAiOutput = aiResult.structuredOutput
+                                displayAiResults(aiResult.structuredOutput)
+                            } else {
+                                // AI调用成功但无法解析为结构化输出，仍然显示成功
+                                Log.w(TAG, "AI returned non-JSON response: ${aiResult.content}")
+                                textStatus.text = "AI 识别完成（非结构化结果）"
+                            }
                         } else {
                             val errorMessage = aiResult.error ?: "未知错误，请检查模型配置"
                             Toast.makeText(this@ImageDetectActivity, "AI 识别失败: $errorMessage", Toast.LENGTH_SHORT).show()
