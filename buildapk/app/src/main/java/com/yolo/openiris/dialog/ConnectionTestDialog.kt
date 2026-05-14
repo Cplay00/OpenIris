@@ -1,6 +1,7 @@
 package com.yolo.openiris.dialog
 
 import android.os.Bundle
+import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -66,14 +67,32 @@ class ConnectionTestDialog : BottomSheetDialogFragment() {
     }
 
     private fun loadModels() {
+        Log.d("ConnectionTest", "Loading models for providerId: '$providerId'")
+        
+        if (providerId.isBlank()) {
+            Log.e("ConnectionTest", "Provider ID is blank")
+            Toast.makeText(context, "提供商ID为空，请先保存提供商", Toast.LENGTH_SHORT).show()
+            dismiss()
+            return
+        }
+        
         val provider = aiModelManager.getProvider(providerId)
         if (provider == null) {
-            Toast.makeText(context, "提供商不存在", Toast.LENGTH_SHORT).show()
+            Log.e("ConnectionTest", "Provider not found: '$providerId'")
+            // 列出所有提供商以帮助调试
+            val allProviders = aiModelManager.getProviders()
+            Log.d("ConnectionTest", "Available providers (${allProviders.size}):")
+            allProviders.forEach { p ->
+                Log.d("ConnectionTest", "  - ID: '${p.id}', Name: '${p.name}', Models: ${p.models.size}")
+            }
+            Toast.makeText(context, "提供商不存在 (ID: $providerId)", Toast.LENGTH_LONG).show()
             dismiss()
             return
         }
 
+        Log.d("ConnectionTest", "Found provider: ${provider.name}, models: ${provider.models.size}")
         models = provider.models.filter { it.isEnabled }
+        Log.d("ConnectionTest", "Enabled models: ${models.size}")
         if (models.isEmpty()) {
             Toast.makeText(context, "没有可用的模型", Toast.LENGTH_SHORT).show()
             dismiss()

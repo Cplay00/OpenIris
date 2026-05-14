@@ -228,12 +228,22 @@ class AiModelManager private constructor(context: Context) {
         systemPrompt: String? = null,
         onError: ((String) -> Unit)? = null
     ): AiResult {
-        val models = getEnabledModels().filter { it.hasVision }
+        Log.d(TAG, "callWithFallbackAndImage called")
+        Log.d(TAG, "imageBase64 length: ${imageBase64.length}")
+        
+        val allModels = getEnabledModels()
+        Log.d(TAG, "Total enabled models: ${allModels.size}")
+        allModels.forEach { Log.d(TAG, "  Model: ${it.displayName}, vision: ${it.hasVision}, provider: ${it.providerId}") }
+        
+        val models = allModels.filter { it.hasVision }
+        Log.d(TAG, "Models with vision: ${models.size}")
+        
         if (models.isEmpty()) {
+            Log.w(TAG, "No vision models available")
             return AiResult.failure(
                 modelId = "none",
                 modelName = "None",
-                error = "没有支持视觉的可用模型"
+                error = "没有支持视觉的可用模型（已启用 ${allModels.size} 个模型，但无视觉支持）"
             )
         }
 
@@ -247,15 +257,21 @@ class AiModelManager private constructor(context: Context) {
 
         for (model in orderedModels) {
             try {
+                Log.d(TAG, "Trying vision model: ${model.displayName} (${model.modelId})")
+                val provider = configStore.getProvider(model.providerId)
+                Log.d(TAG, "  Provider: ${provider?.name}, baseUrl: ${provider?.baseUrl}")
+                
                 val result = callModelWithImage(model, prompt, imageBase64, systemPrompt)
                 if (result.success) {
+                    Log.d(TAG, "Vision model call succeeded: ${model.displayName}")
                     return result
                 } else {
+                    Log.w(TAG, "Vision model call failed: ${model.displayName}, error: ${result.error}")
                     onError?.invoke("模型 ${model.displayName} 调用失败: ${result.error}")
                 }
             } catch (e: Exception) {
+                Log.e(TAG, "Vision model call exception: ${model.displayName}", e)
                 onError?.invoke("模型 ${model.displayName} 调用异常: ${e.message}")
-                Log.e(TAG, "Model call failed", e)
             }
         }
 
