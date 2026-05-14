@@ -3,6 +3,7 @@ package com.yolo.openiris
 import android.content.Intent
 import android.os.Bundle
 import android.widget.ImageButton
+import android.widget.LinearLayout
 import android.widget.Toast
 import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
@@ -15,8 +16,11 @@ import com.google.android.material.appbar.MaterialToolbar
 import com.google.android.material.button.MaterialButton
 import com.google.android.material.materialswitch.MaterialSwitch
 import com.google.android.material.textfield.TextInputEditText
+import com.google.android.material.textview.MaterialTextView
+import com.yolo.openiris.ai.AiModel
 import com.yolo.openiris.ai.AiModelManager
 import com.yolo.openiris.ai.AiProvider
+import com.yolo.openiris.dialog.DefaultModelPickerDialog
 import kotlinx.coroutines.launch
 
 /**
@@ -31,6 +35,9 @@ class AiModelSettingsActivity : AppCompatActivity() {
     private lateinit var editSummaryPrompt: TextInputEditText
     private lateinit var buttonSaveVisualPrompt: MaterialButton
     private lateinit var buttonSaveSummaryPrompt: MaterialButton
+    private lateinit var textDefaultModelName: MaterialTextView
+    private lateinit var textDefaultModelProvider: MaterialTextView
+    private lateinit var buttonSelectDefaultModel: MaterialButton
     private lateinit var recyclerProviders: RecyclerView
     private lateinit var buttonAddProvider: MaterialButton
 
@@ -89,6 +96,13 @@ class AiModelSettingsActivity : AppCompatActivity() {
         buttonSaveVisualPrompt.setOnClickListener { saveVisualPrompt() }
         buttonSaveSummaryPrompt.setOnClickListener { saveSummaryPrompt() }
 
+        // 默认模型选择
+        textDefaultModelName = findViewById(R.id.textDefaultModelName)
+        textDefaultModelProvider = findViewById(R.id.textDefaultModelProvider)
+        buttonSelectDefaultModel = findViewById(R.id.buttonSelectDefaultModel)
+        buttonSelectDefaultModel.setOnClickListener { showDefaultModelPicker() }
+        findViewById<LinearLayout>(R.id.layoutDefaultModel).setOnClickListener { showDefaultModelPicker() }
+
         // 提供商列表
         recyclerProviders = findViewById(R.id.recyclerProviders)
         recyclerProviders.layoutManager = LinearLayoutManager(this)
@@ -130,9 +144,34 @@ class AiModelSettingsActivity : AppCompatActivity() {
         editVisualPrompt.setText(aiModelManager.getVisualRecognitionPrompt())
         editSummaryPrompt.setText(aiModelManager.getDetectionSummaryPrompt())
 
+        // 加载默认模型
+        updateDefaultModelDisplay()
+
         // 加载提供商列表
         val providers = aiModelManager.getProviders()
         providerAdapter.submitList(providers)
+    }
+
+    private fun updateDefaultModelDisplay() {
+        val defaultModel = aiModelManager.getDefaultModel()
+        if (defaultModel != null) {
+            val provider = aiModelManager.getProvider(defaultModel.providerId)
+            textDefaultModelName.text = defaultModel.displayName
+            textDefaultModelProvider.text = provider?.name ?: "未知提供商"
+        } else {
+            textDefaultModelName.text = "未选择"
+            textDefaultModelProvider.text = "点击选择默认模型"
+        }
+    }
+
+    private fun showDefaultModelPicker() {
+        val dialog = DefaultModelPickerDialog()
+        dialog.listener = object : DefaultModelPickerDialog.OnModelSelectedListener {
+            override fun onDefaultModelSelected(model: AiModel?) {
+                updateDefaultModelDisplay()
+            }
+        }
+        dialog.show(supportFragmentManager, "DefaultModelPickerDialog")
     }
 
     override fun onResume() {

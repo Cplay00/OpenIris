@@ -253,11 +253,12 @@ class ImageDetectActivity : AppCompatActivity() {
                             lastAiOutput = aiResult.structuredOutput
                             displayAiResults(aiResult.structuredOutput)
                         } else {
-                            Toast.makeText(this@ImageDetectActivity, "AI 识别失败: ${aiResult.error}", Toast.LENGTH_SHORT).show()
+                            val errorMessage = aiResult.error ?: "未知错误，请检查模型配置"
+                            Toast.makeText(this@ImageDetectActivity, "AI 识别失败: $errorMessage", Toast.LENGTH_SHORT).show()
                         }
                     } catch (e: Exception) {
                         Log.e(TAG, "AI detection failed", e)
-                        Toast.makeText(this@ImageDetectActivity, "AI 识别异常: ${e.message}", Toast.LENGTH_SHORT).show()
+                        Toast.makeText(this@ImageDetectActivity, "AI 识别异常: ${e.message ?: "未知错误"}", Toast.LENGTH_SHORT).show()
                     }
                 }
 

@@ -256,19 +256,6 @@ class AiProviderEditActivity : AppCompatActivity(), ModelSettingsDialog.OnModelS
     private fun updateSelectedModelsList() {
         val adapter = SelectedModelsAdapter(
             models = selectedModels,
-            onDefaultToggle = { model, isDefault ->
-                if (isDefault) {
-                    selectedModels.forEachIndexed { index, m ->
-                        selectedModels[index] = m.copy(isDefault = m.id == model.id)
-                    }
-                } else {
-                    val index = selectedModels.indexOfFirst { it.id == model.id }
-                    if (index >= 0) {
-                        selectedModels[index] = model.copy(isDefault = false)
-                    }
-                }
-                updateSelectedModelsList()
-            },
             onSettingsClick = { model ->
                 showModelSettingsDialog(model)
             },
@@ -362,10 +349,13 @@ class AiProviderEditActivity : AppCompatActivity(), ModelSettingsDialog.OnModelS
             aiModelManager.updateProvider(provider)
         } else {
             aiModelManager.saveProvider(provider)
+            // 保存后更新 providerId，以便后续操作（如连接测试）可用
+            providerId = provider.id
+            existingProvider = provider
         }
 
         Toast.makeText(this, "保存成功", Toast.LENGTH_SHORT).show()
-        finish()
+        // 保存后停留当前页，不调用 finish()
     }
 
     // ModelSettingsDialog.OnModelSettingsListener 实现
@@ -426,7 +416,6 @@ class AiProviderEditActivity : AppCompatActivity(), ModelSettingsDialog.OnModelS
 
     inner class SelectedModelsAdapter(
         private val models: List<AiModel>,
-        private val onDefaultToggle: (AiModel, Boolean) -> Unit,
         private val onSettingsClick: (AiModel) -> Unit,
         private val onDeleteClick: (AiModel) -> Unit,
         private val onModelIdChange: (AiModel, String) -> Unit
@@ -445,7 +434,6 @@ class AiProviderEditActivity : AppCompatActivity(), ModelSettingsDialog.OnModelS
         override fun getItemCount() = models.size
 
         inner class ViewHolder(itemView: android.view.View) : RecyclerView.ViewHolder(itemView) {
-            private val radioDefault: android.widget.RadioButton = itemView.findViewById(R.id.radioDefault)
             private val imageProvider: android.widget.ImageView = itemView.findViewById(R.id.imageProvider)
             private val textInitial: android.widget.TextView = itemView.findViewById(R.id.textInitial)
             private val textModelName: android.widget.TextView = itemView.findViewById(R.id.textModelName)
@@ -457,11 +445,6 @@ class AiProviderEditActivity : AppCompatActivity(), ModelSettingsDialog.OnModelS
             fun bind(model: AiModel) {
                 textModelName.text = model.displayName
                 editModelId.setText(model.modelId)
-
-                // 设置默认模型 RadioButton
-                radioDefault.isChecked = model.isDefault
-                radioDefault.contentDescription = if (model.isDefault) "当前默认模型" else "设为默认调用模型"
-                radioDefault.setOnClickListener { onDefaultToggle(model, !model.isDefault) }
 
                 // 设置供应商图标
                 setProviderIcon(model.modelId)
@@ -527,7 +510,7 @@ class AiProviderEditActivity : AppCompatActivity(), ModelSettingsDialog.OnModelS
     private fun showConnectionTestDialog() {
         val currentProviderId = providerId
         if (currentProviderId == null) {
-            Toast.makeText(this, "请先保存提供商", Toast.LENGTH_SHORT).show()
+            Toast.makeText(this, "请先保存提供商再进行测试", Toast.LENGTH_SHORT).show()
             return
         }
         val dialog = ConnectionTestDialog.newInstance(currentProviderId)
