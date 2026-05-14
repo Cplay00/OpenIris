@@ -388,20 +388,30 @@ class ImageDetectActivity : AppCompatActivity() {
             }
         }
 
-        // 合入 AI 结果
+        // 合入 AI 结果（支持同名标识合并）
         val aiOutput = lastAiOutput
         if (aiOutput != null) {
             aiOutput.objects.forEach { obj ->
-                val name = obj.getDisplayName()
-                val existing = combinedMap[name]
-                if (existing != null) {
-                    // 同名对象取较大数量，置信度取平均
-                    combinedMap[name] = Pair(
-                        maxOf(existing.first, obj.count),
-                        (existing.second + obj.confidence) / 2f
+                val aiName = obj.getDisplayName()
+                // 检查是否与YOLO结果中的某个标识匹配（模糊匹配：去除括号内容后比较）
+                val matchingKey = combinedMap.keys.find { existingKey ->
+                    val normalizedExisting = existingKey.replace(Regex("（[^）]*）"), "").trim()
+                    val normalizedAi = aiName.replace(Regex("（[^）]*）"), "").trim()
+                    normalizedExisting.equals(normalizedAi, ignoreCase = true) ||
+                    normalizedExisting.contains(normalizedAi) ||
+                    normalizedAi.contains(normalizedExisting)
+                }
+
+                if (matchingKey != null) {
+                    // 找到匹配的YOLO结果，使用YOLO的置信度
+                    val existing = combinedMap[matchingKey]!!
+                    combinedMap[matchingKey] = Pair(
+                        existing.first + obj.count,  // 累加数量
+                        existing.second  // 保留YOLO的置信度
                     )
                 } else {
-                    combinedMap[name] = Pair(obj.count, obj.confidence)
+                    // 没有匹配的YOLO结果，直接添加AI结果
+                    combinedMap[aiName] = Pair(obj.count, obj.confidence)
                 }
             }
         }

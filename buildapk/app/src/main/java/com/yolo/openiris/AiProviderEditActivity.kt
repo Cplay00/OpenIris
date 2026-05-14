@@ -303,9 +303,12 @@ class AiProviderEditActivity : AppCompatActivity(), ModelSettingsDialog.OnModelS
             return
         }
 
+        // 确保使用当前的 providerId（如果未保存则使用临时ID）
+        val currentProviderId = providerId ?: existingProvider?.id ?: UUID.randomUUID().toString()
+
         val model = AiModel(
             id = UUID.randomUUID().toString(),
-            providerId = providerId ?: UUID.randomUUID().toString(),
+            providerId = currentProviderId,
             modelId = modelId,
             displayName = modelId,
             hasVision = false,
@@ -332,12 +335,15 @@ class AiProviderEditActivity : AppCompatActivity(), ModelSettingsDialog.OnModelS
             return
         }
 
+        val currentProviderId = providerId ?: existingProvider?.id ?: UUID.randomUUID().toString()
+
         val provider = AiProvider(
-            id = providerId ?: UUID.randomUUID().toString(),
+            id = currentProviderId,
             name = name,
             baseUrl = baseUrl,
             apiKey = apiKey,
-            models = selectedModels,
+            // 确保所有模型的 providerId 都是当前提供商的 ID
+            models = selectedModels.map { it.copy(providerId = currentProviderId) },
             isEnabled = isEnabled,
             apiFormat = currentApiFormat,
             apiPath = apiPath,
@@ -349,13 +355,16 @@ class AiProviderEditActivity : AppCompatActivity(), ModelSettingsDialog.OnModelS
             aiModelManager.updateProvider(provider)
         } else {
             aiModelManager.saveProvider(provider)
-            // 保存后更新 providerId，以便后续操作（如连接测试）可用
-            providerId = provider.id
-            existingProvider = provider
         }
 
+        // 更新 providerId 和 existingProvider
+        providerId = currentProviderId
+        existingProvider = provider
+
+        // 同步更新 selectedModels 的 providerId
+        selectedModels = selectedModels.map { it.copy(providerId = currentProviderId) }.toMutableList()
+
         Toast.makeText(this, "保存成功", Toast.LENGTH_SHORT).show()
-        // 保存后停留当前页，不调用 finish()
     }
 
     // ModelSettingsDialog.OnModelSettingsListener 实现
