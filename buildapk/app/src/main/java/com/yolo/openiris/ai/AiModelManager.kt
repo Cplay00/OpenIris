@@ -397,7 +397,13 @@ class AiModelManager private constructor(context: Context) {
      */
     suspend fun testConnectionNonStream(model: AiModel): TestResult = withContext(Dispatchers.IO) {
         val provider = configStore.getProvider(model.providerId)
-            ?: return@withContext TestResult(false, 0, "提供商不存在")
+        if (provider == null) {
+            Log.e(TAG, "Provider not found for model: ${model.displayName}, providerId: ${model.providerId}")
+            // 尝试查找所有提供商
+            val allProviders = configStore.loadProviders()
+            Log.d(TAG, "Available providers: ${allProviders.map { "${it.id} - ${it.name}" }}")
+            return@withContext TestResult(false, 0, "提供商不存在 (ID: ${model.providerId})")
+        }
 
         val startTime = System.currentTimeMillis()
         val result = apiClient.callModel(provider, model, "Hello, respond with 'OK'")

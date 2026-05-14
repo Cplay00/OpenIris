@@ -32,9 +32,11 @@ data class AiProvider(
         val url = baseUrl.trimEnd('/')
         // Anthropic 格式不需要追加 /v1
         if (apiFormat == ApiFormat.ANTHROPIC) return url
-        // OpenAI 兼容格式
+        // OpenAI 兼容格式：检查是否已经包含版本路径
         if (url.endsWith("/v1")) return url
         if (url.contains("/v1/")) return url
+        if (url.endsWith("/v2")) return url
+        if (url.contains("/v2/")) return url
         return "$url/v1"
     }
 
