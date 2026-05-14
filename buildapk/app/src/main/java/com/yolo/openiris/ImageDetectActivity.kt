@@ -373,7 +373,7 @@ class ImageDetectActivity : AppCompatActivity() {
     private fun updateCombinedResults() {
         flexboxCombined.removeAllViews()
 
-        val combinedMap = mutableMapOf<String, Pair<Int, Float>>()
+        val combinedMap = mutableMapOf<String, Triple<Int, Float, String>>()  // count, confidence, source
 
         // 合入 YOLO 结果
         val yoloResult = analysisResult?.yoloResult
@@ -384,7 +384,7 @@ class ImageDetectActivity : AppCompatActivity() {
                     .map { it.confidence }
                     .average()
                     .toFloat()
-                combinedMap[label] = Pair(count, avgConfidence)
+                combinedMap[label] = Triple(count, avgConfidence, "yolo")
             }
         }
 
@@ -393,6 +393,9 @@ class ImageDetectActivity : AppCompatActivity() {
         if (aiOutput != null) {
             aiOutput.objects.forEach { obj ->
                 val aiName = obj.getDisplayName()
+                val aiCount = obj.count
+                val aiConfidence = obj.confidence
+
                 // 检查是否与YOLO结果中的某个标识匹配（模糊匹配：去除括号内容后比较）
                 val matchingKey = combinedMap.keys.find { existingKey ->
                     val normalizedExisting = existingKey.replace(Regex("（[^）]*）"), "").trim()
@@ -403,24 +406,39 @@ class ImageDetectActivity : AppCompatActivity() {
                 }
 
                 if (matchingKey != null) {
-                    // 找到匹配的YOLO结果，使用YOLO的置信度
+                    // 找到匹配的YOLO结果，取最高数量和对应的置信度
                     val existing = combinedMap[matchingKey]!!
-                    combinedMap[matchingKey] = Pair(
-                        existing.first + obj.count,  // 累加数量
-                        existing.second  // 保留YOLO的置信度
-                    )
+                    val existingCount = existing.first
+                    val existingConfidence = existing.second
+
+                    val newCount = maxOf(existingCount, aiCount)
+                    val newConfidence = if (newCount == aiCount && aiCount > existingCount) {
+                        // AI数量更高，采用AI置信度
+                        aiConfidence
+                    } else if (newCount == existingCount && existingCount > aiCount) {
+                        // YOLO数量更高，采用YOLO置信度
+                        existingConfidence
+                    } else if (newCount == aiCount && newCount == existingCount) {
+                        // 数量相等，优先采用YOLO置信度
+                        existingConfidence
+                    } else {
+                        // 其他情况，采用数量更高的置信度
+                        aiConfidence
+                    }
+
+                    combinedMap[matchingKey] = Triple(newCount, newConfidence, "combined")
                 } else {
                     // 没有匹配的YOLO结果，直接添加AI结果
-                    combinedMap[aiName] = Pair(obj.count, obj.confidence)
+                    combinedMap[aiName] = Triple(aiCount, aiConfidence, "ai")
                 }
             }
         }
 
-        combinedMap.forEach { (label, pair) ->
+        combinedMap.forEach { (label, triple) ->
             val stats = SlidingWindowTracker.ObjectStats(
                 name = label,
-                count = pair.first,
-                totalConfidence = pair.second * pair.first
+                count = triple.first,
+                totalConfidence = triple.second * triple.first
             )
 
             val capsule = CapsuleView(this)
