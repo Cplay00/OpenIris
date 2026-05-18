@@ -401,8 +401,8 @@ class ImageDetectActivity : AppCompatActivity() {
                     val normalizedExisting = existingKey.replace(Regex("（[^）]*）"), "").trim()
                     val normalizedAi = aiName.replace(Regex("（[^）]*）"), "").trim()
                     normalizedExisting.equals(normalizedAi, ignoreCase = true) ||
-                    normalizedExisting.contains(normalizedAi) ||
-                    normalizedAi.contains(normalizedExisting)
+                    normalizedExisting.startsWith(normalizedAi, ignoreCase = true) ||
+                    normalizedAi.startsWith(normalizedExisting, ignoreCase = true)
                 }
 
                 if (matchingKey != null) {
@@ -412,18 +412,12 @@ class ImageDetectActivity : AppCompatActivity() {
                     val existingConfidence = existing.second
 
                     val newCount = maxOf(existingCount, aiCount)
-                    val newConfidence = if (newCount == aiCount && aiCount > existingCount) {
+                    val newConfidence = if (aiCount > existingCount) {
                         // AI数量更高，采用AI置信度
                         aiConfidence
-                    } else if (newCount == existingCount && existingCount > aiCount) {
-                        // YOLO数量更高，采用YOLO置信度
-                        existingConfidence
-                    } else if (newCount == aiCount && newCount == existingCount) {
-                        // 数量相等，优先采用YOLO置信度
-                        existingConfidence
                     } else {
-                        // 其他情况，采用数量更高的置信度
-                        aiConfidence
+                        // YOLO数量更高或相等，采用YOLO置信度
+                        existingConfidence
                     }
 
                     combinedMap[matchingKey] = Triple(newCount, newConfidence, "combined")

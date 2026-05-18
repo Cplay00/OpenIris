@@ -103,6 +103,7 @@ class AiModelConfigStore(context: Context) {
         val metadataList = providers.map { it.copy(apiKey = "") }
         val json = gson.toJson(metadataList)
         prefs.edit().putString(KEY_PROVIDERS, json).apply()
+        invalidateCache()
     }
 
     /**
@@ -342,6 +343,7 @@ class AiModelConfigStore(context: Context) {
             updatedModels.add(model)
             providers[providerIndex] = provider.copy(models = updatedModels)
             saveRawProviders(providers)
+            invalidateCache()
         }
     }
 
@@ -358,6 +360,7 @@ class AiModelConfigStore(context: Context) {
             updatedModels.removeAll { it.id == modelId }
             providers[providerIndex] = provider.copy(models = updatedModels)
             saveRawProviders(providers)
+            invalidateCache()
         }
     }
 
@@ -376,6 +379,7 @@ class AiModelConfigStore(context: Context) {
                 updatedModels[modelIndex] = model
                 providers[providerIndex] = provider.copy(models = updatedModels)
                 saveRawProviders(providers)
+                invalidateCache()
             }
         }
     }

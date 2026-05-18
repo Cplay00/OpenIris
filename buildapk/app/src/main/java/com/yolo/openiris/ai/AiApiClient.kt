@@ -70,7 +70,8 @@ class AiApiClient {
         // 禁止覆盖的安全头列表
         val blockedHeaders = setOf(
             "authorization", "x-api-key", "host", "content-length", 
-            "content-type", "transfer-encoding", "connection"
+            "content-type", "transfer-encoding", "connection",
+            "cookie", "proxy-authorization", "x-forwarded-for", "x-real-ip", "expect"
         )
         
         // 合并自定义 Headers（过滤危险头）
@@ -450,14 +451,15 @@ class AiApiClient {
             "max_tokens" to 1024
         )
 
-        // 推理/思考开关
-        if (!model.enableReasoning) {
-            body["thinking"] = mapOf("type" to "disabled")
-        }
-
-        // 合并自定义 Body
+        // 合并自定义 Body（过滤关键字段防止注入）
+        val blockedBodyKeys = setOf(
+            "model", "messages", "stream", "temperature", "max_tokens",
+            "top_p", "frequency_penalty", "presence_penalty"
+        )
         model.customBody.forEach { (key, value) ->
-            body[key] = value
+            if (key.isNotBlank() && key.lowercase() !in blockedBodyKeys) {
+                body[key] = value
+            }
         }
 
         return body
@@ -499,14 +501,19 @@ class AiApiClient {
             body["system"] = DEFAULT_SYSTEM_PROMPT
         }
 
-        // 推理/思考开关
+        // 推理/思考开关（仅 Anthropic 格式支持）
         if (!model.enableReasoning) {
             body["thinking"] = mapOf("type" to "disabled")
         }
 
-        // 合并自定义 Body
+        // 合并自定义 Body（过滤关键字段防止注入）
+        val blockedBodyKeys = setOf(
+            "model", "messages", "stream", "max_tokens", "system"
+        )
         model.customBody.forEach { (key, value) ->
-            body[key] = value
+            if (key.isNotBlank() && key.lowercase() !in blockedBodyKeys) {
+                body[key] = value
+            }
         }
 
         return body

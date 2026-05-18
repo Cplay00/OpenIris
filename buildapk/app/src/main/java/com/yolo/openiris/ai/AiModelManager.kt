@@ -259,7 +259,7 @@ class AiModelManager private constructor(context: Context) {
             try {
                 Log.d(TAG, "Trying vision model: ${model.displayName} (${model.modelId})")
                 val provider = configStore.getProvider(model.providerId)
-                Log.d(TAG, "  Provider: ${provider?.name}, baseUrl: ${provider?.baseUrl}")
+                Log.d(TAG, "  Provider: ${provider?.name}")
                 
                 val result = callModelWithImage(model, prompt, imageBase64, systemPrompt)
                 if (result.success) {
