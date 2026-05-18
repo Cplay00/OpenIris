@@ -31,20 +31,21 @@ object JsonExporter {
             val timestamp = getTimestamp()
             val fileName = "openiris_analysis_${timestamp}.json"
 
-            // 使用公共存储目录
-            val baseDir = Environment.getExternalStorageDirectory()
+            val baseDir = context.getExternalFilesDir(null) ?: context.filesDir
             val exportDir = if (jsonPath.isNotBlank()) {
                 File(baseDir, jsonPath)
             } else {
                 File(baseDir, "YOLO_Export/JSON")
             }
-            exportDir.mkdirs()
+            if (!exportDir.exists() && !exportDir.mkdirs()) {
+                return ExportResult(type = ExportType.JSON, filePath = "", success = false, errorMessage = "无法创建导出目录: ${exportDir.absolutePath}")
+            }
 
             val file = File(exportDir, fileName)
 
             val jsonData = ExportData(
                 version = "1.0",
-                exportTime = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'", Locale.getDefault()).format(Date()),
+                exportTime = java.text.SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssXXX", java.util.Locale.US).format(Date()),
                 appVersion = getAppVersion(context),
                 deviceInfo = DeviceInfo(
                     model = android.os.Build.MODEL,
@@ -91,9 +92,10 @@ object ImageExporter {
             val timestamp = getTimestamp()
             val fileName = "openiris_annotated_${timestamp}.jpg"
 
-            // 默认导出到公共 Pictures 目录
-            val exportDir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_PICTURES)
-            exportDir.mkdirs()
+            val exportDir = context.getExternalFilesDir(Environment.DIRECTORY_PICTURES) ?: context.filesDir
+            if (!exportDir.exists() && !exportDir.mkdirs()) {
+                return ExportResult(type = ExportType.ANNOTATED_IMAGE, filePath = "", success = false, errorMessage = "无法创建导出目录: ${exportDir.absolutePath}")
+            }
 
             val file = File(exportDir, fileName)
 

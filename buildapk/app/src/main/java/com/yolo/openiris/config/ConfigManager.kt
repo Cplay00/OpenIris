@@ -65,9 +65,34 @@ class ConfigManager private constructor(context: Context) {
                 EncryptedSharedPreferences.PrefValueEncryptionScheme.AES256_GCM
             )
         } catch (e: Exception) {
-            Log.e(TAG, "加密存储初始化失败，回退到普通 SharedPreferences", e)
+            Log.e(TAG, "加密存储初始化失败，当前会话已禁用敏感字段落盘", e)
             encrypted = false
-            context.getSharedPreferences(PREFS_FILE, Context.MODE_PRIVATE)
+            object : SharedPreferences {
+                private val noopEditor = object : SharedPreferences.Editor {
+                    override fun putString(key: String?, value: String?) = this
+                    override fun putStringSet(key: String?, values: MutableSet<String>?) = this
+                    override fun putInt(key: String?, value: Int) = this
+                    override fun putLong(key: String?, value: Long) = this
+                    override fun putFloat(key: String?, value: Float) = this
+                    override fun putBoolean(key: String?, value: Boolean) = this
+                    override fun remove(key: String?) = this
+                    override fun clear() = this
+                    override fun commit() = true
+                    override fun apply() {}
+                }
+
+                override fun getAll(): Map<String, *> = emptyMap<String, Any>()
+                override fun getString(key: String?, defValue: String?) = defValue
+                override fun getStringSet(key: String?, defValues: MutableSet<String>?) = defValues
+                override fun getInt(key: String?, defValue: Int) = defValue
+                override fun getLong(key: String?, defValue: Long) = defValue
+                override fun getFloat(key: String?, defValue: Float) = defValue
+                override fun getBoolean(key: String?, defValue: Boolean) = defValue
+                override fun contains(key: String?) = false
+                override fun edit() = noopEditor
+                override fun registerOnSharedPreferenceChangeListener(listener: SharedPreferences.OnSharedPreferenceChangeListener?) {}
+                override fun unregisterOnSharedPreferenceChangeListener(listener: SharedPreferences.OnSharedPreferenceChangeListener?) {}
+            }
         }
         encryptedPrefs = prefs
         isEncryptionAvailable = encrypted
@@ -252,7 +277,7 @@ class ConfigManager private constructor(context: Context) {
      */
     fun saveAiProviderApiKey(providerId: String, apiKey: String) {
         if (!isEncryptionAvailable && apiKey.isNotBlank()) {
-            Log.w(TAG, "加密存储不可用，API Key 将以明文保存！providerId=$providerId")
+            Log.w(TAG, "加密存储不可用，已阻止敏感 API Key 写入 SharedPreferences")
         }
         val key = "ai_provider_key_$providerId"
         encryptedPrefs.edit().apply {

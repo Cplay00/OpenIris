@@ -268,7 +268,7 @@ class AiApiClient {
             }
 
             val url = "${provider.getEffectiveBaseUrl()}${provider.getEffectiveApiPath()}"
-            Log.d(TAG, "Calling model with image: ${model.modelId}, URL: $url, format: ${provider.apiFormat}")
+            Log.d(TAG, "Calling model with image: ${model.modelId}, format: ${provider.apiFormat}")
             
             val headers = buildHeaders(provider, model)
             
@@ -277,7 +277,7 @@ class AiApiClient {
                 else -> buildOpenAIRequestBody(model, prompt, systemPrompt, true, imageBase64)
             }
 
-            Log.d(TAG, "Request body keys: ${requestBody.keys}")
+            Log.d(TAG, "Request body assembled for model: ${model.modelId}")
 
             val jsonBody = gson.toJson(requestBody)
                 .toRequestBody("application/json".toMediaType())
@@ -293,7 +293,7 @@ class AiApiClient {
 
                 if (response.isSuccessful) {
                     val body = response.body?.string() ?: ""
-                    Log.d(TAG, "Response body length: ${body.length}, first 200 chars: ${body.take(200)}")
+                    Log.d(TAG, "Response body received, length=${body.length}")
                     
                     val result = parseResponse(body, provider.apiFormat)
                     Log.d(TAG, "Parsed result: content length=${result.first.length}, structuredOutput=${result.second != null}")

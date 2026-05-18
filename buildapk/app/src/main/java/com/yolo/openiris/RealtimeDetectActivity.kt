@@ -2,6 +2,8 @@ package com.yolo.openiris
 
 import android.animation.AnimatorSet
 import android.animation.ObjectAnimator
+import android.Manifest
+import android.content.pm.PackageManager
 import android.graphics.Bitmap
 import android.graphics.Color
 import android.graphics.PixelFormat
@@ -306,12 +308,16 @@ class RealtimeDetectActivity : AppCompatActivity(), SurfaceHolder.Callback {
         val timeStamp = SimpleDateFormat("yyyyMMdd_HHmmss", Locale.getDefault()).format(Date())
         val fileName = "OpenIris_${timeStamp}.jpg"
 
-        // 使用公共存储目录
+        if (ContextCompat.checkSelfPermission(this, Manifest.permission.WRITE_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED) {
+            Toast.makeText(this, "缺少写入存储权限，无法保存截图", Toast.LENGTH_SHORT).show()
+        }
+
         val configPath = configManager.getImageExportPath()
+        val baseDir = getExternalFilesDir(Environment.DIRECTORY_PICTURES) ?: filesDir
         val storageDir = if (configPath.isNotBlank() && configPath != "Pictures") {
-            File(Environment.getExternalStorageDirectory(), configPath).apply { mkdirs() }
+            File(baseDir, configPath).apply { mkdirs() }
         } else {
-            File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_PICTURES), "OpenIris").apply { mkdirs() }
+            File(baseDir, "OpenIris").apply { mkdirs() }
         }
         val file = File(storageDir, fileName)
 

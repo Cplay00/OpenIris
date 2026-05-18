@@ -132,7 +132,7 @@ class AiModelConfigStore(context: Context) {
 
             val result = metadataList.map { provider ->
                 var apiKey = configManager.getAiProviderApiKey(provider.id)
-                Log.d(TAG, "Provider '${provider.name}' (ID: ${provider.id}): apiKey length=${apiKey.length}")
+                Log.d(TAG, "Provider '${provider.name}' (ID: ${provider.id}): apiKey present=${apiKey.isNotBlank()}")
                 
                 // 旧格式迁移：加密存储为空但 JSON 中有旧 key
                 if (apiKey.isBlank() && provider.apiKey.isNotBlank()) {
