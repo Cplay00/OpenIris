@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Material Design 3 Color Scheme -->
+    <color name="md_theme_primary">#1B6EF3</color>
+    <color name="md_theme_onPrimary">#FFFFFF</color>
+    <color name="md_theme_primaryContainer">#D8E2FF</color>
+    <color name="md_theme_onPrimaryContainer">#001A41</color>
+    
+    <color name="md_theme_secondary">#565E71</color>
+    <color name="md_theme_onSecondary">#FFFFFF</color>
+    <color name="md_theme_secondaryContainer">#DAE2F9</color>
+    <color name="md_theme_onSecondaryContainer">#131C2B</color>
+    
+    <color name="md_theme_tertiary">#6F5575</color>
+    <color name="md_theme_onTertiary">#FFFFFF</color>
+    <color name="md_theme_tertiaryContainer">#F9D8FE</color>
+    <color name="md_theme_onTertiaryContainer">#28132F</color>
+    
+    <color name="md_theme_error">#BA1A1A</color>
+    <color name="md_theme_onError">#FFFFFF</color>
+    <color name="md_theme_errorContainer">#FFDAD6</color>
+    <color name="md_theme_onErrorContainer">#410002</color>
+    
+    <color name="md_theme_background">#FEFBFF</color>
+    <color name="md_theme_onBackground">#1B1B1F</color>
+    <color name="md_theme_surface">#FEFBFF</color>
+    <color name="md_theme_onSurface">#1B1B1F</color>
+    <color name="md_theme_surfaceVariant">#E1E2EC</color>
+    <color name="md_theme_onSurfaceVariant">#44474F</color>
+    
+    <color name="md_theme_outline">#74777F</color>
+    <color name="md_theme_outlineVariant">#C4C6D0</color>
+    <color name="md_theme_inverseSurface">#303034</color>
+    <color name="md_theme_inverseOnSurface">#F2F0F4</color>
+    <color name="md_theme_inversePrimary">#AEC6FF</color>
+    
+    <color name="md_theme_surfaceTint">#1B6EF3</color>
+    
+    <!-- Capsule Colors - YOLO Blue -->
+    <color name="capsule_yolo_bg">#E3F2FD</color>
+    <color name="capsule_yolo_border">#2196F3</color>
+    <color name="capsule_yolo_text">#1565C0</color>
+    
+    <!-- Capsule Colors - AI Purple -->
+    <color name="capsule_ai_bg">#F3E5F5</color>
+    <color name="capsule_ai_border">#9C27B0</color>
+    <color name="capsule_ai_text">#7B1FA2</color>
+    
+    <!-- Capsule Colors - Combined Green -->
+    <color name="capsule_combined_bg">#E8F5E9</color>
+    <color name="capsule_combined_border">#4CAF50</color>
+    <color name="capsule_combined_text">#2E7D32</color>
+    
+    <!-- Capsule Colors - Unique Orange -->
+    <color name="capsule_unique_bg">#FFF3E0</color>
+    <color name="capsule_unique_border">#FF9800</color>
+    <color name="capsule_unique_text">#E65100</color>
+    
+    <!-- Button State Colors -->
+    <color name="btn_gpu_enabled">#4CAF50</color>
+    <color name="btn_gpu_disabled">#FF9800</color>
+    <color name="btn_ai_enabled">#2196F3</color>
+    <color name="btn_ai_disabled">#9E9E9E</color>
+    <color name="btn_camera">#2196F3</color>
+    <color name="btn_bg_overlay">#CC000000</color>
+</resources>

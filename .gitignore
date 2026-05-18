@@ -1,0 +1,41 @@
+# Android
+*.iml
+.gradle
+/local.properties
+/.idea
+.DS_Store
+/build
+/captures
+.externalNativeBuild
+.cxx
+app/build
+build
+
+# Gradle
+buildapk/.gradle
+buildapk/build
+buildapk/app/build
+buildapk/app/.cxx
+buildapk/usable-apk
+
+# IDE
+.idea
+*.iml
+.vscode
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Backup
+backup/
+
+# Temporary files
+*.tmp
+*.log
+
+# Gradle wrapper jar
+gradle/wrapper/gradle-wrapper.jar
+
+# APK files (release in GitHub Releases)
+usable-apk/
