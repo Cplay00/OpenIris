@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">OpenIris</string>
+    <string name="switch_camera">切换摄像头</string>
+    <string name="image_detect">图片检测</string>
+    <string name="realtime_detect">实时检测</string>
+    <string name="video_detect">视频检测</string>
+    <string name="settings">设置</string>
+    <string name="detected_image">检测图片</string>
+    <string name="detecting">正在检测...</string>
+    <string name="export_json">导出 JSON</string>
+    <string name="export_image">导出图片</string>
+    <string name="api_settings">API 设置</string>
+    <string name="api_base_url">API Base URL</string>
+    <string name="api_key">API Key</string>
+    <string name="model_settings">模型设置</string>
+    <string name="vlm_model">VLM 模型</string>
+    <string name="llm_model">LLM 模型</string>
+    <string name="detection_settings">检测设置</string>
+    <string name="use_gpu">使用 GPU 加速</string>
+    <string name="enable_llm_fusion">启用 LLM 融合</string>
+    <string name="save_settings">保存设置</string>
+    <string name="test_api">测试 API 连接</string>
+    <string name="settings_saved">设置已保存</string>
+    <string name="api_test_success">API 连接成功</string>
+    <string name="api_test_failed">API 连接失败</string>
+    <string-array name="model_array">
+        <item>n</item>
+        <item>s</item>
+    </string-array>
+    <string-array name="cpugpu_array">
+        <item>CPU</item>
+        <item>GPU</item>
+    </string-array>
+    <string-array name="vlm_interval_array">
+        <item>2 秒</item>
+        <item>5 秒</item>
+        <item>10 秒</item>
+        <item>30 秒</item>
+    </string-array>
+</resources>
