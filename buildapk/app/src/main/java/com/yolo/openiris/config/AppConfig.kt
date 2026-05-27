@@ -16,7 +16,7 @@ data class AppConfig(
     val llmModel: String = DEFAULT_LLM_MODEL,
     @field:SerializedName(value = "vlmIntervalSeconds", alternate = ["realtimeVlmIntervalSeconds", "vlmInterval"])
     val vlmIntervalSeconds: Int = DEFAULT_VLM_INTERVAL,
-    val useGpu: Boolean = true,
+    val useGpu: Boolean = false,
     val selectedModel: String = "yolov11n",
     val enableLlmFusion: Boolean = true,
     val enableJsonExport: Boolean = true,

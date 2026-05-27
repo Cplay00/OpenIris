@@ -225,13 +225,11 @@ JNIEXPORT jboolean JNICALL Java_com_yolo_openiris_Yolov11Ncnn_loadModel(JNIEnv* 
     {
         ncnn::MutexLockGuard g(lock);
 
-        // 检查 GPU 是否可用
+        // 检查 GPU 是否可用，不可用时自动回退 CPU
         if (use_gpu && ncnn::get_gpu_count() == 0)
         {
-            __android_log_print(ANDROID_LOG_WARN, "ncnn", "GPU not available, cannot load with GPU");
-            delete g_yolo;
-            g_yolo = 0;
-            return JNI_FALSE;
+            __android_log_print(ANDROID_LOG_WARN, "ncnn", "GPU not available, falling back to CPU");
+            use_gpu = false;
         }
 
         // 删除旧模型（如果存在）
@@ -244,7 +242,14 @@ JNIEXPORT jboolean JNICALL Java_com_yolo_openiris_Yolov11Ncnn_loadModel(JNIEnv* 
 
         // 创建新模型并加载
         g_yolo = new Inference;
-        g_yolo->loadNcnnNetwork(mgr, modeltype, target_size, mean_vals[(int)modelid], norm_vals[(int)modelid], use_gpu);
+        int ret = g_yolo->loadNcnnNetwork(mgr, modeltype, target_size, mean_vals[(int)modelid], norm_vals[(int)modelid], use_gpu);
+        if (ret != 0)
+        {
+            __android_log_print(ANDROID_LOG_ERROR, "ncnn", "loadNcnnNetwork failed with ret=%d", ret);
+            delete g_yolo;
+            g_yolo = 0;
+            return JNI_FALSE;
+        }
         __android_log_print(ANDROID_LOG_DEBUG, "ncnn", "Model loaded with GPU=%d", use_gpu ? 1 : 0);
     }
 

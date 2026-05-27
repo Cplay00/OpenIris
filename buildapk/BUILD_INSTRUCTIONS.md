@@ -64,7 +64,7 @@
 
 1. 启动 Android Studio
 2. 选择 "Open an existing Android Studio project"
-3. 选择 `.buildapk` 目录
+3. 选择 `buildapk` 目录
 4. 等待 Gradle 同步完成
 
 ### 3. 配置 NDK 和 CMake

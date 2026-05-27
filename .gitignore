@@ -40,3 +40,5 @@ gradle/wrapper/gradle-wrapper.jar
 # APK files (release in GitHub Releases)
 usable-apk/
 gradle-9.4.1-all.zip
+# Build output packages
+Package/
