@@ -34,36 +34,32 @@
 |------|---------|------|--------|
 | ConfigManager | 配置读写、加密存储 | JUnit + Mockito | 高 |
 | AppConfig | 数据类序列化/反序列化 | JUnit | 高 |
+| AiModelConfigStore | 提供商/模型 CRUD、apiKey 加密存储 | JUnit + Mockito | 高 |
+| AiApiClient | HTTP 请求构建、流式/非流式响应解析、错误处理 | JUnit + MockWebServer | 高 |
+| AiModelManager | 模型选择、调用路由、超时处理 | JUnit + Mockito | 高 |
 | DetectionResult | 数据转换、JSON 序列化 | JUnit | 高 |
 | VlmRequest/Response | 请求构建、响应解析 | JUnit | 高 |
 | LlmRequest/Response | 请求构建、响应解析 | JUnit | 高 |
 | ResultFusion | YOLO + VLM 结果合并逻辑 | JUnit | 高 |
-| FusionPromptBuilder | Prompt 模板构建 | JUnit | 中 |
 | JsonExporter | JSON 导出格式校验 | JUnit | 中 |
-| ImageExporter | 图片标注逻辑 | JUnit + 模拟 Bitmap | 中 |
 | VlmScheduler | 间隔调度、防堆积 | JUnit | 中 |
 
 ### 2.2 单元测试示例结构
 
 ```
 app/src/test/java/com/yolo/openiris/
+├── ai/
+│   ├── AiApiClientTest.kt          # HTTP 请求/响应解析
+│   ├── AiModelConfigStoreTest.kt   # 持久化存储 CRUD
+│   └── AiModelManagerTest.kt       # 模型调用路由
 ├── config/
-│   ├── AppConfigTest.kt
-│   └── ConfigManagerTest.kt
-├── detection/
-│   └── DetectionResultTest.kt
+│   └── AppConfigValidatorTest.kt   # ✅ 已实现
 ├── vlm/
-│   ├── VlmRequestTest.kt
-│   └── VlmResponseParserTest.kt
+│   └── VlmRequestBuilderTest.kt    # ✅ 已实现
 ├── llm/
-│   ├── LlmRequestTest.kt
-│   └── LlmResponseParserTest.kt
-├── fusion/
-│   ├── ResultFusionTest.kt
-│   └── FusionPromptBuilderTest.kt
-└── export/
-    ├── JsonExporterTest.kt
-    └── ImageExporterTest.kt
+│   └── LlmRequestBuilderTest.kt    # ✅ 已实现
+└── fusion/
+    └── ResultFusionTest.kt          # ✅ 已实现
 ```
 
 ## 3. 集成测试
@@ -379,12 +375,13 @@ fun testFusion_countMismatchDetected() {
 
 | 模块 | 目标覆盖率 | 说明 |
 |------|-----------|------|
-| config | 90% | 配置读写、校验 |
-| vlm | 85% | 请求构建、响应解析、错误处理 |
-| llm | 85% | 请求构建、响应解析、错误处理 |
-| fusion | 90% | 核心融合逻辑 |
+| config | 90% | 配置读写、校验 ✅ AppConfigValidatorTest |
+| ai | 85% | AiApiClient 请求构建/解析、AiModelConfigStore CRUD |
+| vlm | 85% | 请求构建、响应解析 ✅ VlmRequestBuilderTest |
+| llm | 85% | 请求构建、响应解析 ✅ LlmRequestBuilderTest |
+| fusion | 90% | 核心融合逻辑 ✅ ResultFusionTest |
 | export | 80% | 导出格式 |
-| detection (Java) | 80% | 结果处理 |
+| detection | 80% | 结果处理、UnifiedObjectResult |
 | detection (JNI) | N/A | 真机 QA 覆盖 |
 | camera | N/A | 真机 QA 覆盖 |
 

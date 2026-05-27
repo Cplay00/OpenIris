@@ -209,7 +209,10 @@ enum class ProviderType {
 
 ### 4.2 实现优先级
 
-1. **Phase 1** (当前): CloudLlmProvider - 云端 API
+1. **Phase 1** ✅ **已实现**: CloudLlmProvider — 通过 `ai/` 包实现（AiApiClient + AiModelManager）
+   - 支持 OpenAI-compatible 和 Anthropic 两种 API 格式
+   - 支持流式/非流式调用
+   - 支持多提供商、多模型配置
 2. **Phase 2** (未来): LocalLlmProvider - llama.cpp 集成
 3. **Phase 3** (可选): NpuLlmProvider - SNPE/QNN 集成
 
@@ -225,9 +228,11 @@ enum class ProviderType {
 
 ## 6. 总结
 
-### 6.1 短期建议（当前版本）
-- 继续使用云端 API（OpenAI-compatible）
-- 保持 LlmProvider 抽象接口设计
+### 6.1 短期建议（当前版本）✅ 已完成
+
+- ✅ 云端 API 已实现（`ai/AiApiClient`，支持 OpenAI-compatible + Anthropic）
+- ✅ 提供商抽象已实现（`ai/AiProvider` + `ai/AiModel` + `ai/AiModelManager`）
+- ✅ 多提供商/多模型配置已实现（`ai/AiModelConfigStore`）
 - 不引入本地 LLM
 
 ### 6.2 中期建议（下一版本）
