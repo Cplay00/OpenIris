@@ -18,26 +18,21 @@ if errorlevel 1 (
     pip install pyinstaller
 )
 
-REM Clean previous build artifacts (keep dist output)
+REM Clean previous build artifacts
 echo [INFO] Cleaning build cache...
 if exist "%~dp0build" rmdir /s /q "%~dp0build"
-if exist "%~dp0__pycache__" rmdir /s /q "%~dp0__pycache__"
-if exist "%~dp0gui\__pycache__" rmdir /s /q "%~dp0gui\__pycache__"
-if exist "%~dp0scripts\__pycache__" rmdir /s /q "%~dp0scripts\__pycache__"
-if exist "%~dp0tools\__pycache__" rmdir /s /q "%~dp0tools\__pycache__"
-if exist "%~dp0tools\dataset_builder\__pycache__" rmdir /s /q "%~dp0tools\dataset_builder\__pycache__"
+if exist "%~dp0dist\OpenIrisTraining" rmdir /s /q "%~dp0dist\OpenIrisTraining"
+for /r "%~dp0" %%d in (__pycache__) do if exist "%%d" rmdir /s /q "%%d" 2>nul
 
-REM Build with spec file, set dist and work path to training folder
+REM Build using spec file
 echo [INFO] Building exe...
-pyinstaller --clean ^
-    --distpath "%~dp0dist" ^
-    --workpath "%~dp0build" ^
-    --specpath "%~dp0" ^
-    "%~dp0build_gui.spec"
+cd /d "%~dp0"
+pyinstaller build_gui.spec
 
 if errorlevel 1 (
     echo.
     echo [ERROR] Build failed!
+    cd /d "%~dp0.."
     pause
     exit /b 1
 )
@@ -45,12 +40,9 @@ if errorlevel 1 (
 REM Clean build cache after successful build
 echo [INFO] Cleaning build cache...
 if exist "%~dp0build" rmdir /s /q "%~dp0build"
-if exist "%~dp0OpenIrisTraining.spec" del /q "%~dp0OpenIrisTraining.spec"
-for /d %%i in ("%~dp0gui\__pycache__") do rmdir /s /q "%%i" 2>nul
-for /d %%i in ("%~dp0scripts\__pycache__") do rmdir /s /q "%%i" 2>nul
-for /d %%i in ("%~dp0tools\__pycache__") do rmdir /s /q "%%i" 2>nul
-for /d %%i in ("%~dp0tools\dataset_builder\__pycache__") do rmdir /s /q "%%i" 2>nul
+for /r "%~dp0" %%d in (__pycache__) do if exist "%%d" rmdir /s /q "%%d" 2>nul
 
+cd /d "%~dp0.."
 echo.
 echo ========================================
 echo Build complete!
