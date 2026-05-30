@@ -51,7 +51,10 @@ training/
 ├── gui/                            # 图形界面
 │   ├── __init__.py
 │   ├── main_window.py             # 主窗口
-│   └── launcher.py                # 启动器
+│   └── launcher.py                # 启动器 (legacy)
+├── run_gui.py                      # GUI 入口 (推荐)
+├── build_gui.bat                   # 打包 exe 脚本
+├── build_gui.spec                  # PyInstaller 配置
 ├── requirements.txt                # 依赖清单
 └── README.md                       # 本文件
 ```
@@ -84,7 +87,24 @@ pip install -r training/requirements.txt
 ### 2. 启动图形界面
 
 ```bash
+# 推荐入口
+python training/run_gui.py
+
+# 或使用旧入口
 python training/gui/launcher.py
+```
+
+### 3. 打包为 exe (可选)
+
+```bash
+# 需要先安装 PyInstaller
+pip install pyinstaller
+
+# 运行打包脚本
+training\build_gui.bat
+
+# 输出: dist\OpenIrisTraining\OpenIrisTraining.exe
+# 分发整个 dist\OpenIrisTraining 文件夹即可
 ```
 
 ### 3. 命令行训练
