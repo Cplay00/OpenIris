@@ -1,0 +1,98 @@
+# YOLOv11 High-Precision Training Hyperparameters for OpenIris
+# 高精度训练超参数配置
+# 版本: 2.0
+
+# ============================================================
+# 训练模式预设
+# ============================================================
+# mode: fast      - 快速验证 (30 epochs)
+# mode: balanced  - 平衡训练 (100 epochs)
+# mode: precision - 高精度 (200+ epochs)
+# mode: custom    - 自定义
+mode: precision
+
+# ============================================================
+# 基础参数
+# ============================================================
+model: yolov11n.pt
+imgsz: 640
+epochs: 200
+batch: 32
+accumulate: 1
+workers: 8
+
+# 高精度特有
+multi_scale_period: 10
+tta_enabled: false
+ema_enabled: true
+ema_decay: 0.9999
+distill_teacher: ""
+distill_loss_weight: 0.5
+
+# ============================================================
+# 优化器
+# ============================================================
+optimizer: AdamW
+lr0: 0.001
+lrf: 0.01
+momentum: 0.937
+weight_decay: 0.0005
+beta1: 0.9
+beta2: 0.999
+
+# ============================================================
+# 学习率调度
+# ============================================================
+scheduler: cosine
+warmup_epochs: 5.0
+warmup_momentum: 0.8
+warmup_bias_lr: 0.1
+cosine_t0: 50
+cosine_t_mult: 2
+cosine_eta_min: 1e-6
+
+# ============================================================
+# 损失函数
+# ============================================================
+cls: 0.5
+box: 7.5
+dfl: 1.5
+iou_type: ciou
+cls_loss_type: BCE
+focal_loss_gamma: 1.5
+
+# ============================================================
+# 正则化
+# ============================================================
+label_smoothing: 0.02
+dropout: 0.0
+stochastic_depth: 0.0
+max_grad_norm: 10.0
+
+# ============================================================
+# 训练控制
+# ============================================================
+patience: 80
+save: true
+save_period: 10
+val_period: 1
+save_top_k: 3
+best_metric: mAP50-95
+
+# ============================================================
+# 硬件
+# ============================================================
+device: 0
+amp: true
+compile: false
+multi_scale: false
+gradient_checkpointing: false
+
+# ============================================================
+# 输出
+# ============================================================
+project: runs/train
+name: openiris_highprec
+exist_ok: false
+pretrained: true
+resume: false

@@ -34,6 +34,36 @@ backup/
 *.tmp
 *.log
 
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.egg-info/
+dist/
+build/
+*.egg
+.eggs/
+
+# Virtual environments
+venv/
+env/
+.venv/
+*.venv/
+
+# Training outputs
+runs/
+datasets/
+*.pt
+*.onnx
+*.ncnn.bin
+*.ncnn.param
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
 # Gradle wrapper jar
 gradle/wrapper/gradle-wrapper.jar
 
