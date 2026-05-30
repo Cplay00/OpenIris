@@ -1,35 +1,32 @@
 # -*- mode: python ; coding: utf-8 -*-
 """
 PyInstaller spec file for OpenIris Training GUI
-
-Build command:
-    pyinstaller training/build_gui.spec
-
-Output: dist/OpenIrisTraining/OpenIrisTraining.exe
+Output: training/dist/OpenIrisTraining/OpenIrisTraining.exe
 """
 
 import sys
 from pathlib import Path
 
 block_cipher = None
-project_root = Path(SPECPATH).parent
+# SPECPATH = training/ folder when spec is in training/
+training_dir = Path(SPECPATH)
+project_root = training_dir.parent
 
 a = Analysis(
-    [str(project_root / 'training' / 'run_gui.py')],
+    [str(training_dir / 'run_gui.py')],
     pathex=[str(project_root)],
     binaries=[],
     datas=[
-        (str(project_root / 'training' / 'configs'), 'training/configs'),
-        (str(project_root / 'training' / 'scripts'), 'training/scripts'),
-        (str(project_root / 'training' / 'tools'), 'training/tools'),
+        (str(training_dir / 'configs'), 'training/configs'),
+        (str(training_dir / 'scripts'), 'training/scripts'),
+        (str(training_dir / 'tools'), 'training/tools'),
+        (str(training_dir / 'gui' / 'openiris.ico'), 'training/gui'),
     ],
     hiddenimports=[
-        'yaml',
-        'tkinter',
-        'tkinter.ttk',
-        'tkinter.filedialog',
-        'tkinter.messagebox',
-        'tkinter.scrolledtext',
+        'yaml', 'tkinter', 'tkinter.ttk', 'tkinter.filedialog',
+        'tkinter.messagebox', 'tkinter.scrolledtext',
+        'training', 'training.gui', 'training.gui.i18n',
+        'training.gui.main_window',
     ],
     hookspath=[],
     hooksconfig={},
@@ -56,13 +53,13 @@ exe = EXE(
     bootloader_ignore_signals=False,
     strip=False,
     upx=True,
-    console=False,  # Hide terminal window
+    console=False,  # Hide terminal
     disable_windowed_traceback=False,
     argv_emulation=False,
     target_arch=None,
     codesign_identity=None,
     entitlements_file=None,
-    icon=None,
+    icon=str(training_dir / 'gui' / 'openiris.ico'),
 )
 
 coll = COLLECT(
