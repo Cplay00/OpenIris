@@ -70,7 +70,7 @@ class VideoDetectActivity : AppCompatActivity() {
 
     // Data
     private var videoUri: Uri? = null
-    private var analysisResults: MutableList<AnalysisResult> = java.util.concurrent.CopyOnWriteArrayList()
+    private var analysisResults: MutableList<AnalysisResult> = mutableListOf()
     private var aiCallJob: Job? = null
 
     private val pickVideoLauncher = registerForActivityResult(
@@ -80,7 +80,7 @@ class VideoDetectActivity : AppCompatActivity() {
             videoUri = it
             videoView.setVideoURI(it)
             buttonAnalyze.isEnabled = true
-            textStatus.text = "宸查€夋嫨瑙嗛"
+            textStatus.text = "已选择视频"
         }
     }
 
@@ -148,7 +148,7 @@ class VideoDetectActivity : AppCompatActivity() {
 
         // Setup video view
         videoView.setOnPreparedListener { mp ->
-            textStatus.text = "瑙嗛宸插姞杞? ${mp.duration / 1000}绉?
+            textStatus.text = "视频已加载: ${mp.duration / 1000}秒"
         }
     }
 
@@ -160,7 +160,7 @@ class VideoDetectActivity : AppCompatActivity() {
     private fun loadVideo() {
         val videoUriString = intent.getStringExtra("video_uri")
         if (videoUriString == null) {
-            textStatus.text = "鏈€夋嫨瑙嗛"
+            textStatus.text = "未选择视频"
             buttonAnalyze.isEnabled = false
             return
         }
@@ -172,11 +172,11 @@ class VideoDetectActivity : AppCompatActivity() {
     private fun togglePlayPause() {
         if (isPlaying) {
             videoView.pause()
-            buttonPlayPause.text = "鎾斁"
+            buttonPlayPause.text = "播放"
             buttonPlayPause.setIconResource(android.R.drawable.ic_media_play)
         } else {
             videoView.start()
-            buttonPlayPause.text = "鏆傚仠"
+            buttonPlayPause.text = "暂停"
             buttonPlayPause.setIconResource(android.R.drawable.ic_media_pause)
         }
         isPlaying = !isPlaying
@@ -191,7 +191,7 @@ class VideoDetectActivity : AppCompatActivity() {
         buttonAnalyze.isEnabled = false
         progressBar.visibility = View.VISIBLE
         progressBar.progress = 0
-        textStatus.text = "姝e湪鍒嗘瀽瑙嗛..."
+        textStatus.text = "正在分析视频..."
 
         lifecycleScope.launch {
             try {
@@ -203,12 +203,12 @@ class VideoDetectActivity : AppCompatActivity() {
                 analysisResults.addAll(results)
 
                 displayResults()
-                textStatus.text = "鍒嗘瀽瀹屾垚"
+                textStatus.text = "分析完成"
                 buttonExportJson.isEnabled = true
 
             } catch (e: Exception) {
                 Log.e(TAG, "Video analysis failed", e)
-                textStatus.text = "鍒嗘瀽澶辫触: ${e.message}"
+                textStatus.text = "分析失败: ${e.message}"
             } finally {
                 isAnalyzing = false
                 buttonAnalyze.isEnabled = true
@@ -218,7 +218,7 @@ class VideoDetectActivity : AppCompatActivity() {
     }
 
     private suspend fun analyzeVideo(uri: Uri): List<AnalysisResult> {
-        val results = mutableListOf<AnalysisResult>()
+        val results = java.util.concurrent.CopyOnWriteArrayList<AnalysisResult>()
         val retriever = MediaMetadataRetriever()
 
         try {
@@ -229,7 +229,7 @@ class VideoDetectActivity : AppCompatActivity() {
 
             if (durationMs <= 0) {
                 withContext(Dispatchers.Main) {
-                    textStatus.text = "鏃犳硶璇诲彇瑙嗛鏃堕暱"
+                    textStatus.text = "无法读取视频时长"
                 }
                 return results
             }
@@ -386,7 +386,7 @@ class VideoDetectActivity : AppCompatActivity() {
 
     private suspend fun callAiModel() {
         try {
-            // 灏嗗綋鍓嶈棰戝抚鐨?YOLO 妫€娴嬬粨鏋滀綔涓轰笂涓嬫枃浼犵粰 AI
+            // 将当前视频帧的 YOLO 检测结果作为上下文传给 AI
             val currentTimeMs = videoView.currentPosition.toLong()
             val currentFrameResult = analysisResults.lastOrNull { result ->
                 (result.videoTimestampMs ?: 0) <= currentTimeMs
@@ -395,11 +395,11 @@ class VideoDetectActivity : AppCompatActivity() {
 
             val contextPrompt = if (yoloObjects.isNotEmpty()) {
                 val yoloText = yoloObjects.groupBy { it.label }
-                    .map { (label, list) -> "$label(${list.size}涓?" }
-                    .joinToString("銆?)
-                "褰撳墠瑙嗛甯?YOLO 妫€娴嬪埌锛?yoloText銆傝鍩轰簬浠ヤ笂妫€娴嬬粨鏋滐紝琛ュ厖璇嗗埆鐢婚潰涓殑鍏朵粬鐗╀綋锛屼互JSON鏍煎紡杩斿洖缁撴灉銆?
+                    .map { (label, list) -> "$label(${list.size}个)" }
+                    .joinToString("、")
+                "当前视频帧 YOLO 检测到：$yoloText。请基于以上检测结果，补充识别画面中的其他物体，以JSON格式返回结果。"
             } else {
-                "璇疯瘑鍒棰戜腑鐨勭墿浣擄紝浠SON鏍煎紡杩斿洖缁撴灉銆?
+                "请识别视频中的物体，以JSON格式返回结果。"
             }
 
             val result = aiModelManager.callWithFallback(
@@ -491,16 +491,16 @@ class VideoDetectActivity : AppCompatActivity() {
 
     private fun exportJson() {
         if (analysisResults.isEmpty()) {
-            Toast.makeText(this, "娌℃湁鍒嗘瀽缁撴灉鍙鍑?, Toast.LENGTH_SHORT).show()
+            Toast.makeText(this, "没有分析结果可导出", Toast.LENGTH_SHORT).show()
             return
         }
 
         val result = analysisResults.first()
         val exportResult = JsonExporter.export(this, result)
         if (exportResult.success) {
-            Toast.makeText(this, "JSON 宸插鍑? ${exportResult.filePath}", Toast.LENGTH_LONG).show()
+            Toast.makeText(this, "JSON 已导出: ${exportResult.filePath}", Toast.LENGTH_LONG).show()
         } else {
-            Toast.makeText(this, "瀵煎嚭澶辫触: ${exportResult.errorMessage}", Toast.LENGTH_SHORT).show()
+            Toast.makeText(this, "导出失败: ${exportResult.errorMessage}", Toast.LENGTH_SHORT).show()
         }
     }
 
@@ -509,7 +509,7 @@ class VideoDetectActivity : AppCompatActivity() {
         if (isPlaying) {
             videoView.pause()
             isPlaying = false
-            buttonPlayPause.text = "鎾斁"
+            buttonPlayPause.text = "播放"
             buttonPlayPause.setIconResource(android.R.drawable.ic_media_play)
         }
         stopAiCallLoop()

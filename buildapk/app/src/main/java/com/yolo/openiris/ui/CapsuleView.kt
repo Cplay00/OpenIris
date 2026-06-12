@@ -75,7 +75,7 @@ class CapsuleView @JvmOverloads constructor(
     }
 
     /**
-     * 绑定识别对象数据(用于 AI 结果)
+     * 绑定识别对象数据（用于 AI 结果）
      */
     fun bindRecognizedObject(
         name: String,

@@ -22,9 +22,9 @@ class AiApiClient {
         private const val WRITE_TIMEOUT_SECONDS = 30L
 
         // 默认系统提示词
-        private const val DEFAULT_SYSTEM_PROMPT = """你是一个物体识别助手。请分析提供的图像或文本描述,识别出其中的物体。
+        private const val DEFAULT_SYSTEM_PROMPT = """你是一个物体识别助手。请分析提供的图像或文本描述，识别出其中的物体。
 
-请以JSON格式返回结果:
+请以JSON格式返回结果：
 {
   "objects": [
     {"name": "object_name", "name_cn": "中文名称", "count": 1, "confidence": 0.95}
@@ -32,11 +32,11 @@ class AiApiClient {
   "summary": "场景描述摘要"
 }
 
-要求:
+要求：
 1. name 为英文物体名称
-2. name_cn 为中文翻译(如果知道的话)
+2. name_cn 为中文翻译（如果知道的话）
 3. count 为该物体出现的次数
-4. confidence 为置信度(0-1之间的小数)
+4. confidence 为置信度（0-1之间的小数）
 5. summary 为简短的场景描述"""
     }
 
@@ -74,7 +74,7 @@ class AiApiClient {
             "cookie", "proxy-authorization", "x-forwarded-for", "x-real-ip", "expect"
         )
         
-        // 合并自定义 Headers(过滤危险头)
+        // 合并自定义 Headers（过滤危险头）
         model.customHeaders.forEach { (key, value) ->
             if (key.lowercase() !in blockedHeaders && key.isNotBlank() && value.isNotBlank()) {
                 headers[key] = value
@@ -121,7 +121,7 @@ class AiApiClient {
     }
 
     /**
-     * 调用 AI 模型(纯文本)
+     * 调用 AI 模型（纯文本）
      */
     fun callModel(
         provider: AiProvider,
@@ -187,15 +187,10 @@ class AiApiClient {
                     )
                 } else {
                     val errorBody = response.body?.string() ?: "Unknown error"
-                    val safeError = if (com.yolo.openiris.BuildConfig.DEBUG) {
-                        errorBody.take(500)
-                    } else {
-                        "HTTP ${response.code}"
-                    }
                     AiResult.failure(
                         modelId = model.id,
                         modelName = model.displayName,
-                        error = "HTTP ${response.code}: $safeError",
+                        error = "HTTP ${response.code}: $errorBody",
                         durationMs = duration
                     )
                 }
@@ -213,7 +208,7 @@ class AiApiClient {
     }
 
     /**
-     * 调用 AI 模型(带图片)
+     * 调用 AI 模型（带图片）
      */
     fun callModelWithImage(
         provider: AiProvider,
@@ -313,11 +308,7 @@ class AiApiClient {
                     )
                 } else {
                     val errorBody = response.body?.string() ?: "Unknown error"
-                    if (com.yolo.openiris.BuildConfig.DEBUG) {
-                        Log.e(TAG, "HTTP error: ${response.code}, body: ${errorBody.take(500)}")
-                    } else {
-                        Log.e(TAG, "HTTP error: ${response.code}")
-                    }
+                    Log.e(TAG, "HTTP error: ${response.code}, body: ${errorBody.take(500)}")
                     AiResult.failure(
                         modelId = model.id,
                         modelName = model.displayName,
@@ -339,7 +330,7 @@ class AiApiClient {
     }
 
     /**
-     * 流式调用 AI 模型(纯文本)
+     * 流式调用 AI 模型（纯文本）
      * @return Pair<完整内容, 错误信息?>
      */
     fun callModelStream(
@@ -460,7 +451,7 @@ class AiApiClient {
             "max_tokens" to 1024
         )
 
-        // 合并自定义 Body(过滤关键字段防止注入)
+        // 合并自定义 Body（过滤关键字段防止注入）
         val blockedBodyKeys = setOf(
             "model", "messages", "stream", "temperature", "max_tokens",
             "top_p", "frequency_penalty", "presence_penalty"
@@ -510,12 +501,12 @@ class AiApiClient {
             body["system"] = DEFAULT_SYSTEM_PROMPT
         }
 
-        // 推理/思考开关(仅 Anthropic 格式支持)
+        // 推理/思考开关（仅 Anthropic 格式支持）
         if (!model.enableReasoning) {
             body["thinking"] = mapOf("type" to "disabled")
         }
 
-        // 合并自定义 Body(过滤关键字段防止注入)
+        // 合并自定义 Body（过滤关键字段防止注入）
         val blockedBodyKeys = setOf(
             "model", "messages", "stream", "max_tokens", "system"
         )

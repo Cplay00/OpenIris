@@ -17,7 +17,8 @@ import java.io.IOException
 import java.util.concurrent.TimeUnit
 
 /**
- * LLM 瀹㈡埛绔? * 璋冪敤 OpenAI-compatible API 杩涜缁撴灉铻嶅悎
+ * LLM 客户端
+ * 调用 OpenAI-compatible API 进行结果融合
  */
 class LlmClient private constructor(
     private val config: AppConfig
@@ -38,7 +39,7 @@ class LlmClient private constructor(
 
         fun recreate(config: AppConfig): LlmClient {
             instance = LlmClient(config)
-            return instance ?: throw IllegalStateException("LlmClient not initialized. Call getInstance first.")
+            return instance!!
         }
     }
 
@@ -50,7 +51,7 @@ class LlmClient private constructor(
         .build()
 
     /**
-     * 鍚屾铻嶅悎缁撴灉
+     * 同步融合结果
      */
     fun fuse(yoloResult: DetectionResult, vlmResult: VlmResult): LlmResult {
         return try {
@@ -60,14 +61,14 @@ class LlmClient private constructor(
         } catch (e: Exception) {
             Log.e(TAG, "LLM fusion failed", e)
             LlmResult(
-                summary = "铻嶅悎澶辫触: ${e.message}",
+                summary = "融合失败: ${e.message}",
                 rawResponse = e.message ?: "Unknown error"
             )
         }
     }
 
     /**
-     * 寮傛铻嶅悎缁撴灉
+     * 异步融合结果
      */
     fun fuseAsync(yoloResult: DetectionResult, vlmResult: VlmResult, callback: LlmCallback) {
         try {
@@ -204,7 +205,7 @@ class LlmClient private constructor(
     }
 
     /**
-     * LLM 鍥炶皟鎺ュ彛
+     * LLM 回调接口
      */
     interface LlmCallback {
         fun onSuccess(result: LlmResult)

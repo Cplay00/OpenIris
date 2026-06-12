@@ -17,7 +17,7 @@ import java.io.IOException
 import java.util.concurrent.TimeUnit
 
 /**
- * VLM 瀹㈡埛锟? * 璋冪敤 OpenAI-compatible Vision API 杩涜鍥惧儚璇嗗埆
+ * VLM 客户�? * 调用 OpenAI-compatible Vision API 进行图像识别
  */
 class VlmClient private constructor(
     private val config: AppConfig
@@ -38,7 +38,7 @@ class VlmClient private constructor(
 
         fun recreate(config: AppConfig): VlmClient {
             instance = VlmClient(config)
-            return instance ?: throw IllegalStateException("VlmClient not initialized. Call getInstance first.")
+            return instance!!
         }
     }
 
@@ -50,7 +50,7 @@ class VlmClient private constructor(
         .build()
 
     /**
-     * 鍚屾璇嗗埆鍥剧墖
+     * 同步识别图片
      */
     fun recognize(bitmap: Bitmap): VlmResult {
         val base64Image = bitmapToBase64(bitmap)
@@ -62,13 +62,13 @@ class VlmClient private constructor(
             VlmResult(
                 imageBase64 = base64Image,
                 rawResponse = e.message ?: "Unknown error",
-                sceneSummary = "璇嗗埆澶辫触: ${e.message}"
+                sceneSummary = "识别失败: ${e.message}"
             )
         }
     }
 
     /**
-     * 寮傛璇嗗埆鍥剧墖
+     * 异步识别图片
      */
     fun recognizeAsync(bitmap: Bitmap, callback: VlmCallback) {
         try {
@@ -140,7 +140,7 @@ class VlmClient private constructor(
 
     private fun parseVlmContent(content: String, rawResponse: String): VlmResult {
         return try {
-            // 灏濊瘯瑙f瀽 JSON 鍝嶅簲
+            // 尝试解析 JSON 响应
             val jsonObject = org.json.JSONObject(content)
             val objectsArray = jsonObject.optJSONArray("objects") ?: org.json.JSONArray()
             val sceneSummary = jsonObject.optString("sceneSummary").ifBlank {
@@ -182,7 +182,8 @@ class VlmClient private constructor(
             )
         } catch (e: Exception) {
             Log.e(TAG, "Failed to parse VLM JSON response, using raw text", e)
-            // 濡傛灉 JSON 瑙f瀽澶辫触锛屼娇鐢ㄥ師濮嬫枃鏈綔涓烘憳瑕?            VlmResult(
+            // 如果 JSON 解析失败，使用原始文本作为摘要
+            VlmResult(
                 sceneSummary = content,
                 rawResponse = rawResponse
             )
@@ -197,7 +198,7 @@ class VlmClient private constructor(
     }
 
     /**
-     * VLM 鍥炶皟鎺ュ彛
+     * VLM 回调接口
      */
     interface VlmCallback {
         fun onSuccess(result: VlmResult)

@@ -18,7 +18,8 @@ import com.yolo.openiris.ai.AiModelManager
 import kotlinx.coroutines.*
 
 /**
- * 妯″瀷杩炴帴娴嬭瘯瀵硅瘽妗? */
+ * 模型连接测试对话框
+ */
 class ConnectionTestDialog : BottomSheetDialogFragment() {
 
     companion object {
@@ -66,43 +67,34 @@ class ConnectionTestDialog : BottomSheetDialogFragment() {
     }
 
     private fun loadModels() {
-        if (com.yolo.openiris.BuildConfig.DEBUG) {
-            Log.d("ConnectionTest", "Loading models for providerId: '$providerId'")
-        }
+        Log.d("ConnectionTest", "Loading models for providerId: '$providerId'")
         
         if (providerId.isBlank()) {
             Log.e("ConnectionTest", "Provider ID is blank")
-            Toast.makeText(context, "鎻愪緵鍟咺D涓虹┖锛岃鍏堜繚瀛樻彁渚涘晢", Toast.LENGTH_SHORT).show()
+            Toast.makeText(context, "提供商ID为空，请先保存提供商", Toast.LENGTH_SHORT).show()
             dismiss()
             return
         }
         
         val provider = aiModelManager.getProvider(providerId)
         if (provider == null) {
-            if (com.yolo.openiris.BuildConfig.DEBUG) {
-                Log.e("ConnectionTest", "Provider not found: '$providerId'")
-                val allProviders = aiModelManager.getProviders()
-                Log.d("ConnectionTest", "Available providers (${allProviders.size}):")
-                allProviders.forEach { p ->
-                    Log.d("ConnectionTest", "  - ID: '${p.id}', Name: '${p.name}', Models: ${p.models.size}")
-                }
-            } else {
-                Log.e("ConnectionTest", "Provider not found")
+            Log.e("ConnectionTest", "Provider not found: '$providerId'")
+            // 列出所有提供商以帮助调试
+            val allProviders = aiModelManager.getProviders()
+            Log.d("ConnectionTest", "Available providers (${allProviders.size}):")
+            allProviders.forEach { p ->
+                Log.d("ConnectionTest", "  - ID: '${p.id}', Name: '${p.name}', Models: ${p.models.size}")
             }
-            Toast.makeText(context, "鎻愪緵鍟嗕笉瀛樺湪 (ID: $providerId)", Toast.LENGTH_LONG).show()
+            Toast.makeText(context, "提供商不存在 (ID: $providerId)", Toast.LENGTH_LONG).show()
             dismiss()
             return
         }
 
-        if (com.yolo.openiris.BuildConfig.DEBUG) {
-            Log.d("ConnectionTest", "Found provider: ${provider.name}, models: ${provider.models.size}")
-        }
+        Log.d("ConnectionTest", "Found provider: ${provider.name}, models: ${provider.models.size}")
         models = provider.models.filter { it.isEnabled }
-        if (com.yolo.openiris.BuildConfig.DEBUG) {
-            Log.d("ConnectionTest", "Enabled models: ${models.size}")
-        }
+        Log.d("ConnectionTest", "Enabled models: ${models.size}")
         if (models.isEmpty()) {
-            Toast.makeText(context, "娌℃湁鍙敤鐨勬ā鍨?, Toast.LENGTH_SHORT).show()
+            Toast.makeText(context, "没有可用的模型", Toast.LENGTH_SHORT).show()
             dismiss()
             return
         }
@@ -114,7 +106,8 @@ class ConnectionTestDialog : BottomSheetDialogFragment() {
             selectedModel = models[position]
         }
 
-        // 榛樿閫夋嫨绗竴涓ā鍨?        if (models.isNotEmpty()) {
+        // 默认选择第一个模型
+        if (models.isNotEmpty()) {
             selectedModel = models[0]
             spinnerTestModel.setText(modelNames[0], false)
         }
@@ -128,34 +121,35 @@ class ConnectionTestDialog : BottomSheetDialogFragment() {
     private fun startTest() {
         val model = selectedModel
         if (model == null) {
-            Toast.makeText(context, "璇烽€夋嫨娴嬭瘯妯″瀷", Toast.LENGTH_SHORT).show()
+            Toast.makeText(context, "请选择测试模型", Toast.LENGTH_SHORT).show()
             return
         }
 
         buttonTest.isEnabled = false
-        buttonTest.text = "娴嬭瘯涓?.."
-        textNonStreamResult.text = "娴嬭瘯涓?.."
-        textStreamResult.text = "娴嬭瘯涓?.."
+        buttonTest.text = "测试中..."
+        textNonStreamResult.text = "测试中..."
+        textStreamResult.text = "测试中..."
 
         lifecycleScope.launch {
-            // 娴嬭瘯闈炴祦寮?            val nonStreamResult = aiModelManager.testConnectionNonStream(model)
+            // 测试非流式
+            val nonStreamResult = aiModelManager.testConnectionNonStream(model)
             updateResult(textNonStreamResult, nonStreamResult)
 
-            // 娴嬭瘯娴佸紡
+            // 测试流式
             val streamResult = aiModelManager.testConnectionStream(model)
             updateResult(textStreamResult, streamResult)
 
             buttonTest.isEnabled = true
-            buttonTest.text = "娴嬭瘯"
+            buttonTest.text = "测试"
         }
     }
 
     private fun updateResult(textView: MaterialTextView, result: com.yolo.openiris.ai.TestResult) {
         if (result.success) {
-            textView.text = "鉁?鎴愬姛 (${result.durationMs}ms)"
+            textView.text = "✓ 成功 (${result.durationMs}ms)"
             textView.setTextColor(resources.getColor(android.R.color.holo_green_dark, null))
         } else {
-            textView.text = "鉁?澶辫触: ${result.message}"
+            textView.text = "✗ 失败: ${result.message}"
             textView.setTextColor(resources.getColor(android.R.color.holo_red_dark, null))
         }
     }

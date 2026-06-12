@@ -80,7 +80,7 @@ object ImageUtils {
     }
 
     /**
-     * 将 Bitmap 转换为 RGB 字节数组(用于 NCNN 推理)
+     * 将 Bitmap 转换为 RGB 字节数组（用于 NCNN 推理）
      */
     fun bitmapToRgbBytes(bitmap: Bitmap): ByteArray {
         // 确保 Bitmap 是 ARGB_8888 格式
@@ -95,7 +95,7 @@ object ImageUtils {
         val pixels = IntArray(width * height)
         argbBitmap.getPixels(pixels, 0, width, 0, 0, width, height)
 
-        // 如果创建了新 bitmap,回收它
+        // 如果创建了新 bitmap，回收它
         if (argbBitmap !== bitmap) {
             argbBitmap.recycle()
         }

@@ -24,8 +24,8 @@ class CustomToast(private val context: Context) {
     /**
      * 显示自定义Toast
      * @param message 消息内容
-     * @param duration 显示时长(毫秒),默认3000ms
-     * @param copyable 是否显示复制按钮,默认true
+     * @param duration 显示时长（毫秒），默认3000ms
+     * @param copyable 是否显示复制按钮，默认true
      */
     fun show(message: String, duration: Long = 3000, copyable: Boolean = true) {
         val inflater = LayoutInflater.from(context)
@@ -71,14 +71,14 @@ class CustomToast(private val context: Context) {
     }
 
     /**
-     * 显示错误消息(可复制)
+     * 显示错误消息（可复制）
      */
     fun showError(message: String, duration: Long = 5000) {
         show("错误: $message", duration, copyable = true)
     }
 
     /**
-     * 显示长文本消息(可复制)
+     * 显示长文本消息（可复制）
      */
     fun showLongText(message: String, duration: Long = 5000) {
         show(message, duration, copyable = true)

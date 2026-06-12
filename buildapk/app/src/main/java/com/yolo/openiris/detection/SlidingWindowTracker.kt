@@ -3,11 +3,14 @@ package com.yolo.openiris.detection
 import java.util.concurrent.ConcurrentHashMap
 
 /**
- * 婊戝姩绐楀彛缁熻杩借釜鍣? * 鐢ㄤ簬瀹炴椂妫€娴嬬粨鏋滅殑缁熻姹囨€? */
+ * 滑动窗口统计追踪器
+ * 用于实时检测结果的统计汇总
+ */
 class SlidingWindowTracker(private val windowDurationMs: Long = 15000) {
 
     /**
-     * 甯︽椂闂存埑鐨勬娴嬭褰?     */
+     * 带时间戳的检测记录
+     */
     data class TimestampedDetection(
         val label: String,
         val confidence: Float,
@@ -15,7 +18,7 @@ class SlidingWindowTracker(private val windowDurationMs: Long = 15000) {
     )
 
     /**
-     * 瀵硅薄缁熻淇℃伅
+     * 对象统计信息
      */
     data class ObjectStats(
         val name: String,
@@ -26,9 +29,10 @@ class SlidingWindowTracker(private val windowDurationMs: Long = 15000) {
             get() = if (count > 0) totalConfidence / count else 0f
     }
 
-    // 瀛樺偍鎵€鏈夋娴嬭褰?    private val detections = mutableListOf<TimestampedDetection>()
+    // 存储所有检测记录
+    private val detections = mutableListOf<TimestampedDetection>()
 
-    // 鎸夊璞″悕绉板垎缁勭殑缁熻锛堝唴閮ㄤ娇鐢ㄥ彲鍙樼増鏈級
+    // 按对象名称分组的统计（内部使用可变版本）
     private data class MutableObjectStats(
         val name: String,
         var count: Int = 0,
@@ -39,39 +43,65 @@ class SlidingWindowTracker(private val windowDurationMs: Long = 15000) {
     private val objectStatsMap = ConcurrentHashMap<String, MutableObjectStats>()
 
     /**
-     * 娣诲姞妫€娴嬬粨鏋?     */
+     * 添加检测结果
+     */
     @Synchronized
     fun addDetection(label: String, confidence: Float) {
         val detection = TimestampedDetection(label, confidence)
         detections.add(detection)
 
-        // 鏇存柊缁熻
+        // 更新统计
         val stats = objectStatsMap.getOrPut(label) { MutableObjectStats(label) }
         stats.count++
         stats.totalConfidence += confidence
         stats.detections.add(detection)
 
-        // 娓呯悊杩囨湡鏁版嵁
+        // 清理过期数据
         cleanup()
     }
 
     /**
-     * 鎵归噺娣诲姞妫€娴嬬粨鏋?     */
+     * 批量添加检测结果
+     */
     @Synchronized
     fun addDetections(detections: List<Pair<String, Float>>) {
         detections.forEach { (label, confidence) ->
-            val detection = TimestampedDetection(label, confidence)
-            this.detections.add(detection)
-            val stats = objectStatsMap.getOrPut(label) { MutableObjectStats(label) }
-            stats.count++
-            stats.totalConfidence += confidence
-            stats.detections.add(detection)
+            addDetection(label, confidence)
         }
-        cleanup()
     }
 
     /**
-     * 鑾峰彇褰撳墠绐楀彛鍐呯殑鎵€鏈夌粺璁?     */
+     * 清理过期数据
+     */
+    private fun cleanup() {
+        val now = System.currentTimeMillis()
+        val cutoff = now - windowDurationMs
+
+        // 移除过期的检测记录
+        val iterator = detections.iterator()
+        while (iterator.hasNext()) {
+            val detection = iterator.next()
+            if (detection.timestampMs < cutoff) {
+                iterator.remove()
+                // 更新对应的统计
+                val stats = objectStatsMap[detection.label]
+                if (stats != null) {
+                    stats.count--
+                    stats.totalConfidence -= detection.confidence
+                    stats.detections.remove(detection)
+                    if (stats.count <= 0) {
+                        objectStatsMap.remove(detection.label)
+                    }
+                }
+            } else {
+                break // 因为是按时间顺序添加的，所以遇到未过期的就可以停止
+            }
+        }
+    }
+
+    /**
+     * 获取当前窗口内的所有统计
+     */
     @Synchronized
     fun getSummary(): Map<String, ObjectStats> {
         cleanup()
@@ -81,7 +111,8 @@ class SlidingWindowTracker(private val windowDurationMs: Long = 15000) {
     }
 
     /**
-     * 鑾峰彇褰撳墠绐楀彛鍐呯殑妫€娴嬫暟閲?     */
+     * 获取当前窗口内的检测数量
+     */
     @Synchronized
     fun getTotalCount(): Int {
         cleanup()
@@ -89,7 +120,7 @@ class SlidingWindowTracker(private val windowDurationMs: Long = 15000) {
     }
 
     /**
-     * 鑾峰彇褰撳墠绐楀彛鍐呬笉鍚屽璞$殑鏁伴噺
+     * 获取当前窗口内不同对象的数量
      */
     @Synchronized
     fun getUniqueCount(): Int {
@@ -98,7 +129,8 @@ class SlidingWindowTracker(private val windowDurationMs: Long = 15000) {
     }
 
     /**
-     * 娓呯┖鎵€鏈夋暟鎹?     */
+     * 清空所有数据
+     */
     @Synchronized
     fun clear() {
         detections.clear()
@@ -106,13 +138,14 @@ class SlidingWindowTracker(private val windowDurationMs: Long = 15000) {
     }
 
     /**
-     * 鑾峰彇绐楀彛鏃堕暱锛堢锛?     */
+     * 获取窗口时长（秒）
+     */
     fun getWindowDurationSeconds(): Int {
         return (windowDurationMs / 1000).toInt()
     }
 
     /**
-     * 妫€鏌ユ槸鍚︽湁鏁版嵁
+     * 检查是否有数据
      */
     @Synchronized
     fun hasData(): Boolean {
@@ -121,7 +154,8 @@ class SlidingWindowTracker(private val windowDurationMs: Long = 15000) {
     }
 
     /**
-     * 鑾峰彇鎺掑簭鍚庣殑缁熻鍒楄〃锛堟寜鏁伴噺闄嶅簭锛?     */
+     * 获取排序后的统计列表（按数量降序）
+     */
     @Synchronized
     fun getSortedSummary(): List<ObjectStats> {
         cleanup()

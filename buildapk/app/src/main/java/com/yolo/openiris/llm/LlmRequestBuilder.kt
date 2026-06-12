@@ -9,18 +9,18 @@ object LlmRequestBuilder {
     private val gson = Gson()
 
     private const val SYSTEM_PROMPT = """
-你是一个数据融合专家。请整合 YOLO 目标检测和 VLM 视觉语言模型的识别结果,生成统一的中文分析摘要。
+你是一个数据融合专家。请整合 YOLO 目标检测和 VLM 视觉语言模型的识别结果，生成统一的中文分析摘要。
 
-输入数据格式:
-- YOLO 结果:包含检测到的对象类别、置信度、边界框
-- VLM 结果:包含对象名称、数量、属性、场景描述
+输入数据格式：
+- YOLO 结果：包含检测到的对象类别、置信度、边界框
+- VLM 结果：包含对象名称、数量、属性、场景描述
 
-请输出:
-1. 整体场景摘要(中文)
-2. 对象列表(名称、数量、证据来源)
-3. 差异分析(如果 YOLO 和 VLM 结果不一致)
+请输出：
+1. 整体场景摘要（中文）
+2. 对象列表（名称、数量、证据来源）
+3. 差异分析（如果 YOLO 和 VLM 结果不一致）
 
-请用 JSON 格式输出:
+请用 JSON 格式输出：
 {
   "summary": "整体摘要",
   "objects": [
@@ -54,7 +54,7 @@ object LlmRequestBuilder {
         )
 
         return buildString {
-            appendLine("请基于以下结构化输入完成融合分析,输出必须是 JSON 对象。")
+            appendLine("请基于以下结构化输入完成融合分析，输出必须是 JSON 对象。")
             append(gson.toJson(payload))
         }
     }
