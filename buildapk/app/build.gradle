@@ -7,14 +7,21 @@ android {
 
     defaultConfig {
         applicationId "com.yolo.openiris"
-
         minSdk 31
         targetSdk 36
-
         ndk {
             abiFilters 'arm64-v8a', 'armeabi-v7a'
         }
         versionName '0.4-Alpha'
+    }
+
+    signingConfigs {
+        release {
+            storeFile file("openiris-release.jks")
+            storePassword "openiris2026"
+            keyAlias "openiris"
+            keyPassword "openiris2026"
+        }
     }
 
     externalNativeBuild {
@@ -34,6 +41,7 @@ android {
 
     buildTypes {
         release {
+            signingConfig signingConfigs.release
             minifyEnabled true
             shrinkResources true
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
@@ -57,26 +65,13 @@ dependencies {
     implementation 'androidx.security:security-crypto:1.1.0-alpha06'
     implementation 'com.google.code.gson:gson:2.11.0'
     implementation 'com.squareup.okhttp3:okhttp:4.12.0'
-    // logging-interceptor 浠呭湪 debug 鏋勫缓鍖呭惈锛岄伩鍏?release 涓?API Key 琚棩蹇楄褰?    debugImplementation 'com.squareup.okhttp3:logging-interceptor:4.12.0'
-    
-    // FlexboxLayout for capsule layout
+    debugImplementation 'com.squareup.okhttp3:logging-interceptor:4.12.0'
     implementation 'com.google.android.flexbox:flexbox:3.0.0'
-
-    // PhotoView for image zoom
     implementation 'com.github.chrisbanes:PhotoView:2.3.0'
-    
-    // Coroutines
     implementation 'org.jetbrains.kotlinx:kotlinx-coroutines-android:1.9.0'
-
-    // Test dependencies
     testImplementation 'junit:junit:4.13.2'
     testImplementation 'org.mockito:mockito-core:5.14.0'
     testImplementation 'com.squareup.okhttp3:mockwebserver:4.12.0'
-
     androidTestImplementation 'androidx.test.ext:junit:1.1.4'
     androidTestImplementation 'androidx.test.espresso:espresso-core:3.6.1'
 }
-
-
-
-
