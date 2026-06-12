@@ -1,6 +1,6 @@
 # YOLO11 with SE (Squeeze-and-Excitation) Attention
 # 轻量级通道注意力机制
-# 适用于: 移动端部署（计算量增加最小）
+# 适用于: 移动端部署(计算量增加最小)
 
 nc: 80
 scales:

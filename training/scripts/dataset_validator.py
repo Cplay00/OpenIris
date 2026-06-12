@@ -4,7 +4,7 @@
 OpenIris Dataset Validator
 
 校验数据集格式、标注质量和目录结构。
-在训练前运行，提前发现并修复数据问题。
+在训练前运行,提前发现并修复数据问题。
 
 使用方法:
     python training/scripts/dataset_validator.py --data configs/dataset_custom.yaml
@@ -74,11 +74,11 @@ class ValidationResult:
 
         print("\n" + "-" * 60)
         if self.passed:
-            print("✓ 数据集校验通过！")
+            print("✓ 数据集校验通过!")
             if self.warnings:
-                print(f"  （有 {len(self.warnings)} 个警告，建议处理）")
+                print(f"  (有 {len(self.warnings)} 个警告,建议处理)")
         else:
-            print(f"✗ 数据集校验失败！发现 {len(self.errors)} 个错误。")
+            print(f"✗ 数据集校验失败!发现 {len(self.errors)} 个错误。")
             print("  请修复上述错误后重新运行。")
         print("=" * 60)
 
@@ -91,7 +91,7 @@ def load_data_config(path: str) -> dict:
 
 def validate_directory_structure(data_config: dict, result: ValidationResult) -> dict:
     """
-    校验目录结构，返回解析后的路径。
+    校验目录结构,返回解析后的路径。
 
     Returns:
         解析后的路径字典
@@ -104,7 +104,7 @@ def validate_directory_structure(data_config: dict, result: ValidationResult) ->
             continue
 
         img_dir = base / data_config[split]
-        # 标注目录与图像目录同级，名为 labels
+        # 标注目录与图像目录同级,名为 labels
         label_dir = img_dir.parent.parent / "labels" / img_dir.name
 
         paths[split] = {"images": img_dir, "labels": label_dir}
@@ -162,7 +162,7 @@ def validate_label_format(label_path: Path, nc: int, result: ValidationResult) -
         if len(parts) < 5:
             result.error(
                 f"{label_path}:{line_num} 格式错误: "
-                f"需要至少 5 个值 (class x y w h)，实际 {len(parts)} 个"
+                f"需要至少 5 个值 (class x y w h),实际 {len(parts)} 个"
             )
             continue
 
@@ -211,7 +211,7 @@ def validate_pairs(paths: dict, nc: int, result: ValidationResult):
         if not img_dir.exists() or not lbl_dir.exists():
             continue
 
-        # 收集文件名（不含扩展名）
+        # 收集文件名(不含扩展名)
         img_stems = {f.stem for f in img_dir.iterdir()
                     if f.suffix.lower() in IMAGE_EXTENSIONS}
         lbl_stems = {f.stem for f in lbl_dir.iterdir() if f.suffix == ".txt"}
@@ -222,7 +222,7 @@ def validate_pairs(paths: dict, nc: int, result: ValidationResult):
             samples = list(missing_labels)[:3]
             result.warn(
                 f"{split}: {len(missing_labels)} 张图像缺少标注文件"
-                f"（示例: {samples}）"
+                f"(示例: {samples})"
             )
 
         # 无图像的标注
@@ -231,7 +231,7 @@ def validate_pairs(paths: dict, nc: int, result: ValidationResult):
             samples = list(missing_images)[:3]
             result.error(
                 f"{split}: {len(missing_images)} 个标注文件缺少对应图像"
-                f"（示例: {samples}）"
+                f"(示例: {samples})"
             )
 
         # 校验标注内容
@@ -245,7 +245,7 @@ def validate_pairs(paths: dict, nc: int, result: ValidationResult):
             class_counts = Counter(all_classes)
             total = len(all_classes)
             result.add_info(
-                f"{split} 标注总数: {total}，"
+                f"{split} 标注总数: {total},"
                 f"覆盖类别: {len(class_counts)}/{nc}"
             )
 
@@ -256,7 +256,7 @@ def validate_pairs(paths: dict, nc: int, result: ValidationResult):
                 if max_count > min_count * 10:
                     result.warn(
                         f"{split} 类别严重不平衡: "
-                        f"最多 {max_count} 个，最少 {min_count} 个"
+                        f"最多 {max_count} 个,最少 {min_count} 个"
                     )
 
 

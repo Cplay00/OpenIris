@@ -7,8 +7,8 @@ import androidx.security.crypto.EncryptedSharedPreferences
 import androidx.security.crypto.MasterKey
 
 /**
- * 配置管理器
- * 使用 EncryptedSharedPreferences 安全存储敏感配置
+ * 閰嶇疆绠$悊鍣?
+ * 浣跨敤 EncryptedSharedPreferences 瀹夊叏瀛樺偍鏁忔劅閰嶇疆
  */
 class ConfigManager private constructor(context: Context) {
 
@@ -29,7 +29,7 @@ class ConfigManager private constructor(context: Context) {
         private const val KEY_IMAGE_EXPORT_PATH = "image_export_path"
         private const val KEY_JSON_EXPORT_PATH = "json_export_path"
         
-        // 摄像头分辨率配置
+        // 鎽勫儚澶村垎杈ㄧ巼閰嶇疆
         private const val KEY_CAMERA_RESOLUTION_WIDTH = "camera_resolution_width"
         private const val KEY_CAMERA_RESOLUTION_HEIGHT = "camera_resolution_height"
         private const val KEY_CUSTOM_RESOLUTIONS = "custom_resolutions"
@@ -65,7 +65,7 @@ class ConfigManager private constructor(context: Context) {
                 EncryptedSharedPreferences.PrefValueEncryptionScheme.AES256_GCM
             )
         } catch (e: Exception) {
-            Log.e(TAG, "加密存储初始化失败，当前会话已禁用敏感字段落盘", e)
+            Log.e(TAG, "鍔犲瘑瀛樺偍鍒濆鍖栧け璐ワ紝褰撳墠浼氳瘽宸茬鐢ㄦ晱鎰熷瓧娈佃惤鐩?, e)
             encrypted = false
             object : SharedPreferences {
                 private val noopEditor = object : SharedPreferences.Editor {
@@ -106,7 +106,7 @@ class ConfigManager private constructor(context: Context) {
     )
 
     /**
-     * 保存配置
+     * 淇濆瓨閰嶇疆
      */
     fun saveConfig(config: AppConfig) {
         saveNonSensitiveConfig(config)
@@ -114,7 +114,7 @@ class ConfigManager private constructor(context: Context) {
     }
 
     /**
-     * 保存除 API Key 外的普通配置。
+     * 淇濆瓨闄?API Key 澶栫殑鏅€氶厤缃€?
      */
     fun saveNonSensitiveConfig(config: AppConfig) {
         encryptedPrefs.edit().apply {
@@ -128,7 +128,7 @@ class ConfigManager private constructor(context: Context) {
             putBoolean(KEY_ENABLE_JSON_EXPORT, config.enableJsonExport)
             putBoolean(KEY_ENABLE_IMAGE_EXPORT, config.enableImageExport)
             putBoolean(KEY_ENABLE_VIDEO_EXPORT, config.enableVideoExport)
-            // 摄像头分辨率配置
+            // 鎽勫儚澶村垎杈ㄧ巼閰嶇疆
             putInt(KEY_CAMERA_RESOLUTION_WIDTH, config.cameraResolutionWidth)
             putInt(KEY_CAMERA_RESOLUTION_HEIGHT, config.cameraResolutionHeight)
             putString(KEY_CUSTOM_RESOLUTIONS, config.customResolutions.joinToString(","))
@@ -138,14 +138,14 @@ class ConfigManager private constructor(context: Context) {
     }
 
     /**
-     * 加载配置
+     * 鍔犺浇閰嶇疆
      */
     fun loadConfig(): AppConfig {
         return loadNonSensitiveConfig().withApiKey(getApiKey())
     }
 
     /**
-     * 加载不包含 API Key 的普通配置。
+     * 鍔犺浇涓嶅寘鍚?API Key 鐨勬櫘閫氶厤缃€?
      */
     fun loadNonSensitiveConfig(): AppConfig {
         val customResolutionsStr = encryptedPrefs.getString(KEY_CUSTOM_RESOLUTIONS, "") ?: ""
@@ -171,7 +171,7 @@ class ConfigManager private constructor(context: Context) {
             enableJsonExport = encryptedPrefs.getBoolean(KEY_ENABLE_JSON_EXPORT, defaults.enableJsonExport),
             enableImageExport = encryptedPrefs.getBoolean(KEY_ENABLE_IMAGE_EXPORT, defaults.enableImageExport),
             enableVideoExport = encryptedPrefs.getBoolean(KEY_ENABLE_VIDEO_EXPORT, defaults.enableVideoExport),
-            // 摄像头分辨率配置
+            // 鎽勫儚澶村垎杈ㄧ巼閰嶇疆
             cameraResolutionWidth = encryptedPrefs.getInt(KEY_CAMERA_RESOLUTION_WIDTH, AppConfig.DEFAULT_CAMERA_WIDTH),
             cameraResolutionHeight = encryptedPrefs.getInt(KEY_CAMERA_RESOLUTION_HEIGHT, AppConfig.DEFAULT_CAMERA_HEIGHT),
             customResolutions = customResolutions,
@@ -180,42 +180,42 @@ class ConfigManager private constructor(context: Context) {
     }
 
     /**
-     * 保存 API Key。
+     * 淇濆瓨 API Key銆?
      */
     fun saveApiKey(apiKey: String) {
         apiKeyStore.save(apiKey)
     }
 
     /**
-     * 更新 API Key。
+     * 鏇存柊 API Key銆?
      */
     fun updateApiKey(apiKey: String) {
         apiKeyStore.save(apiKey)
     }
 
     /**
-     * 获取 API Key（用于网络请求）
+     * 鑾峰彇 API Key锛堢敤浜庣綉缁滆姹傦級
      */
     fun getApiKey(): String {
         return apiKeyStore.get()
     }
 
     /**
-     * 清除 API Key，但保留其他普通配置。
+     * 娓呴櫎 API Key锛屼絾淇濈暀鍏朵粬鏅€氶厤缃€?
      */
     fun clearApiKey() {
         apiKeyStore.clear()
     }
 
     /**
-     * 是否已经保存 API Key。
+     * 鏄惁宸茬粡淇濆瓨 API Key銆?
      */
     fun hasApiKey(): Boolean {
         return apiKeyStore.hasValue()
     }
 
     /**
-     * 清除所有配置（保留 AI Provider 密钥）
+     * 娓呴櫎鎵€鏈夐厤缃紙淇濈暀 AI Provider 瀵嗛挜锛?
      */
     fun clearConfig() {
         encryptedPrefs.edit().apply {
@@ -237,47 +237,48 @@ class ConfigManager private constructor(context: Context) {
     }
 
     /**
-     * 检查是否已配置 API
+     * 妫€鏌ユ槸鍚﹀凡閰嶇疆 API
      */
     fun isConfigured(): Boolean {
         return loadConfig().isValid()
     }
 
     /**
-     * 获取图片导出路径
+     * 鑾峰彇鍥剧墖瀵煎嚭璺緞
      */
     fun getImageExportPath(): String {
         return encryptedPrefs.getString(KEY_IMAGE_EXPORT_PATH, "Pictures") ?: "Pictures"
     }
 
     /**
-     * 设置图片导出路径
+     * 璁剧疆鍥剧墖瀵煎嚭璺緞
      */
     fun setImageExportPath(path: String) {
         encryptedPrefs.edit().putString(KEY_IMAGE_EXPORT_PATH, path).apply()
     }
 
     /**
-     * 获取 JSON 导出路径
+     * 鑾峰彇 JSON 瀵煎嚭璺緞
      */
     fun getJsonExportPath(): String {
         return encryptedPrefs.getString(KEY_JSON_EXPORT_PATH, "YOLO_Export/JSON") ?: "YOLO_Export/JSON"
     }
 
     /**
-     * 设置 JSON 导出路径
+     * 璁剧疆 JSON 瀵煎嚭璺緞
      */
     fun setJsonExportPath(path: String) {
         encryptedPrefs.edit().putString(KEY_JSON_EXPORT_PATH, path).apply()
     }
 
     /**
-     * 保存 AI Provider 的 API Key（加密存储）
-     * 回退模式下会记录警告日志（明文存储）
+     * 淇濆瓨 AI Provider 鐨?API Key锛堝姞瀵嗗瓨鍌級
+     * 鍥為€€妯″紡涓嬩細璁板綍璀﹀憡鏃ュ織锛堟槑鏂囧瓨鍌級
      */
     fun saveAiProviderApiKey(providerId: String, apiKey: String) {
         if (!isEncryptionAvailable && apiKey.isNotBlank()) {
-            Log.w(TAG, "加密存储不可用，已阻止敏感 API Key 写入 SharedPreferences")
+            Log.w(TAG, "鍔犲瘑瀛樺偍涓嶅彲鐢紝宸查樆姝㈡晱鎰?API Key 鍐欏叆 SharedPreferences")
+            return
         }
         val key = "ai_provider_key_$providerId"
         encryptedPrefs.edit().apply {
@@ -291,7 +292,7 @@ class ConfigManager private constructor(context: Context) {
     }
 
     /**
-     * 获取 AI Provider 的 API Key
+     * 鑾峰彇 AI Provider 鐨?API Key
      */
     fun getAiProviderApiKey(providerId: String): String {
         val key = "ai_provider_key_$providerId"
@@ -299,7 +300,7 @@ class ConfigManager private constructor(context: Context) {
     }
 
     /**
-     * 删除 AI Provider 的 API Key
+     * 鍒犻櫎 AI Provider 鐨?API Key
      */
     fun removeAiProviderApiKey(providerId: String) {
         val key = "ai_provider_key_$providerId"

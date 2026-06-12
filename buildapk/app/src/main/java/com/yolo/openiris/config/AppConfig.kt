@@ -25,7 +25,7 @@ data class AppConfig(
     // 摄像头分辨率配置
     val cameraResolutionWidth: Int = DEFAULT_CAMERA_WIDTH,
     val cameraResolutionHeight: Int = DEFAULT_CAMERA_HEIGHT,
-    // 自定义分辨率列表（格式：["1280x720", "1920x1080"]）
+    // 自定义分辨率列表(格式:["1280x720", "1920x1080"])
     val customResolutions: List<String> = emptyList(),
     // 实时抓取后简短展示原图
     val showCapturePreview: Boolean = false
@@ -51,7 +51,7 @@ data class AppConfig(
         const val RESOLUTION_NATIVE = 3
         
         /**
-         * 获取预设分辨率列表（根据屏幕比例动态计算）
+         * 获取预设分辨率列表(根据屏幕比例动态计算)
          */
         fun getPresetResolutions(screenWidth: Int, screenHeight: Int): List<Pair<Int, Int>> {
             val aspectRatio = screenHeight.toFloat() / screenWidth.toFloat()
@@ -86,21 +86,21 @@ data class AppConfig(
     }
 
     /**
-     * 返回附带 API Key 的配置副本，便于将敏感字段注入运行态配置。
+     * 返回附带 API Key 的配置副本,便于将敏感字段注入运行态配置。
      */
     fun withApiKey(apiKey: String): AppConfig {
         return copy(apiKey = apiKey.trim())
     }
 
     /**
-     * 返回移除 API Key 的配置副本，便于非敏感配置单独流转。
+     * 返回移除 API Key 的配置副本,便于非敏感配置单独流转。
      */
     fun withoutApiKey(): AppConfig {
         return copy(apiKey = "")
     }
 
     /**
-     * 获取完整的 API Base URL（确保以 /v1 结尾）
+     * 获取完整的 API Base URL(确保以 /v1 结尾)
      */
     fun getFullApiBaseUrl(): String {
         return AppConfigValidator.normalizeApiBaseUrl(apiBaseUrl)

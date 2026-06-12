@@ -4,8 +4,8 @@ import com.google.gson.Gson
 import com.yolo.openiris.config.AppConfig
 
 /**
- * Wave 2 的固定图�?VLM 兼容性验证辅助逻辑�? *
- * 该类不直接持有真实密钥，主要验证�? * 1. image_url / base64 两种输入的请求体形状�? * 2. 返回 JSON 文本的关键字段是否可被稳定解析�? */
+ * Wave 2 的固定图�?VLM 兼容性验证辅助逻辑�? *
+ * 该类不直接持有真实密钥,主要验证�? * 1. image_url / base64 两种输入的请求体形状�? * 2. 返回 JSON 文本的关键字段是否可被稳定解析�? */
 object VlmCompatibilityValidator {
     private val gson = Gson()
 

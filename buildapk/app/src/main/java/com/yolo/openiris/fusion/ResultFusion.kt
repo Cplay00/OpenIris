@@ -8,12 +8,12 @@ import com.yolo.openiris.vlm.VlmResult
 
 /**
  * 结果融合器
- * 在本地快速合并 YOLO 和 VLM 的结果，作为 LLM 融合的前置步骤
+ * 在本地快速合并 YOLO 和 VLM 的结果,作为 LLM 融合的前置步骤
  */
 object ResultFusion {
 
     /**
-     * 简单融合：直接对比 YOLO 和 VLM 的结果
+     * 简单融合:直接对比 YOLO 和 VLM 的结果
      */
     fun simpleFusion(yoloResult: DetectionResult, vlmResult: VlmResult): LlmResult {
         val yoloCounts = yoloResult.countByLabel()
@@ -38,7 +38,7 @@ object ResultFusion {
             if (vlmCount > 0) evidence.add("vlm")
 
             val count = if (yoloCount > 0 && vlmCount > 0) {
-                // 两者都有，取平均值或最大值
+                // 两者都有,取平均值或最大值
                 maxOf(yoloCount, vlmCount)
             } else if (yoloCount > 0) {
                 yoloCount
@@ -141,7 +141,7 @@ object ResultFusion {
 
         if (yoloLabels.isEmpty() || vlmNames.isEmpty()) return false
 
-        // 检查是否存在交集（共同识别的对象）
+        // 检查是否存在交集(共同识别的对象)
         return yoloLabels.intersect(vlmNames).isNotEmpty()
     }
 }

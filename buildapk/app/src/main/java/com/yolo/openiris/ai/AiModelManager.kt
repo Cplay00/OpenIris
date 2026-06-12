@@ -8,7 +8,7 @@ import kotlinx.coroutines.*
 import java.io.ByteArrayOutputStream
 
 /**
- * AI 模型管理器（单例）
+ * AI 模型管理器(单例)
  */
 class AiModelManager private constructor(context: Context) {
 
@@ -67,15 +67,15 @@ class AiModelManager private constructor(context: Context) {
     }
 
     /**
-     * 设置调用间隔（最小 1 秒）
+     * 设置调用间隔(最小 1 秒)
      */
     fun setCallIntervalSeconds(seconds: Int) {
         configStore.setCallIntervalSeconds(seconds.coerceAtLeast(1))
     }
 
     /**
-     * 调用指定模型（纯文本）
-     * 如果提供商启用流式输出，先尝试流式调用，超时20秒自动降级到非流式
+     * 调用指定模型(纯文本)
+     * 如果提供商启用流式输出,先尝试流式调用,超时20秒自动降级到非流式
      */
     suspend fun callModel(
         model: AiModel,
@@ -89,7 +89,7 @@ class AiModelManager private constructor(context: Context) {
                 error = "提供商不存在"
             )
 
-        // 如果提供商启用流式，先尝试流式调用
+        // 如果提供商启用流式,先尝试流式调用
         if (provider.enableStream) {
             val startTime = System.currentTimeMillis()
             val streamResult = withTimeoutOrNull(STREAM_TIMEOUT_MS) {
@@ -118,8 +118,8 @@ class AiModelManager private constructor(context: Context) {
     }
 
     /**
-     * 调用指定模型（带图片）
-     * 如果提供商启用流式输出，先尝试流式调用，超时20秒自动降级到非流式
+     * 调用指定模型(带图片)
+     * 如果提供商启用流式输出,先尝试流式调用,超时20秒自动降级到非流式
      */
     suspend fun callModelWithImage(
         model: AiModel,
@@ -134,12 +134,12 @@ class AiModelManager private constructor(context: Context) {
                 error = "提供商不存在"
             )
 
-        // 流式调用目前不支持带图片，直接使用非流式
+        // 流式调用目前不支持带图片,直接使用非流式
         apiClient.callModelWithImage(provider, model, prompt, imageBase64, systemPrompt)
     }
 
     /**
-     * 调用默认模型（纯文本）
+     * 调用默认模型(纯文本)
      */
     suspend fun callDefaultModel(
         prompt: String,
@@ -156,7 +156,7 @@ class AiModelManager private constructor(context: Context) {
     }
 
     /**
-     * 调用默认模型（带图片）
+     * 调用默认模型(带图片)
      */
     suspend fun callDefaultModelWithImage(
         prompt: String,
@@ -174,7 +174,7 @@ class AiModelManager private constructor(context: Context) {
     }
 
     /**
-     * 使用故障切换机制调用模型（纯文本）
+     * 使用故障切换机制调用模型(纯文本)
      */
     suspend fun callWithFallback(
         prompt: String,
@@ -220,7 +220,7 @@ class AiModelManager private constructor(context: Context) {
     }
 
     /**
-     * 使用故障切换机制调用模型（带图片）
+     * 使用故障切换机制调用模型(带图片)
      */
     suspend fun callWithFallbackAndImage(
         prompt: String,
@@ -228,26 +228,32 @@ class AiModelManager private constructor(context: Context) {
         systemPrompt: String? = null,
         onError: ((String) -> Unit)? = null
     ): AiResult {
-        Log.d(TAG, "callWithFallbackAndImage called")
-        Log.d(TAG, "imageBase64 length: ${imageBase64.length}")
+        if (com.yolo.openiris.BuildConfig.DEBUG) {
+            Log.d(TAG, "callWithFallbackAndImage called")
+            Log.d(TAG, "imageBase64 length: ${imageBase64.length}")
+        }
         
         val allModels = getEnabledModels()
-        Log.d(TAG, "Total enabled models: ${allModels.size}")
-        allModels.forEach { Log.d(TAG, "  Model: ${it.displayName}, vision: ${it.hasVision}, provider: ${it.providerId}") }
+        if (com.yolo.openiris.BuildConfig.DEBUG) {
+            Log.d(TAG, "Total enabled models: ${allModels.size}")
+            allModels.forEach { Log.d(TAG, "  Model: ${it.displayName}, vision: ${it.hasVision}, provider: ${it.providerId}") }
+        }
         
         val models = allModels.filter { it.hasVision }
-        Log.d(TAG, "Models with vision: ${models.size}")
+        if (com.yolo.openiris.BuildConfig.DEBUG) {
+            Log.d(TAG, "Models with vision: ${models.size}")
+        }
         
         if (models.isEmpty()) {
             Log.w(TAG, "No vision models available")
             return AiResult.failure(
                 modelId = "none",
                 modelName = "None",
-                error = "没有支持视觉的可用模型（已启用 ${allModels.size} 个模型，但无视觉支持）"
+                error = "没有支持视觉的可用模型(已启用 ${allModels.size} 个模型,但无视觉支持)"
             )
         }
 
-        // 优先使用默认模型（如果支持视觉）
+        // 优先使用默认模型(如果支持视觉)
         val defaultModel = getDefaultModel()?.takeIf { it.hasVision }
         val orderedModels = if (defaultModel != null) {
             listOf(defaultModel) + models.filter { it.id != defaultModel.id }
@@ -257,9 +263,13 @@ class AiModelManager private constructor(context: Context) {
 
         for (model in orderedModels) {
             try {
-                Log.d(TAG, "Trying vision model: ${model.displayName} (${model.modelId})")
+                if (com.yolo.openiris.BuildConfig.DEBUG) {
+                    Log.d(TAG, "Trying vision model: ${model.displayName} (${model.modelId})")
+                }
                 val provider = configStore.getProvider(model.providerId)
-                Log.d(TAG, "  Provider: ${provider?.name}")
+                if (com.yolo.openiris.BuildConfig.DEBUG) {
+                    Log.d(TAG, "  Provider: ${provider?.name}")
+                }
                 
                 val result = callModelWithImage(model, prompt, imageBase64, systemPrompt)
                 if (result.success) {
@@ -393,15 +403,21 @@ class AiModelManager private constructor(context: Context) {
     }
 
     /**
-     * 测试模型连接（非流式）
+     * 测试模型连接(非流式)
      */
     suspend fun testConnectionNonStream(model: AiModel): TestResult = withContext(Dispatchers.IO) {
         val provider = configStore.getProvider(model.providerId)
         if (provider == null) {
-            Log.e(TAG, "Provider not found for model: ${model.displayName}, providerId: ${model.providerId}")
+            if (com.yolo.openiris.BuildConfig.DEBUG) {
+                Log.e(TAG, "Provider not found for model: ${model.displayName}, providerId: ${model.providerId}")
+            } else {
+                Log.e(TAG, "Provider not found for model: ${model.displayName}")
+            }
             // 尝试查找所有提供商
             val allProviders = configStore.loadProviders()
-            Log.d(TAG, "Available providers: ${allProviders.map { "${it.id} - ${it.name}" }}")
+            if (com.yolo.openiris.BuildConfig.DEBUG) {
+                Log.d(TAG, "Available providers: ${allProviders.map { "${it.id} - ${it.name}" }}")
+            }
             return@withContext TestResult(false, 0, "提供商不存在 (ID: ${model.providerId})")
         }
 
@@ -417,7 +433,7 @@ class AiModelManager private constructor(context: Context) {
     }
 
     /**
-     * 测试模型连接（流式）
+     * 测试模型连接(流式)
      */
     suspend fun testConnectionStream(model: AiModel): TestResult = withContext(Dispatchers.IO) {
         val provider = configStore.getProvider(model.providerId)

@@ -1,7 +1,7 @@
-apply plugin: 'com.android.application'
+﻿apply plugin: 'com.android.application'
 
 android {
-    compileSdk = 35
+    compileSdk = 36
 
     ndkVersion = '27.2.12479018'
 
@@ -9,12 +9,12 @@ android {
         applicationId "com.yolo.openiris"
 
         minSdk 31
-        targetSdk 35
+        targetSdk 36
 
         ndk {
             abiFilters 'arm64-v8a', 'armeabi-v7a'
         }
-        versionName '0.3.4-Alpha'
+        versionName '0.4-Alpha'
     }
 
     externalNativeBuild {
@@ -51,13 +51,13 @@ android {
 }
 
 dependencies {
-    implementation 'androidx.core:core-ktx:1.8.0'
-    implementation 'androidx.appcompat:appcompat:1.5.1'
-    implementation 'com.google.android.material:material:1.13.0'
-    implementation 'androidx.security:security-crypto:1.1.0-alpha03'
-    implementation 'com.google.code.gson:gson:2.9.1'
-    implementation 'com.squareup.okhttp3:okhttp:4.10.0'
-    implementation 'com.squareup.okhttp3:logging-interceptor:4.10.0'
+    implementation 'androidx.core:core-ktx:1.15.0'
+    implementation 'androidx.appcompat:appcompat:1.7.0'
+    implementation 'com.google.android.material:material:1.12.0'
+    implementation 'androidx.security:security-crypto:1.1.0-alpha06'
+    implementation 'com.google.code.gson:gson:2.11.0'
+    implementation 'com.squareup.okhttp3:okhttp:4.12.0'
+    // logging-interceptor 浠呭湪 debug 鏋勫缓鍖呭惈锛岄伩鍏?release 涓?API Key 琚棩蹇楄褰?    debugImplementation 'com.squareup.okhttp3:logging-interceptor:4.12.0'
     
     // FlexboxLayout for capsule layout
     implementation 'com.google.android.flexbox:flexbox:3.0.0'
@@ -66,14 +66,16 @@ dependencies {
     implementation 'com.github.chrisbanes:PhotoView:2.3.0'
     
     // Coroutines
-    implementation 'org.jetbrains.kotlinx:kotlinx-coroutines-android:1.7.3'
+    implementation 'org.jetbrains.kotlinx:kotlinx-coroutines-android:1.9.0'
 
     // Test dependencies
     testImplementation 'junit:junit:4.13.2'
-    testImplementation 'org.mockito:mockito-core:4.8.0'
-    testImplementation 'com.squareup.okhttp3:mockwebserver:4.10.0'
+    testImplementation 'org.mockito:mockito-core:5.14.0'
+    testImplementation 'com.squareup.okhttp3:mockwebserver:4.12.0'
 
     androidTestImplementation 'androidx.test.ext:junit:1.1.4'
-    androidTestImplementation 'androidx.test.espresso:espresso-core:3.5.0'
+    androidTestImplementation 'androidx.test.espresso:espresso-core:3.6.1'
 }
+
+
 

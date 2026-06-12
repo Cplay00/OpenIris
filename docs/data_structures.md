@@ -4,7 +4,7 @@
 
 ### AppConfig
 
-应用全局配置，存储于 EncryptedSharedPreferences。
+应用全局配置,存储于 EncryptedSharedPreferences。
 
 ```kotlin
 data class AppConfig(
@@ -13,7 +13,7 @@ data class AppConfig(
     val vlmModel: String = "qwen3.5-35b-a3b",
     val llmModel: String = "deepseek-v4-flash",
     val vlmIntervalSeconds: Int = 5,
-    val useGpu: Boolean = false,            // 默认关闭 GPU（兼容不支持 Vulkan 的设备）
+    val useGpu: Boolean = false,            // 默认关闭 GPU(兼容不支持 Vulkan 的设备)
     val selectedModel: String = "yolov11n",
     val enableLlmFusion: Boolean = true,
     val enableJsonExport: Boolean = true,
@@ -32,7 +32,7 @@ data class AppConfig(
 
 ```kotlin
 enum class ApiFormat {
-    OPENAI_COMPATIBLE,    // OpenAI 兼容 API（默认）
+    OPENAI_COMPATIBLE,    // OpenAI 兼容 API(默认)
     ANTHROPIC             // Anthropic 兼容 API
 }
 ```
@@ -146,7 +146,7 @@ data class DetectionResult(
 
 ### UnifiedObjectResult
 
-面向融合与导出的派生读模型。YOLO 提供 bbox/confidence，VLM 提供 count/attributes，LLM 提供 evidence/discrepancies。
+面向融合与导出的派生读模型。YOLO 提供 bbox/confidence,VLM 提供 count/attributes,LLM 提供 evidence/discrepancies。
 
 ```kotlin
 data class UnifiedObjectResult(
@@ -298,11 +298,11 @@ AnalysisResult (时间轴)
 
 ## 8. 架构演进说明
 
-项目经历了从 **单一 VLM/LLM 客户端** 到 **AI 多提供商系统** 的架构升级：
+项目经历了从 **单一 VLM/LLM 客户端** 到 **AI 多提供商系统** 的架构升级:
 
 | 阶段 | 架构 | 说明 |
 |------|------|------|
 | 初始 | `vlm/VlmClient` + `llm/LlmClient` | 单一 OpenAI-compatible API |
 | 当前 | `ai/AiModelManager` + `ai/AiApiClient` | 多提供商、多模型、流式支持 |
 
-旧模块（`vlm/`、`llm/`）仍保留在代码中，新的 AI 系统通过 `AiApiClient` 统一处理 OpenAI-compatible 和 Anthropic 两种 API 格式。
+旧模块(`vlm/`、`llm/`)仍保留在代码中,新的 AI 系统通过 `AiApiClient` 统一处理 OpenAI-compatible 和 Anthropic 两种 API 格式。

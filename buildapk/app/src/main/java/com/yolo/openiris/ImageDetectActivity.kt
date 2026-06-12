@@ -79,6 +79,7 @@ class ImageDetectActivity : AppCompatActivity() {
     // Data
     private var originalBitmap: Bitmap? = null
     private var annotatedBitmap: Bitmap? = null
+    @Volatile private var isAnalyzing = false
     private var analysisResult: AnalysisResult? = null
     private var lastAiOutput: com.yolo.openiris.ai.StructuredOutput? = null
     private var photoUri: Uri? = null
@@ -104,7 +105,7 @@ class ImageDetectActivity : AppCompatActivity() {
         if (isGranted) {
             takePhoto()
         } else {
-            Toast.makeText(this, "需要相机权限才能拍照", Toast.LENGTH_SHORT).show()
+            Toast.makeText(this, "闇€瑕佺浉鏈烘潈闄愭墠鑳芥媿鐓?, Toast.LENGTH_SHORT).show()
         }
     }
 
@@ -119,7 +120,7 @@ class ImageDetectActivity : AppCompatActivity() {
 
         initViews()
         if (!loadModel()) {
-            Toast.makeText(this, "模型加载失败", Toast.LENGTH_LONG).show()
+            Toast.makeText(this, "妯″瀷鍔犺浇澶辫触", Toast.LENGTH_LONG).show()
         }
     }
 
@@ -163,7 +164,7 @@ class ImageDetectActivity : AppCompatActivity() {
         val ret = yolov11Ncnn.loadModel(assets, 0, cpuGpu)
         if (!ret) {
             Log.e(TAG, "Failed to load model")
-            textStatus.text = "模型加载失败"
+            textStatus.text = "妯″瀷鍔犺浇澶辫触"
             return false
         }
         return true
@@ -181,7 +182,7 @@ class ImageDetectActivity : AppCompatActivity() {
 
     private fun createImageFile(): File {
         val timeStamp = SimpleDateFormat("yyyyMMdd_HHmmss", Locale.getDefault()).format(Date())
-        // 拍照临时文件使用应用私有目录（FileProvider 需要）
+        // 鎷嶇収涓存椂鏂囦欢浣跨敤搴旂敤绉佹湁鐩綍锛團ileProvider 闇€瑕侊級
         val storageDir = getExternalFilesDir(Environment.DIRECTORY_PICTURES)
         return File.createTempFile("JPEG_${timeStamp}_", ".jpg", storageDir)
     }
@@ -189,7 +190,7 @@ class ImageDetectActivity : AppCompatActivity() {
     private fun loadImageFromUri(uri: Uri) {
         try {
             val bitmap = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
-                // 支持 HEIF 格式
+                // 鏀寔 HEIF 鏍煎紡
                 val source = ImageDecoder.createSource(contentResolver, uri)
                 ImageDecoder.decodeBitmap(source) { decoder, _, _ ->
                     decoder.isMutableRequired = true
@@ -203,11 +204,11 @@ class ImageDetectActivity : AppCompatActivity() {
             if (bitmap != null) {
                 processImage(bitmap)
             } else {
-                textStatus.text = "无法加载图片"
+                textStatus.text = "鏃犳硶鍔犺浇鍥剧墖"
             }
         } catch (e: Exception) {
             Log.e(TAG, "Failed to load image", e)
-            textStatus.text = "加载图片失败: ${e.message}"
+            textStatus.text = "鍔犺浇鍥剧墖澶辫触: ${e.message}"
         }
     }
 
@@ -222,7 +223,7 @@ class ImageDetectActivity : AppCompatActivity() {
     private fun startDetection() {
         val bitmap = originalBitmap ?: return
 
-        textStatus.text = "正在检测..."
+        textStatus.text = "姝e湪妫€娴?.."
 
         lifecycleScope.launch {
             try {
@@ -234,21 +235,21 @@ class ImageDetectActivity : AppCompatActivity() {
                 annotatedBitmap = ImageUtils.drawDetections(bitmap, yoloResult.objects)
                 imageView.setImageBitmap(annotatedBitmap)
 
-                // 先赋值 analysisResult，确保 updateCombinedResults() 能读到 YOLO 结果
+                // 鍏堣祴鍊?analysisResult锛岀'淇?updateCombinedResults() 鑳借鍒?YOLO 缁撴灉
                 analysisResult = AnalysisResult.fromResults(
                     mode = DetectionMode.IMAGE,
                     yoloResult = yoloResult
                 )
 
                 if (isAiEnabled) {
-                    textStatus.text = "正在进行 AI 识别..."
+                    textStatus.text = "姝e湪杩涜 AI 璇嗗埆..."
                     Log.d(TAG, "Starting AI detection...")
                     try {
                         val imageBase64 = aiModelManager.bitmapToBase64(bitmap)
                         Log.d(TAG, "Image encoded to base64, length: ${imageBase64.length}")
                         
                         val aiResult = aiModelManager.callWithFallbackAndImage(
-                            prompt = "请识别图片中的物体，以JSON格式返回结果。",
+                            prompt = "璇疯瘑鍒浘鐗囦腑鐨勭墿浣擄紝浠SON鏍煎紡杩斿洖缁撴灉銆?,
                             imageBase64 = imageBase64
                         )
 
@@ -260,26 +261,27 @@ class ImageDetectActivity : AppCompatActivity() {
                                 displayAiResults(aiResult.structuredOutput)
                                 Log.d(TAG, "AI detection succeeded with structured output")
                             } else {
-                                // AI调用成功但无法解析为结构化输出
+                                // AI璋冪敤鎴愬姛浣嗘棤娉曡В鏋愪负缁撴瀯鍖栬緭鍑?
                                 Log.w(TAG, "AI returned non-JSON response: ${aiResult.content?.take(200)}")
-                                textStatus.text = "AI 识别完成（非结构化结果）"
+                                textStatus.text = "AI 璇嗗埆瀹屾垚锛堥潪缁撴瀯鍖栫粨鏋滐級"
                             }
                         } else {
-                            val errorMessage = aiResult.error ?: "未知错误，请检查模型配置"
+                            val errorMessage = aiResult.error ?: "鏈煡閿欒锛岃妫€鏌ユā鍨嬮厤缃?
                             Log.e(TAG, "AI detection failed: $errorMessage")
-                            Toast.makeText(this@ImageDetectActivity, "AI 识别失败: $errorMessage", Toast.LENGTH_SHORT).show()
+                            Toast.makeText(this@ImageDetectActivity, "AI 璇嗗埆澶辫触: $errorMessage", Toast.LENGTH_SHORT).show()
                         }
                     } catch (e: Exception) {
                         Log.e(TAG, "AI detection exception", e)
-                        Toast.makeText(this@ImageDetectActivity, "AI 识别异常: ${e.message ?: "未知错误"}", Toast.LENGTH_SHORT).show()
+                        Toast.makeText(this@ImageDetectActivity, "AI 璇嗗埆寮傚父: ${e.message ?: "鏈煡閿欒"}", Toast.LENGTH_SHORT).show()
                     }
                 }
 
-                textStatus.text = "检测完成"
+                textStatus.text = "妫€娴嬪畬鎴?
 
             } catch (e: Exception) {
                 Log.e(TAG, "Detection failed", e)
-                textStatus.text = "检测失败: ${e.message}"
+                textStatus.text = "妫€娴嬪け璐? ${e.message}"
+                isAnalyzing = false
             }
         }
     }
@@ -375,7 +377,7 @@ class ImageDetectActivity : AppCompatActivity() {
 
         val combinedMap = mutableMapOf<String, Triple<Int, Float, String>>()  // count, confidence, source
 
-        // 合入 YOLO 结果
+        // 鍚堝叆 YOLO 缁撴灉
         val yoloResult = analysisResult?.yoloResult
         if (yoloResult != null) {
             yoloResult.countByLabel().forEach { (label, count) ->
@@ -388,7 +390,7 @@ class ImageDetectActivity : AppCompatActivity() {
             }
         }
 
-        // 合入 AI 结果（支持同名标识合并）
+        // 鍚堝叆 AI 缁撴灉锛堟敮鎸佸悓鍚嶆爣璇嗗悎骞讹級
         val aiOutput = lastAiOutput
         if (aiOutput != null) {
             aiOutput.objects.forEach { obj ->
@@ -396,33 +398,33 @@ class ImageDetectActivity : AppCompatActivity() {
                 val aiCount = obj.count
                 val aiConfidence = obj.confidence
 
-                // 检查是否与YOLO结果中的某个标识匹配（模糊匹配：去除括号内容后比较）
+                // 妫€鏌ユ槸鍚︿笌YOLO缁撴灉涓殑鏌愪釜鏍囪瘑鍖归厤锛堟ā绯婂尮閰嶏細鍘婚櫎鎷彿鍐呭鍚庢瘮杈冿級
                 val matchingKey = combinedMap.keys.find { existingKey ->
-                    val normalizedExisting = existingKey.replace(Regex("（[^）]*）"), "").trim()
-                    val normalizedAi = aiName.replace(Regex("（[^）]*）"), "").trim()
+                    val normalizedExisting = existingKey.replace(Regex("锛圼^锛塢*锛?), "").trim()
+                    val normalizedAi = aiName.replace(Regex("锛圼^锛塢*锛?), "").trim()
                     normalizedExisting.equals(normalizedAi, ignoreCase = true) ||
                     normalizedExisting.startsWith(normalizedAi, ignoreCase = true) ||
                     normalizedAi.startsWith(normalizedExisting, ignoreCase = true)
                 }
 
                 if (matchingKey != null) {
-                    // 找到匹配的YOLO结果，取最高数量和对应的置信度
-                    val existing = combinedMap[matchingKey]!!
+                    // 鎵惧埌鍖归厤鐨刌OLO缁撴灉锛屽彇鏈€楂樻暟閲忓拰瀵瑰簲鐨勭疆淇″害
+                    val existing = combinedMap[matchingKey] ?: continue
                     val existingCount = existing.first
                     val existingConfidence = existing.second
 
                     val newCount = maxOf(existingCount, aiCount)
                     val newConfidence = if (aiCount > existingCount) {
-                        // AI数量更高，采用AI置信度
+                        // AI鏁伴噺鏇撮珮锛岄噰鐢ˋI缃俊搴?
                         aiConfidence
                     } else {
-                        // YOLO数量更高或相等，采用YOLO置信度
+                        // YOLO鏁伴噺鏇撮珮鎴栫浉绛夛紝閲囩敤YOLO缃俊搴?
                         existingConfidence
                     }
 
                     combinedMap[matchingKey] = Triple(newCount, newConfidence, "combined")
                 } else {
-                    // 没有匹配的YOLO结果，直接添加AI结果
+                    // 娌℃湁鍖归厤鐨刌OLO缁撴灉锛岀洿鎺ユ坊鍔燗I缁撴灉
                     combinedMap[aiName] = Triple(aiCount, aiConfidence, "ai")
                 }
             }
@@ -497,30 +499,30 @@ class ImageDetectActivity : AppCompatActivity() {
     private fun exportJson() {
         val result = analysisResult
         if (result == null) {
-            Toast.makeText(this, "没有检测结果可导出", Toast.LENGTH_SHORT).show()
+            Toast.makeText(this, "娌℃湁妫€娴嬬粨鏋滃彲瀵煎嚭", Toast.LENGTH_SHORT).show()
             return
         }
 
         val exportResult = JsonExporter.export(this, result)
         if (exportResult.success) {
-            Toast.makeText(this, "JSON 已导出: ${exportResult.filePath}", Toast.LENGTH_LONG).show()
+            Toast.makeText(this, "JSON 宸插鍑? ${exportResult.filePath}", Toast.LENGTH_LONG).show()
         } else {
-            Toast.makeText(this, "导出失败: ${exportResult.errorMessage}", Toast.LENGTH_SHORT).show()
+            Toast.makeText(this, "瀵煎嚭澶辫触: ${exportResult.errorMessage}", Toast.LENGTH_SHORT).show()
         }
     }
 
     private fun exportImage() {
         val bitmap = annotatedBitmap
         if (bitmap == null) {
-            Toast.makeText(this, "没有标注图片可导出", Toast.LENGTH_SHORT).show()
+            Toast.makeText(this, "娌℃湁鏍囨敞鍥剧墖鍙鍑?, Toast.LENGTH_SHORT).show()
             return
         }
 
         val exportResult = ImageExporter.export(this, bitmap)
         if (exportResult.success) {
-            Toast.makeText(this, "图片已导出: ${exportResult.filePath}", Toast.LENGTH_LONG).show()
+            Toast.makeText(this, "鍥剧墖宸插鍑? ${exportResult.filePath}", Toast.LENGTH_LONG).show()
         } else {
-            Toast.makeText(this, "导出失败: ${exportResult.errorMessage}", Toast.LENGTH_SHORT).show()
+            Toast.makeText(this, "瀵煎嚭澶辫触: ${exportResult.errorMessage}", Toast.LENGTH_SHORT).show()
         }
     }
 }

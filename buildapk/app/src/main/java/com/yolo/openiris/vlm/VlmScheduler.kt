@@ -7,11 +7,11 @@ import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.atomic.AtomicLong
 
 /**
- * VLM 调度器（实时模式）
+ * VLM 调度器(实时模式)
  *
- * 负责控制 VLM 调用频率，防止请求堆积：
- * 1. 按可配置间隔触发 VLM 请求（默认 5 秒）
- * 2. 如果上一个请求还在进行中，跳过本次触发
+ * 负责控制 VLM 调用频率,防止请求堆积:
+ * 1. 按可配置间隔触发 VLM 请求(默认 5 秒)
+ * 2. 如果上一个请求还在进行中,跳过本次触发
  * 3. 提供状态查询接口
  */
 class VlmScheduler(
@@ -23,7 +23,7 @@ class VlmScheduler(
     }
 
     enum class State {
-        IDLE,       // 空闲，可以接受新请求
+        IDLE,       // 空闲,可以接受新请求
         PENDING,    // 请求进行中
         DISABLED    // 调度器已禁用
     }
@@ -65,12 +65,12 @@ class VlmScheduler(
     /**
      * 触发 VLM 请求
      *
-     * 如果满足以下条件则触发请求：
+     * 如果满足以下条件则触发请求:
      * 1. 调度器正在运行
      * 2. 距离上次触发已超过间隔时间
      * 3. 没有正在进行的请求
      *
-     * @return true 如果请求已触发，false 如果被跳过
+     * @return true 如果请求已触发,false 如果被跳过
      */
     fun trigger(bitmap: Bitmap): Boolean {
         if (!isRunning.get()) {

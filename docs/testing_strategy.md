@@ -2,7 +2,7 @@
 
 ## 1. 测试策略总览
 
-根据需求确认，采用 **TDD 优先** 策略，混合自动化测试与真机 QA。
+根据需求确认,采用 **TDD 优先** 策略,混合自动化测试与真机 QA。
 
 ```
 ┌─────────────────────────────────────────────┐
@@ -66,7 +66,7 @@ app/src/test/java/com/yolo/openiris/
 
 ### 3.1 API 客户端测试
 
-使用 **MockWebServer** 模拟 OpenAI-compatible API：
+使用 **MockWebServer** 模拟 OpenAI-compatible API:
 
 ```kotlin
 // 测试 VLM 客户端
@@ -124,15 +124,15 @@ fun testFusion_yoloAndVlmMatch() {
 |------|------|-------------|------|
 | 主力测试机 | 骁龙 865+ | Android 12 | 功能验证、性能基准 |
 | 中端设备 | 骁龙 7 系 | Android 12 | 兼容性测试 |
-| 旧设备 | 骁龙 855 | Android 10 | 降级测试（可选） |
+| 旧设备 | 骁龙 855 | Android 10 | 降级测试(可选) |
 
 ### 4.2 功能测试清单
 
 #### 图片检测模式
-- [ ] 正常图片检测（人物、车辆、动物）
+- [ ] 正常图片检测(人物、车辆、动物)
 - [ ] 空图片/无对象图片
 - [ ] 模糊/低质量图片
-- [ ] 大分辨率图片（> 4K）
+- [ ] 大分辨率图片(> 4K)
 - [ ] VLM API 超时/失败处理
 - [ ] LLM 融合结果正确性
 - [ ] JSON 导出格式校验
@@ -144,15 +144,15 @@ fun testFusion_yoloAndVlmMatch() {
 - [ ] 检测框实时绘制
 - [ ] FPS 显示正确
 - [ ] GPU/CPU 切换
-- [ ] VLM 间隔触发（验证不每帧调用）
+- [ ] VLM 间隔触发(验证不每帧调用)
 - [ ] VLM 请求防堆积
 - [ ] 网络断开后恢复
 - [ ] 后台/前台切换
-- [ ] 长时间运行稳定性（30 分钟）
+- [ ] 长时间运行稳定性(30 分钟)
 
 #### 视频检测模式
-- [ ] 短视频（< 10 秒）
-- [ ] 长视频（> 5 分钟）
+- [ ] 短视频(< 10 秒)
+- [ ] 长视频(> 5 分钟)
 - [ ] 不同分辨率视频
 - [ ] 抽帧策略正确性
 - [ ] 时间轴结果展示
@@ -162,7 +162,7 @@ fun testFusion_yoloAndVlmMatch() {
 - [ ] API Key 加密存储
 - [ ] 配置持久化
 - [ ] 无效配置提示
-- [ ] 模型切换（如支持）
+- [ ] 模型切换(如支持)
 
 ### 4.3 性能测试基准
 
@@ -232,7 +232,7 @@ dependencies {
 }
 ```
 
-## 6. CI/CD 测试流程（建议）
+## 6. CI/CD 测试流程(建议)
 
 ```yaml
 # 理想 CI 流程
@@ -260,7 +260,7 @@ integration_test:
     - ./gradlew connectedAndroidTest  # 需要模拟器或真机
 
 device_qa:
-  # 真机自动化测试（如 Firebase Test Lab）
+  # 真机自动化测试(如 Firebase Test Lab)
   script:
     - gcloud firebase test android run --type instrumentation
 ```
@@ -294,7 +294,7 @@ app/src/test/resources/
 
 ## 8. 关键测试用例设计
 
-### 8.1 VLM 兼容性验证（Wave 2 早期任务）
+### 8.1 VLM 兼容性验证(Wave 2 早期任务)
 
 ```kotlin
 @Test
@@ -302,7 +302,7 @@ fun testVlmCompatibility_imageInputSupport() {
     // 使用固定测试图片
     val testImage = loadTestResource("images/person_single.jpg")
 
-    // 构造 VLM 请求（OpenAI Vision 格式）
+    // 构造 VLM 请求(OpenAI Vision 格式)
     val request = VlmRequest(
         model = "qwen3.5-35b-a3b",
         messages = listOf(
@@ -319,7 +319,7 @@ fun testVlmCompatibility_imageInputSupport() {
     // 发送请求
     val response = vlmClient.send(request)
 
-    // 验证：
+    // 验证:
     // 1. HTTP 200
     // 2. 响应包含 choices
     // 3. content 可解析为 JSON
@@ -338,13 +338,13 @@ fun testVlmCompatibility_imageInputSupport() {
 fun testVlmScheduler_noPiling() {
     val scheduler = VlmScheduler(intervalMs = 5000)
 
-    // 模拟快速连续触发（每 1 秒触发一次）
+    // 模拟快速连续触发(每 1 秒触发一次)
     repeat(10) {
         scheduler.trigger(image)
         Thread.sleep(1000)
     }
 
-    // 验证：实际发送的 VLM 请求数 ≤ 2（5 秒内最多 1 个 + 边界）
+    // 验证:实际发送的 VLM 请求数 ≤ 2(5 秒内最多 1 个 + 边界)
     assertTrue(mockServer.requestCount <= 2)
 }
 ```
@@ -387,16 +387,16 @@ fun testFusion_countMismatchDetected() {
 
 ## 10. 测试执行计划
 
-### Wave 1-2（开发阶段）
-- 单元测试跟随功能开发同步编写（TDD）
+### Wave 1-2(开发阶段)
+- 单元测试跟随功能开发同步编写(TDD)
 - 每次提交前运行 `./gradlew testDebugUnitTest`
 
-### Wave 3-5（功能验证阶段）
+### Wave 3-5(功能验证阶段)
 - 模块集成测试
 - 模拟器功能验证
 - 真机初步测试
 
-### Final Wave（发布前）
+### Final Wave(发布前)
 - 完整真机 QA
 - 性能基准测试
 - 长时间稳定性测试
@@ -406,7 +406,7 @@ fun testFusion_countMismatchDetected() {
 
 | 风险 | 影响 | 缓解措施 |
 |------|------|---------|
-| JNI 代码难以单元测试 | 中 | 通过真机 QA 覆盖，提取纯逻辑到 Java/Kotlin |
+| JNI 代码难以单元测试 | 中 | 通过真机 QA 覆盖,提取纯逻辑到 Java/Kotlin |
 | VLM/LLM API 不稳定 | 高 | 完善的错误处理、重试机制、Mock 测试 |
 | Camera 兼容性 | 中 | 多设备真机测试、降级处理 |
 | 性能不达标 | 高 | 早期性能基准、模型优化、分辨率调整 |

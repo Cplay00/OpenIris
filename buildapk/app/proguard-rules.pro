@@ -1,4 +1,4 @@
-# OpenIris ProGuard Rules
+﻿# OpenIris ProGuard Rules
 
 # Keep JNI classes
 -keep class com.yolo.openiris.Yolov11Ncnn { *; }
@@ -43,3 +43,4 @@
 # Keep Security Crypto
 -dontwarn androidx.security.crypto.**
 -keep class androidx.security.crypto.** { *; }
+

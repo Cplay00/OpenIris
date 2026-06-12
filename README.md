@@ -19,19 +19,19 @@
 
 ### 项目简介
 
-OpenIris 是一款基于 **YOLOv11** 目标检测模型和 **VLM/LLM** 视觉语言大模型的 Android 智能识别应用。支持实时摄像头检测、图片分析、视频处理，并提供 AI 辅助识别与结果融合功能。
+OpenIris 是一款基于 **YOLOv11** 目标检测模型和 **VLM/LLM** 视觉语言大模型的 Android 智能识别应用。支持实时摄像头检测、图片分析、视频处理,并提供 AI 辅助识别与结果融合功能。
 
 ### 主要功能
 
 | 功能 | 说明 |
 ------|------|
-| **实时检测** | 摄像头实时预览，YOLO 实时检测，15 秒滑动窗口统计 |
-| **图片检测** | 本地图片分析，支持 HEIF/HEIC 格式，高分辨率拍照 |
-| **视频检测** | 视频抽帧分析，时间轴结果展示，AI 辅助识别 |
-| **AI 模型管理** | 多供应商支持，模型列表获取，视觉能力配置 |
-| **检测结果** | 三栏卡片式展示 (YOLO/AI/综合)，胶囊式结果 UI |
-| **导出功能** | JSON 数据导出，标注图片导出，可配置导出路径 |
-| **训练平台** | 图形化训练界面，自建数据集，模型改进，一键部署 |
+| **实时检测** | 摄像头实时预览,YOLO 实时检测,15 秒滑动窗口统计 |
+| **图片检测** | 本地图片分析,支持 HEIF/HEIC 格式,高分辨率拍照 |
+| **视频检测** | 视频抽帧分析,时间轴结果展示,AI 辅助识别 |
+| **AI 模型管理** | 多供应商支持,模型列表获取,视觉能力配置 |
+| **检测结果** | 三栏卡片式展示 (YOLO/AI/综合),胶囊式结果 UI |
+| **导出功能** | JSON 数据导出,标注图片导出,可配置导出路径 |
+| **训练平台** | 图形化训练界面,自建数据集,模型改进,一键部署 |
 
 ### 技术栈
 
@@ -84,7 +84,7 @@ Yolo11forAndroid/
 **构建步骤:**
 ```bash
 # 克隆仓库
-git clone -b alpha https://github.com/Cplay00/OpenIris.git
+git clone -b alpha https://github.com/your-org/OpenIris.git
 cd OpenIris/buildapk
 
 # 构建 debug 版本
@@ -334,27 +334,27 @@ pip install -r training/requirements.txt
 ### 训练相关
 
 **Q: 训练时 GPU 没有使用怎么办?**
-A: 确认已安装 CUDA 版本的 PyTorch，检查 `device` 参数是否为 `0`。
+A: 确认已安装 CUDA 版本的 PyTorch,检查 `device` 参数是否为 `0`。
 
 **Q: 显存不足怎么办?**
-A: 减小 `batch` 大小 (如 16)，或启用 `gradient_checkpointing`。
+A: 减小 `batch` 大小 (如 16),或启用 `gradient_checkpointing`。
 
 **Q: 如何处理非标准尺寸图片?**
-A: 训练脚本默认启用 `rect=True`，会自动适配不同长宽比的图片。
+A: 训练脚本默认启用 `rect=True`,会自动适配不同长宽比的图片。
 
 **Q: 如何提高精度?**
-A: 增加训练轮次 (200+)，使用 CBAM 注意力，增加数据量或增强。
+A: 增加训练轮次 (200+),使用 CBAM 注意力,增加数据量或增强。
 
 ### 部署相关
 
 **Q: 如何更新 Android 应用中的模型?**
-A: 使用 `export_pipeline.py` 导出后，替换 `assets/models/` 下的文件。
+A: 使用 `export_pipeline.py` 导出后,替换 `assets/models/` 下的文件。
 
 **Q: exe 打包后训练不执行?**
-A: 已修复。新版本会自动检测打包模式，直接调用 ultralytics API。
+A: 已修复。新版本会自动检测打包模式,直接调用 ultralytics API。
 
 **Q: GUI 界面缩放不正常?**
-A: 已支持系统 DPI 自适应。如仍有问题，尝试调整系统显示缩放设置。
+A: 已支持系统 DPI 自适应。如仍有问题,尝试调整系统显示缩放设置。
 
 ---
 
@@ -397,7 +397,7 @@ OpenIris is an Android intelligent recognition application based on **YOLOv11** 
 
 #### Android App
 ```bash
-git clone -b alpha https://github.com/Cplay00/OpenIris.git
+git clone -b alpha https://github.com/your-org/OpenIris.git
 cd OpenIris/buildapk
 ./gradlew assembleDebug
 ```

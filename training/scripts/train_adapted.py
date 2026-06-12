@@ -3,7 +3,7 @@
 """
 OpenIris Adapted Training Script
 
-Adapted for D:\\YOLO11Preinit reference environment.
+Adapted for your training environment reference environment.
 Optimized for RTX 4060 Laptop (8GB).
 
 Usage:
@@ -15,7 +15,7 @@ Usage:
 """
 
 import warnings
-warnings.filterwarnings('ignore')
+warnings.filterwarnings('ignore', category=UserWarning, module='ultralytics')
 
 import argparse
 import sys
@@ -195,3 +195,6 @@ def main():
 
 if __name__ == '__main__':
     main()
+
+
+

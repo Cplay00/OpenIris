@@ -5,6 +5,9 @@ import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
+// 测试常量，避免硬编码真实 API Key 格式
+private const val TEST_API_KEY = "test-key-not-real"
+
 class AppConfigValidatorTest {
 
     @Test
@@ -108,7 +111,7 @@ class AppConfigValidatorTest {
 
     private fun validConfig(
         apiBaseUrl: String = "https://api.openai.com",
-        apiKey: String = "sk-test-key",
+        apiKey: String = TEST_API_KEY,
         vlmModel: String = "qwen-vl-plus",
         llmModel: String = "deepseek-chat",
         vlmIntervalSeconds: Int = AppConfig.DEFAULT_VLM_INTERVAL
@@ -122,3 +125,10 @@ class AppConfigValidatorTest {
         )
     }
 }
+import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
+import org.junit.Assert.assertTrue
+import org.junit.Test
+
+// 测试常量，避免硬编码真实 API Key 格式
+private const val TEST_API_KEY = "test-key-not-real"

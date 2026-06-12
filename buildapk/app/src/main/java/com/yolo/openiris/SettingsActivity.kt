@@ -162,7 +162,7 @@ class SettingsActivity : AppCompatActivity() {
         val ext = fileName.substringAfterLast(".").lowercase()
 
         if (ext != "pt" && ext != "param" && ext != "bin") {
-            Toast.makeText(this, "不支持的文件格式: .$ext（仅支持 .pt / .param / .bin）", Toast.LENGTH_LONG).show()
+            Toast.makeText(this, "不支持的文件格式: .$ext(仅支持 .pt / .param / .bin)", Toast.LENGTH_LONG).show()
             return
         }
 
@@ -294,7 +294,7 @@ class SettingsActivity : AppCompatActivity() {
     }
 
     private fun updateModelSpinner() {
-        val modelOptions = mutableListOf("YOLOv11n (轻量级，实时检测)")
+        val modelOptions = mutableListOf("YOLOv11n (轻量级,实时检测)")
         modelOptions.addAll(customModels.map { "$it (自定义)" })
         modelOptions.add("+ 添加模型")
 

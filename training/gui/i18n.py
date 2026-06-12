@@ -78,7 +78,7 @@ TRANSLATIONS = {
 
         # Errors
         "error_no_dataset": "请先选择数据集配置文件",
-        "error_confirm_stop": "确定要停止训练吗？",
+        "error_confirm_stop": "确定要停止训练吗?",
         "error_load_config": "加载配置失败",
         "error_export_no_weights": "请先选择模型权重文件",
         "error_no_dataset_first": "请先选择数据集配置",
@@ -105,9 +105,9 @@ TRANSLATIONS = {
                        "必须包含: train/val 路径、类别数、类别名\n"
                        "可使用 dataset_custom.yaml 作为模板",
         "tip_model": "预训练模型权重文件\n"
-                     "- yolov11n.pt: Nano，最快，移动端推荐\n"
-                     "- yolov11s.pt: Small，平衡\n"
-                     "- yolov11m.pt: Medium，更高精度\n"
+                     "- yolov11n.pt: Nano,最快,移动端推荐\n"
+                     "- yolov11s.pt: Small,平衡\n"
+                     "- yolov11m.pt: Medium,更高精度\n"
                      "Android NCNN 部署请使用 yolov11n.pt",
         "tip_model_path": "点击「浏览」选择本地 .pt 权重文件\n"
                           "也可在下拉框中直接输入路径",
@@ -130,17 +130,17 @@ TRANSLATIONS = {
                       "- 0: 第一块 GPU\n"
                       "- 0,1: 多 GPU\n"
                       "- cpu: 仅 CPU (很慢)",
-        "tip_name": "实验名称，用于输出目录\n"
+        "tip_name": "实验名称,用于输出目录\n"
                     "结果保存到: runs/train/<名称>/",
         "tip_optimizer": "优化算法\n"
-                        "- SGD: 经典，适合大模型\n"
-                        "- Adam: 自适应，收敛快\n"
+                        "- SGD: 经典,适合大模型\n"
+                        "- Adam: 自适应,收敛快\n"
                         "- AdamW: Adam + 权重衰减 (推荐)\n"
                         "- auto: 自动选择",
         "tip_lr": "初始学习率\n"
                   "- SGD: 0.01\n"
                   "- Adam/AdamW: 0.001\n"
-                  "过大导致发散，过小导致收敛慢",
+                  "过大导致发散,过小导致收敛慢",
         "tip_weight_decay": "L2 正则化强度\n"
                             "防止过拟合\n"
                             "范围: 0.0001 ~ 0.001\n"
@@ -149,13 +149,13 @@ TRANSLATIONS = {
                         "N 轮无改善则停止训练\n"
                         "0 = 禁用\n"
                         "推荐: 50-100",
-        "tip_label_smoothing": "软化 one-hot 标签，减少过拟合\n"
+        "tip_label_smoothing": "软化 one-hot 标签,减少过拟合\n"
                                "范围: 0.0 ~ 0.1\n"
                                "0 = 不平滑 (默认)\n"
                                "小数据集推荐: 0.01-0.05",
         "tip_amp": "自动混合精度训练\n"
-                   "使用 FP16 加速，FP32 保持稳定\n"
-                   "速度提升 2-3 倍，显存节省 50%\n"
+                   "使用 FP16 加速,FP32 保持稳定\n"
+                   "速度提升 2-3 倍,显存节省 50%\n"
                    "NCNN FP16 部署必须开启",
         "tip_workers": "数据加载线程数\n"
                        "越大加载越快\n"
@@ -164,7 +164,7 @@ TRANSLATIONS = {
         "tip_mosaic": "Mosaic 增强概率\n"
                       "将 4 张图拼接为 1 张\n"
                       "多尺度学习效果好\n"
-                      "1.0 = 始终开启，0.0 = 关闭",
+                      "1.0 = 始终开启,0.0 = 关闭",
         "tip_mixup": "Mixup 增强概率\n"
                      "混合两张图像和标签\n"
                      "减少小数据集过拟合\n"

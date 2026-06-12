@@ -284,7 +284,7 @@ class TrainingGUI:
 
         self.train_proc = None
         self.is_training = False
-        self._stop_flag = False
+        self._stop_event = threading.Event()
         self.project_root = self._detect_project_root()
         self.config_dir = self.project_root / "training" / "configs"
         self._tooltips = {}
@@ -329,7 +329,7 @@ class TrainingGUI:
                                values=list(get_available_languages().keys()), state="readonly", width=6)
         lang_cb.pack(side=tk.LEFT, padx=(4, 0))
         lang_cb.bind("<<ComboboxSelected>>", self._switch_language)
-        ToolTip(lang_cb, "zh_CN: 简体中文\nen_US: English")
+        ToolTip(lang_cb, "zh_CN: 绠€浣撲腑鏂嘰nen_US: English")
 
         self._build_menu()
 
@@ -510,8 +510,11 @@ class TrainingGUI:
     def _save_config(self):
         f = filedialog.asksaveasfilename(title=t("menu_save_config"), defaultextension=".yaml", filetypes=[("YAML", "*.yaml"), ("All", "*.*")], initialdir=str(self.config_dir))
         if f:
-            with open(f, "w", encoding="utf-8") as fh: yaml.dump(self._get_cfg(), fh, allow_unicode=True, default_flow_style=False)
-            self._log(f"Config saved: {f}")
+            try:
+                            with open(f, "w", encoding="utf-8") as fh: yaml.dump(self._get_cfg(), fh, allow_unicode=True, default_flow_style=False)
+                self._log(f"Config saved: {f}")
+            except Exception as e:
+                messagebox.showerror(t("error_save_config"), str(e))
 
     def _load_defaults(self):
         hyp = self.config_dir / "hyp_train.yaml"
@@ -551,7 +554,7 @@ class TrainingGUI:
             return
 
         cfg = self._get_cfg()
-        self._stop_flag = False
+        self._stop_event = threading.Event()
 
         self._log("=" * 50)
         self._log(f"{t('start_training')}...")
@@ -579,12 +582,12 @@ class TrainingGUI:
     def _run_direct(self, cfg):
         """Run training directly (for packaged exe)."""
         def log_cb(msg):
-            if not self._stop_flag:
+            if not self._stop_event.is_set():
                 self.root.after(0, self._log, msg)
 
         success, msg = run_training_direct(cfg, log_callback=log_cb)
 
-        if not self._stop_flag:
+        if not self._stop_event.is_set():
             status_msg = t("training_complete") if success else t("training_failed")
             self.root.after(0, self._log, f"\n{status_msg}")
             self.root.after(0, self.status_lbl_var.set, status_msg)
@@ -594,22 +597,26 @@ class TrainingGUI:
         """Run training via subprocess (for Python script mode)."""
         try:
             flags = subprocess.CREATE_NO_WINDOW if sys.platform == "win32" else 0
-            self.train_proc = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
+            with self._proc_lock:`n
+                self.train_proc = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
                                                universal_newlines=True, bufsize=1, creationflags=flags)
             for line in self.train_proc.stdout:
-                if self._stop_flag:
+                if self._stop_event.is_set():
                     break
                 self.root.after(0, self._log, line.strip())
             self.train_proc.wait()
             rc = self.train_proc.returncode
-            if not self._stop_flag:
+            if not self._stop_event.is_set():
                 msg = t("training_complete") if rc == 0 else f"{t('training_failed')} (exit {rc})"
                 self.root.after(0, self._log, f"\n{msg}")
                 self.root.after(0, self.status_lbl_var.set, msg)
         except Exception as e:
-            if not self._stop_flag:
+            if not self._stop_event.is_set():
                 self.root.after(0, self._log, f"\nError: {e}")
         finally:
+            if self.train_proc and self.train_proc.stdout:
+                try: self.train_proc.stdout.close()
+                except Exception: pass
             self.root.after(0, self._done)
 
     def _done(self):
@@ -621,10 +628,10 @@ class TrainingGUI:
     def _stop(self):
         if self.is_training:
             if messagebox.askyesno("?", t("error_confirm_stop")):
-                self._stop_flag = True
-                if self.train_proc:
-                    self.train_proc.terminate()
-                self._log(t("training_stopped"))
+                self._stop_event.set()
+                with self._proc_lock:
+                    if self.train_proc:
+                        self.train_proc.terminate()
                 self.status_lbl_var.set(t("training_stopped"))
 
     # ---- Tools ----
@@ -722,3 +729,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+

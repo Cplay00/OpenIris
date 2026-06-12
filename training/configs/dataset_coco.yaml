@@ -1,7 +1,7 @@
 # COCO Dataset Configuration for OpenIris
 # 用于基准测试和预训练微调
 
-# 数据集路径（相对于项目根目录或绝对路径）
+# 数据集路径(相对于项目根目录或绝对路径)
 path: ./datasets/coco
 train: images/train2017
 val: images/val2017
@@ -10,7 +10,7 @@ test: images/test2017
 # 类别数量
 nc: 80
 
-# 类别名称（与 labels.txt 保持一致）
+# 类别名称(与 labels.txt 保持一致)
 names:
   0: person
   1: bicycle

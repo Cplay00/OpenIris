@@ -2,20 +2,20 @@
 # 复制此文件并修改为你的数据集配置
 
 # 数据集根目录
-# 相对路径：相对于训练脚本的执行目录
-# 绝对路径：/path/to/your/dataset
+# 相对路径:相对于训练脚本的执行目录
+# 绝对路径:/path/to/your/dataset
 path: ./datasets/your_dataset
 
 # 图像子目录
 train: images/train
 val: images/val
-# test: images/test        # 可选：测试集
+# test: images/test        # 可选:测试集
 
 # 类别数量
 nc: 1
 
 # 类别名称
-# 索引从 0 开始，必须与标注文件中的 class_id 对应
+# 索引从 0 开始,必须与标注文件中的 class_id 对应
 names:
   0: your_class_name
 
@@ -33,7 +33,7 @@ names:
 # │       └── ...
 # ├── labels/
 # │   ├── train/
-# │   │   ├── img001.txt    # 与图像同名，扩展名为 .txt
+# │   │   ├── img001.txt    # 与图像同名,扩展名为 .txt
 # │   │   └── ...
 # │   └── val/
 # │       ├── img100.txt
@@ -41,16 +41,16 @@ names:
 # └── data.yaml             # 本文件
 #
 # ============================================================
-# YOLO 标注格式（每行一个目标）
+# YOLO 标注格式(每行一个目标)
 # ============================================================
 #
 # <class_id> <x_center> <y_center> <width> <height>
 #
-# - class_id: 类别索引（从 0 开始）
-# - x_center, y_center: 边界框中心点坐标（归一化到 0~1）
-# - width, height: 边界框宽高（归一化到 0~1）
+# - class_id: 类别索引(从 0 开始)
+# - x_center, y_center: 边界框中心点坐标(归一化到 0~1)
+# - width, height: 边界框宽高(归一化到 0~1)
 #
-# 示例：
+# 示例:
 # 0 0.5 0.5 0.3 0.4
 # 0 0.2 0.3 0.1 0.2
 #

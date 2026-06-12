@@ -8,15 +8,15 @@
 ## 功能特性
 
 ### 🎯 高精度训练
-- 多阶段训练策略（预热 → 精细 → 最终）
-- 知识蒸馏（从大模型学习）
+- 多阶段训练策略(预热 → 精细 → 最终)
+- 知识蒸馏(从大模型学习)
 - EMA 模型平滑
 - 混合精度训练
 - 测试时增强 (TTA)
 
 ### 📊 自建数据集
-- 多格式标注转换（COCO/VOC/LabelMe）
-- 智能数据集划分（分层划分）
+- 多格式标注转换(COCO/VOC/LabelMe)
+- 智能数据集划分(分层划分)
 - 离线数据增强
 - 数据集质量校验
 
@@ -33,7 +33,7 @@ training/
 ├── configs/                        # 配置文件
 │   ├── dataset_coco.yaml          # COCO 数据集配置
 │   ├── dataset_custom.yaml        # 自定义数据集模板
-│   ├── hyp_train.yaml             # 训练超参数（高精度）
+│   ├── hyp_train.yaml             # 训练超参数(高精度)
 │   └── hyp_augment.yaml           # 数据增强配置
 ├── scripts/                        # 核心脚本
 │   ├── train.py                   # 标准训练脚本
@@ -64,13 +64,13 @@ training/
 ### 1. 环境准备
 
 ```bash
-# 创建虚拟环境（推荐）
+# 创建虚拟环境(推荐)
 python -m venv venv
 source venv/bin/activate  # Linux/Mac
 # 或
 venv\Scripts\activate     # Windows
 
-# 安装 PyTorch（根据 CUDA 版本）
+# 安装 PyTorch(根据 CUDA 版本)
 # CUDA 11.8
 pip install torch torchvision --index-url https://download.pytorch.org/whl/cu118
 
@@ -230,9 +230,9 @@ dataset/
 ```
 <class_id> <x_center> <y_center> <width> <height>
 ```
-- class_id: 类别索引（从 0 开始）
-- x_center, y_center: 中心点坐标（归一化到 0~1）
-- width, height: 宽高（归一化到 0~1）
+- class_id: 类别索引(从 0 开始)
+- x_center, y_center: 中心点坐标(归一化到 0~1)
+- width, height: 宽高(归一化到 0~1)
 
 ### 数据量建议
 
@@ -269,25 +269,25 @@ dataset/
 
 ## 常见问题
 
-### Q: 如何选择训练模式？
+### Q: 如何选择训练模式?
 - **数据量 < 500**: 使用 `fast` 模式快速验证
 - **数据量 500-2000**: 使用 `balanced` 模式
 - **数据量 > 2000**: 使用 `precision` 模式
 
-### Q: 显存不足怎么办？
+### Q: 显存不足怎么办?
 1. 减小 `batch` 大小
-2. 增加 `accumulate`（模拟大 batch）
+2. 增加 `accumulate`(模拟大 batch)
 3. 启用 `gradient_checkpointing`
 4. 使用更小的输入尺寸
 
-### Q: 如何提高精度？
+### Q: 如何提高精度?
 1. 增加训练轮次
 2. 使用知识蒸馏
 3. 增加数据量或增强
 4. 调整学习率和优化器
 5. 使用标签平滑
 
-### Q: 训练很慢怎么办？
+### Q: 训练很慢怎么办?
 1. 确保使用 GPU
 2. 启用混合精度 (AMP)
 3. 增加 `workers` 数量

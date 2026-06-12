@@ -181,7 +181,7 @@ class RealtimeDetectActivity : AppCompatActivity(), SurfaceHolder.Callback {
         }
 
         // Update window duration text
-        textWindowDuration.text = "${yoloTracker.getWindowDurationSeconds()}秒窗口"
+        textWindowDuration.text = "${yoloTracker.getWindowDurationSeconds()}绉掔獥鍙?
     }
 
     private fun loadModel(): Boolean {
@@ -192,7 +192,7 @@ class RealtimeDetectActivity : AppCompatActivity(), SurfaceHolder.Callback {
         val ret = yolov11Ncnn.loadModel(assets, currentModel, cpuGpu)
         if (!ret) {
             Log.e(TAG, "Failed to load model")
-            Toast.makeText(this, "模型加载失败", Toast.LENGTH_LONG).show()
+            Toast.makeText(this, "妯″瀷鍔犺浇澶辫触", Toast.LENGTH_LONG).show()
             return false
         }
 
@@ -201,17 +201,17 @@ class RealtimeDetectActivity : AppCompatActivity(), SurfaceHolder.Callback {
         return true
     }
 
-    // 颜色对比度计算
+    // 棰滆壊瀵规瘮搴﹁绠?
     private fun getContrastColor(backgroundColor: Int): Int {
         val red = Color.red(backgroundColor)
         val green = Color.green(backgroundColor)
         val blue = Color.blue(backgroundColor)
-        // 计算相对亮度 (W3C 标准)
+        // 璁$畻鐩稿浜害 (W3C 鏍囧噯)
         val luminance = (0.299 * red + 0.587 * green + 0.114 * blue) / 255
         return if (luminance > 0.5) Color.BLACK else Color.WHITE
     }
 
-    // 更新 GPU 按钮状态
+    // 鏇存柊 GPU 鎸夐挳鐘舵€?
     private fun updateGpuButton() {
         val color = if (useGpu) {
             ContextCompat.getColor(this, R.color.btn_gpu_enabled)
@@ -223,7 +223,7 @@ class RealtimeDetectActivity : AppCompatActivity(), SurfaceHolder.Callback {
         textGpuStatus.setTextColor(getContrastColor(color))
     }
 
-    // 更新 AI 按钮状态
+    // 鏇存柊 AI 鎸夐挳鐘舵€?
     private fun updateAiButton() {
         val color = if (isAiEnabled) {
             ContextCompat.getColor(this, R.color.btn_ai_enabled)
@@ -231,12 +231,12 @@ class RealtimeDetectActivity : AppCompatActivity(), SurfaceHolder.Callback {
             ContextCompat.getColor(this, R.color.btn_ai_disabled)
         }
         cardToggleAi.setCardBackgroundColor(color)
-        textAiState.text = if (isAiEnabled) "开启" else "关闭"
+        textAiState.text = if (isAiEnabled) "寮€鍚? else "鍏抽棴"
         textAiState.setTextColor(getContrastColor(color))
         textAiStatusBtn.setTextColor(getContrastColor(color))
     }
 
-    // 截图并保存
+    // 鎴浘骞朵繚瀛?
     private fun captureAndSave() {
         var bitmap: Bitmap? = null
         try {
@@ -248,29 +248,32 @@ class RealtimeDetectActivity : AppCompatActivity(), SurfaceHolder.Callback {
             )
             
             if (yolov11Ncnn.captureFrame(bitmap)) {
-                // 运行YOLO检测获取检测框
+                // 杩愯YOLO妫€娴嬭幏鍙栨娴嬫
                 val detections = runYoloDetection(bitmap)
                 
-                // 在帧上绘制检测框
+                // 鍦ㄥ抚涓婄粯鍒舵娴嬫
                 val annotatedBitmap = ImageUtils.drawDetections(bitmap, detections)
                 
                 saveBitmap(annotatedBitmap)
                 
-                // 如果开启了截图预览，显示浮窗
+                // 濡傛灉寮€鍚簡鎴浘棰勮锛屾樉绀烘诞绐?
                 if (config.showCapturePreview) {
                     showCapturePreview(annotatedBitmap)
-                    bitmap = null // dialog会持有bitmap引用，不在这里回收
+                    bitmap = null // dialog浼氭寔鏈塨itmap寮曠敤锛屼笉鍦ㄨ繖閲屽洖鏀?
+                } else {
+                    annotatedBitmap.recycle()
                 }
                 
-                Toast.makeText(this, "截图已保存", Toast.LENGTH_SHORT).show()
+                Toast.makeText(this, "鎴浘宸蹭繚瀛?, Toast.LENGTH_SHORT).show()
             } else {
-                Toast.makeText(this, "截图失败：无法获取当前帧", Toast.LENGTH_SHORT).show()
+                Toast.makeText(this, "鎴浘澶辫触锛氭棤娉曡幏鍙栧綋鍓嶅抚", Toast.LENGTH_SHORT).show()
             }
         } catch (e: Exception) {
             Log.e(TAG, "Capture failed", e)
-            Toast.makeText(this, "截图失败: ${e.message}", Toast.LENGTH_SHORT).show()
+            Toast.makeText(this, "鎴浘澶辫触: ${e.message}", Toast.LENGTH_SHORT).show()
         } finally {
-            // 如果bitmap没有被dialog持有，则回收
+            bitmap?.recycle()
+            // 濡傛灉bitmap娌℃湁琚玠ialog鎸佹湁锛屽垯鍥炴敹
             bitmap?.recycle()
         }
     }
@@ -309,7 +312,7 @@ class RealtimeDetectActivity : AppCompatActivity(), SurfaceHolder.Callback {
         val fileName = "OpenIris_${timeStamp}.jpg"
 
         if (ContextCompat.checkSelfPermission(this, Manifest.permission.WRITE_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED) {
-            Toast.makeText(this, "缺少写入存储权限，无法保存截图", Toast.LENGTH_SHORT).show()
+            Toast.makeText(this, "缂哄皯鍐欏叆瀛樺偍鏉冮檺锛屾棤娉曚繚瀛樻埅鍥?, Toast.LENGTH_SHORT).show()
         }
 
         val configPath = configManager.getImageExportPath()
@@ -340,7 +343,7 @@ class RealtimeDetectActivity : AppCompatActivity(), SurfaceHolder.Callback {
     }
 
     private fun showCapturePreview(bitmap: Bitmap) {
-        // 先关闭之前的对话框
+        // 鍏堝叧闂箣鍓嶇殑瀵硅瘽妗?
         capturePreviewDialog?.let { dialog ->
             if (dialog.isShowing) {
                 dialog.dismiss()
@@ -356,19 +359,19 @@ class RealtimeDetectActivity : AppCompatActivity(), SurfaceHolder.Callback {
         
         imageView?.setImageBitmap(bitmap)
         
-        // 显示当前检测结果摘要
+        // 鏄剧ず褰撳墠妫€娴嬬粨鏋滄憳瑕?
         val yoloSummary = yoloTracker.getSortedSummary()
         if (yoloSummary.isNotEmpty()) {
-            val summaryText = yoloSummary.take(3).joinToString("、") { "${it.name} x${it.count}" }
+            val summaryText = yoloSummary.take(3).joinToString("銆?) { "${it.name} x${it.count}" }
             textDetections?.text = summaryText
         } else {
-            textDetections?.text = "无检测结果"
+            textDetections?.text = "鏃犳娴嬬粨鏋?
         }
         
         capturePreviewDialog = dialog
         dialog.show()
         
-        // 2秒后自动关闭
+        // 2绉掑悗鑷姩鍏抽棴
         capturePreviewHandler.postDelayed(capturePreviewRunnable, 2000)
     }
 
@@ -409,9 +412,15 @@ class RealtimeDetectActivity : AppCompatActivity(), SurfaceHolder.Callback {
 
     private fun analyzeCurrentFrame() {
         try {
+            // 浣跨敤 captureFrame 鑾峰彇褰撳墠鎽勫儚澶村抚锛岃€岄潪鍒涘缓绌虹櫧 bitmap
             val bitmap = Bitmap.createBitmap(640, 640, Bitmap.Config.ARGB_8888)
+            if (!yolov11Ncnn.captureFrame(bitmap)) {
+                bitmap.recycle()
+                return
+            }
 
             val rawResults = yolov11Ncnn.detectBitmap(bitmap, currentModel, if (useGpu) 1 else 0)
+            bitmap.recycle()
 
             val objects = mutableListOf<DetectedObject>()
             var i = 0
@@ -452,10 +461,10 @@ class RealtimeDetectActivity : AppCompatActivity(), SurfaceHolder.Callback {
         try {
             val yoloSummary = yoloTracker.getSortedSummary()
             val contextPrompt = if (yoloSummary.isNotEmpty()) {
-                val yoloText = yoloSummary.joinToString("、") { "${it.name}(${it.count}个)" }
-                "当前画面 YOLO 检测到：$yoloText。请基于以上检测结果，补充识别画面中的其他物体，以JSON格式返回结果。"
+                val yoloText = yoloSummary.joinToString("銆?) { "${it.name}(${it.count}涓?" }
+                "褰撳墠鐢婚潰 YOLO 妫€娴嬪埌锛?yoloText銆傝鍩轰簬浠ヤ笂妫€娴嬬粨鏋滐紝琛ュ厖璇嗗埆鐢婚潰涓殑鍏朵粬鐗╀綋锛屼互JSON鏍煎紡杩斿洖缁撴灉銆?
             } else {
-                "请识别图片中的物体，以JSON格式返回结果。"
+                "璇疯瘑鍒浘鐗囦腑鐨勭墿浣擄紝浠SON鏍煎紡杩斿洖缁撴灉銆?
             }
 
             val result = aiModelManager.callWithFallback(
@@ -490,7 +499,7 @@ class RealtimeDetectActivity : AppCompatActivity(), SurfaceHolder.Callback {
             capsule.bind(stats, CapsuleView.CapsuleSource.YOLO)
             flexboxYolo.addView(capsule)
         }
-        textYoloCount.text = "${yoloTracker.getUniqueCount()} 类"
+        textYoloCount.text = "${yoloTracker.getUniqueCount()} 绫?
 
         // Update AI capsules
         val aiSummary = aiTracker.getSortedSummary()
@@ -500,7 +509,7 @@ class RealtimeDetectActivity : AppCompatActivity(), SurfaceHolder.Callback {
             capsule.bind(stats, CapsuleView.CapsuleSource.AI)
             flexboxAi.addView(capsule)
         }
-        textAiCount.text = "${aiTracker.getUniqueCount()} 类"
+        textAiCount.text = "${aiTracker.getUniqueCount()} 绫?
 
         // Update combined capsules
         val combinedMap = mutableMapOf<String, SlidingWindowTracker.ObjectStats>()
@@ -525,7 +534,7 @@ class RealtimeDetectActivity : AppCompatActivity(), SurfaceHolder.Callback {
             capsule.bind(stats, CapsuleView.CapsuleSource.COMBINED)
             flexboxCombined.addView(capsule)
         }
-        textCombinedCount.text = "${combinedMap.size} 类"
+        textCombinedCount.text = "${combinedMap.size} 绫?
     }
 
     private fun loadLabels(modelName: String): List<String> {
@@ -605,7 +614,7 @@ class RealtimeDetectActivity : AppCompatActivity(), SurfaceHolder.Callback {
     override fun onResume() {
         super.onResume()
         
-        // 应用分辨率配置
+        // 搴旂敤鍒嗚鲸鐜囬厤缃?
         val config = configManager.loadConfig()
         yolov11Ncnn.setCameraResolution(config.cameraResolutionWidth, config.cameraResolutionHeight)
         
@@ -622,7 +631,7 @@ class RealtimeDetectActivity : AppCompatActivity(), SurfaceHolder.Callback {
         stopAiCallLoop()
         stopScreenshotAnalysis()
         
-        // 清理浮窗
+        // 娓呯悊娴獥
         capturePreviewHandler.removeCallbacks(capturePreviewRunnable)
         capturePreviewDialog?.let { dialog ->
             if (dialog.isShowing) {

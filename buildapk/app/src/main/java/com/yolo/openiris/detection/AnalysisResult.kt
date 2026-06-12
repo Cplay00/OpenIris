@@ -23,7 +23,7 @@ data class AnalysisResult(
     val llmResult: LlmResult? = null,
     val unifiedObjects: List<UnifiedObjectResult> = emptyList(),
     val fusedSummary: String = "",              // 最终中文摘要
-    val videoTimestampMs: Long? = null          // 视频时间戳（仅视频模式）
+    val videoTimestampMs: Long? = null          // 视频时间戳(仅视频模式)
 ) {
     companion object {
         fun fromResults(

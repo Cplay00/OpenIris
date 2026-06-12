@@ -78,7 +78,7 @@ class AiModelSettingsActivity : AppCompatActivity() {
         editVisualPrompt = findViewById(R.id.editVisualPrompt)
         editSummaryPrompt = findViewById(R.id.editSummaryPrompt)
         
-        // 修复提示词滚动：阻止父容器拦截触摸事件
+        // 修复提示词滚动:阻止父容器拦截触摸事件
         editVisualPrompt.setOnTouchListener { v, event ->
             v.parent.requestDisallowInterceptTouchEvent(true)
             v.onTouchEvent(event)
@@ -130,7 +130,7 @@ class AiModelSettingsActivity : AppCompatActivity() {
     }
 
     private fun loadData() {
-        // 加载 AI 启用状态（临时移除监听避免递归触发）
+        // 加载 AI 启用状态(临时移除监听避免递归触发)
         switchAiEnabled.setOnCheckedChangeListener(null)
         switchAiEnabled.isChecked = aiModelManager.isAiEnabled()
         switchAiEnabled.setOnCheckedChangeListener { _, isChecked ->

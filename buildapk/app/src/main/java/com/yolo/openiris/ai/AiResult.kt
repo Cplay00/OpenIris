@@ -66,11 +66,11 @@ data class RecognizedObject(
     val confidence: Float
 ) {
     /**
-     * 获取显示名称（中文+英文）
+     * 获取显示名称(中文+英文)
      */
     fun getDisplayName(): String {
         return if (nameCn != null) {
-            "$name（$nameCn）"
+            "$name($nameCn)"
         } else {
             name
         }

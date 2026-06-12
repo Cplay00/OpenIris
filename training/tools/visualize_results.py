@@ -3,18 +3,18 @@
 """
 OpenIris Training Results Visualizer
 
-可视化训练过程和结果，包括:
-- 训练损失曲线
-- mAP 指标曲线
-- 学习率变化
-- 混淆矩阵
-- 每类别 AP 柱状图
+鍙鍖栬缁冭繃绋嬪拰缁撴灉锛屽寘鎷?
+- 璁粌鎹熷け鏇茬嚎
+- mAP 鎸囨爣鏇茬嚎
+- 瀛︿範鐜囧彉鍖?
+- 娣锋穯鐭╅樀
+- 姣忕被鍒?AP 鏌辩姸鍥?
 
-使用方法:
-    # 可视化训练结果
+浣跨敤鏂规硶:
+    # 鍙鍖栬缁冪粨鏋?
     python training/tools/visualize_results.py --run-dir runs/train/openiris_v1
 
-    # 指定输出目录
+    # 鎸囧畾杈撳嚭鐩綍
     python training/tools/visualize_results.py --run-dir runs/train/openiris_v1 --output plots/
 """
 
@@ -26,40 +26,39 @@ from pathlib import Path
 
 def load_training_results(csv_path: str) -> dict:
     """
-    加载 ultralytics 训练日志 CSV。
+    鍔犺浇 ultralytics 璁粌鏃ュ織 CSV銆?
 
     Args:
-        csv_path: results.csv 文件路径
+        csv_path: results.csv 鏂囦欢璺緞
 
     Returns:
-        训练结果字典
+        璁粌缁撴灉瀛楀吀
     """
     try:
         import pandas as pd
     except ImportError:
-        print("错误: 需要 pandas。请运行: pip install pandas")
+        print("閿欒: 闇€瑕?pandas銆傝杩愯: pip install pandas")
         sys.exit(1)
 
     df = pd.read_csv(csv_path)
-    # 清理列名空格
+    # 娓呯悊鍒楀悕绌烘牸
     df.columns = df.columns.str.strip()
     return df
 
 
 def plot_training_curves(df, output_dir: str):
-    """绘制训练曲线"""
     try:
-        import matplotlib.pyplot as plt
         import matplotlib
         matplotlib.use("Agg")
+        import matplotlib.pyplot as plt
     except ImportError:
-        print("错误: 需要 matplotlib。请运行: pip install matplotlib")
+        print("Error: matplotlib not installed. Run: pip install matplotlib")
         sys.exit(1)
 
     output_dir = Path(output_dir)
     output_dir.mkdir(parents=True, exist_ok=True)
 
-    # 1. 损失曲线
+    # 1. 鎹熷け鏇茬嚎
     fig, axes = plt.subplots(2, 2, figsize=(14, 10))
     fig.suptitle("Training Loss Curves", fontsize=14)
 
@@ -77,7 +76,7 @@ def plot_training_curves(df, output_dir: str):
             ax.set_ylabel("Loss")
             ax.grid(True, alpha=0.3)
 
-    # 总损失
+    # 鎬绘崯澶?
     if "train/box_loss" in df.columns:
         total = (df["train/box_loss"].fillna(0) +
                  df["train/cls_loss"].fillna(0) +
@@ -92,9 +91,9 @@ def plot_training_curves(df, output_dir: str):
     loss_path = output_dir / "loss_curves.png"
     plt.savefig(loss_path, dpi=150, bbox_inches="tight")
     plt.close()
-    print(f"  保存: {loss_path}")
+    print(f"  淇濆瓨: {loss_path}")
 
-    # 2. mAP 曲线
+    # 2. mAP 鏇茬嚎
     fig, ax = plt.subplots(figsize=(10, 6))
     if "metrics/mAP50(B)" in df.columns:
         ax.plot(df["epoch"], df["metrics/mAP50(B)"],
@@ -114,9 +113,9 @@ def plot_training_curves(df, output_dir: str):
     map_path = output_dir / "map_curves.png"
     plt.savefig(map_path, dpi=150, bbox_inches="tight")
     plt.close()
-    print(f"  保存: {map_path}")
+    print(f"  淇濆瓨: {map_path}")
 
-    # 3. Precision-Recall 曲线
+    # 3. Precision-Recall 鏇茬嚎
     fig, ax = plt.subplots(figsize=(10, 6))
     if "metrics/precision(B)" in df.columns:
         ax.plot(df["epoch"], df["metrics/precision(B)"],
@@ -136,9 +135,9 @@ def plot_training_curves(df, output_dir: str):
     pr_path = output_dir / "precision_recall.png"
     plt.savefig(pr_path, dpi=150, bbox_inches="tight")
     plt.close()
-    print(f"  保存: {pr_path}")
+    print(f"  淇濆瓨: {pr_path}")
 
-    # 4. 学习率曲线
+    # 4. 瀛︿範鐜囨洸绾?
     lr_cols = [c for c in df.columns if "lr" in c.lower() or "pg" in c.lower()]
     if lr_cols:
         fig, ax = plt.subplots(figsize=(10, 4))
@@ -154,18 +153,18 @@ def plot_training_curves(df, output_dir: str):
         lr_path = output_dir / "learning_rate.png"
         plt.savefig(lr_path, dpi=150, bbox_inches="tight")
         plt.close()
-        print(f"  保存: {lr_path}")
+        print(f"  淇濆瓨: {lr_path}")
 
 
 def generate_summary(run_dir: str) -> dict:
     """
-    生成训练摘要。
+    鐢熸垚璁粌鎽樿銆?
 
     Args:
-        run_dir: 训练运行目录
+        run_dir: 璁粌杩愯鐩綍
 
     Returns:
-        摘要字典
+        鎽樿瀛楀吀
     """
     run_dir = Path(run_dir)
 
@@ -177,14 +176,14 @@ def generate_summary(run_dir: str) -> dict:
         "best_map50_95": 0,
     }
 
-    # 检查权重文件
+    # 妫€鏌ユ潈閲嶆枃浠?
     weights_dir = run_dir / "weights"
     if weights_dir.exists():
         for f in weights_dir.glob("*.pt"):
             size_mb = f.stat().st_size / (1024 * 1024)
             summary["weights"][f.name] = f"{size_mb:.1f} MB"
 
-    # 从 CSV 提取最佳指标
+    # 浠?CSV 鎻愬彇鏈€浣虫寚鏍?
     csv_path = run_dir / "results.csv"
     if csv_path.exists():
         df = load_training_results(str(csv_path))
@@ -199,19 +198,19 @@ def generate_summary(run_dir: str) -> dict:
 
 
 def print_summary(summary: dict):
-    """打印训练摘要"""
+    """鎵撳嵃璁粌鎽樿"""
     print("\n" + "=" * 60)
-    print("训练摘要")
+    print("璁粌鎽樿")
     print("=" * 60)
-    print(f"运行目录: {summary['run_dir']}")
+    print(f"杩愯鐩綍: {summary['run_dir']}")
 
     if summary["weights"]:
-        print(f"\n权重文件:")
+        print(f"\n鏉冮噸鏂囦欢:")
         for name, size in summary["weights"].items():
             print(f"  {name}: {size}")
 
     if summary["best_epoch"] is not None:
-        print(f"\n最佳结果 (Epoch {summary['best_epoch']}):")
+        print(f"\n鏈€浣崇粨鏋?(Epoch {summary['best_epoch']}):")
         print(f"  mAP50:    {summary['best_map50']:.4f}")
         print(f"  mAP50-95: {summary['best_map50_95']:.4f}")
 
@@ -226,38 +225,38 @@ def main():
         "--run-dir",
         type=str,
         required=True,
-        help="训练运行目录路径",
+        help="璁粌杩愯鐩綍璺緞",
     )
     parser.add_argument(
         "--output",
         type=str,
         default=None,
-        help="图表输出目录 (默认: <run-dir>/plots)",
+        help="鍥捐〃杈撳嚭鐩綍 (榛樿: <run-dir>/plots)",
     )
 
     args = parser.parse_args()
 
     run_dir = Path(args.run_dir)
     if not run_dir.exists():
-        print(f"错误: 运行目录不存在: {run_dir}")
+        print(f"閿欒: 杩愯鐩綍涓嶅瓨鍦? {run_dir}")
         sys.exit(1)
 
     output_dir = args.output or str(run_dir / "plots")
 
-    # 生成摘要
+    # 鐢熸垚鎽樿
     summary = generate_summary(str(run_dir))
     print_summary(summary)
 
-    # 绘制曲线
+    # 缁樺埗鏇茬嚎
     csv_path = run_dir / "results.csv"
     if csv_path.exists():
-        print("\n正在生成训练曲线...")
+        print("\n姝e湪鐢熸垚璁粌鏇茬嚎...")
         df = load_training_results(str(csv_path))
         plot_training_curves(df, output_dir)
-        print(f"\n图表已保存到: {output_dir}")
+        print(f"\n鍥捐〃宸蹭繚瀛樺埌: {output_dir}")
     else:
-        print(f"\n警告: 未找到 results.csv，跳过曲线绘制。")
-        print(f"  预期路径: {csv_path}")
+        print(f"\n璀﹀憡: 鏈壘鍒?results.csv锛岃烦杩囨洸绾跨粯鍒躲€?)
+        print(f"  棰勬湡璺緞: {csv_path}")
 
 
 if __name__ == "__main__":

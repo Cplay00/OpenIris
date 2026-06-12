@@ -13,7 +13,7 @@
 
 | 模块 | 名称 | 计算量增加 | 精度提升 | 适用场景 |
 ------|------|------------|----------|----------|
-| **SE** | Squeeze-and-Excitation | +2-5% | +1-3% | 通用，移动端友好 |
+| **SE** | Squeeze-and-Excitation | +2-5% | +1-3% | 通用,移动端友好 |
 | **CBAM** | Convolutional Block Attention Module | +5-10% | +2-5% | 小目标、复杂背景 |
 | **C2PSA** | Cross Stage Partial with Attention | +10-15% | +3-6% | 高精度需求 |
 
@@ -21,8 +21,8 @@
 
 | 模块 | 名称 | 计算量变化 | 特点 |
 ------|------|------------|------|
-| **GhostConv** | Ghost Convolution | -30-50% | 轻量级，移动端优化 |
-| **RepConv** | Re-parameterizable Conv | 0% | 推理时融合，无额外开销 |
+| **GhostConv** | Ghost Convolution | -30-50% | 轻量级,移动端优化 |
+| **RepConv** | Re-parameterizable Conv | 0% | 推理时融合,无额外开销 |
 | **DWConv** | Depthwise Separable Conv | -60-70% | 极致轻量 |
 | **LightConv** | Light Convolution | -20-30% | 平衡轻量和精度 |
 
@@ -31,7 +31,7 @@
 | 模块 | 名称 | 特点 |
 ------|------|------|
 | **C2fCIB** | C2f with Compact Inverted Block | 增强特征提取 |
-| **C3k2** | CSP Bottleneck with 2 convolutions | 标准结构，平衡性能 |
+| **C3k2** | CSP Bottleneck with 2 convolutions | 标准结构,平衡性能 |
 | **C3k** | CSP Bottleneck with kernel | 大感受野 |
 
 ---
@@ -56,7 +56,7 @@ from ultralytics import YOLO
 # 使用原始模型
 model = YOLO('yolo11n.pt')
 
-# 使用改进模型（需要从 YAML 构建）
+# 使用改进模型(需要从 YAML 构建)
 model = YOLO('training/configs/models/yolo11-cbam.yaml')
 model.load('yolo11n.pt')  # 加载预训练权重
 
@@ -70,7 +70,7 @@ model.train(data='configs/dataset_custom.yaml', epochs=200)
 
 ### 3.1 SE (Squeeze-and-Excitation)
 
-**原理**: 通过全局平均池化压缩特征，然后通过全连接层学习通道权重。
+**原理**: 通过全局平均池化压缩特征,然后通过全连接层学习通道权重。
 
 ```python
 class SEBlock(nn.Module):
@@ -97,7 +97,7 @@ class SEBlock(nn.Module):
 - 对通道特征进行自适应加权
 
 **缺点**:
-- 只关注通道维度，忽略空间信息
+- 只关注通道维度,忽略空间信息
 
 **适用场景**:
 - 移动端部署
@@ -106,7 +106,7 @@ class SEBlock(nn.Module):
 
 ### 3.2 CBAM (Convolutional Block Attention Module)
 
-**原理**: 结合通道注意力和空间注意力，先通道后空间。
+**原理**: 结合通道注意力和空间注意力,先通道后空间。
 
 ```python
 class CBAMBlock(nn.Module):
@@ -143,10 +143,10 @@ class CBAMBlock(nn.Module):
 
 ### 3.3 C2PSA (Cross Stage Partial with Attention)
 
-**原理**: YOLO11 原生的注意力机制，结合了 PSA (Pyramid Squeeze Attention)。
+**原理**: YOLO11 原生的注意力机制,结合了 PSA (Pyramid Squeeze Attention)。
 
 **优点**:
-- 原生支持，无需修改代码
+- 原生支持,无需修改代码
 - 性能稳定
 - 计算效率高
 
@@ -160,7 +160,7 @@ class CBAMBlock(nn.Module):
 
 ### 4.1 GhostConv
 
-**原理**: 使用少量卷积核生成特征图，然后通过线性变换生成"幽灵"特征图。
+**原理**: 使用少量卷积核生成特征图,然后通过线性变换生成"幽灵"特征图。
 
 ```python
 class GhostConv(nn.Module):
@@ -188,7 +188,7 @@ class GhostConv(nn.Module):
 
 ### 4.2 RepConv (Re-parameterizable Convolution)
 
-**原理**: 训练时使用多分支结构，推理时融合为单分支。
+**原理**: 训练时使用多分支结构,推理时融合为单分支。
 
 **优点**:
 - 推理时无额外开销
@@ -203,7 +203,7 @@ class GhostConv(nn.Module):
 
 ## 5. 改进方案推荐
 
-### 5.1 移动端部署（推荐）
+### 5.1 移动端部署(推荐)
 
 ```yaml
 # 使用 SE 注意力
@@ -345,7 +345,7 @@ python training/scripts/train.py \
     --data configs/dataset_custom.yaml \
     --epochs 200
 
-# 2. 使用改进模型训练（带预训练权重）
+# 2. 使用改进模型训练(带预训练权重)
 python -c "
 from ultralytics import YOLO
 model = YOLO('training/configs/models/yolo11-cbam.yaml')

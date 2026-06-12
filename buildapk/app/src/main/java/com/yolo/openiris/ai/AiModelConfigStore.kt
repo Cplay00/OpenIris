@@ -10,7 +10,7 @@ import com.yolo.openiris.config.ConfigManager
 /**
  * AI 模型配置持久化存储
  *
- * 提供商元数据存储在普通 SharedPreferences 中，
+ * 提供商元数据存储在普通 SharedPreferences 中,
  * apiKey 单独通过 ConfigManager 的 EncryptedSharedPreferences 加密存储。
  */
 class AiModelConfigStore(context: Context) {
@@ -21,7 +21,7 @@ class AiModelConfigStore(context: Context) {
     private val configManager = ConfigManager.getInstance(context)
     private val gson = Gson()
 
-    // 提供商缓存，避免每次都从 SharedPreferences 读取
+    // 提供商缓存,避免每次都从 SharedPreferences 读取
     @Volatile
     private var cachedProviders: List<AiProvider>? = null
 
@@ -38,7 +38,7 @@ class AiModelConfigStore(context: Context) {
         // 默认视觉识别提示词
         const val DEFAULT_VISUAL_PROMPT = """# 视觉识别任务
 
-请识别图片中的物体，以JSON格式返回结果。
+请识别图片中的物体,以JSON格式返回结果。
 
 ## 输出格式
 
@@ -64,7 +64,7 @@ class AiModelConfigStore(context: Context) {
         // 默认检测总结提示词
         const val DEFAULT_SUMMARY_PROMPT = """# 检测总结任务
 
-请根据以下YOLO检测结果，生成简要的检测总结。
+请根据以下YOLO检测结果,生成简要的检测总结。
 
 ## YOLO检测结果
 {yolo_results}
@@ -92,10 +92,10 @@ class AiModelConfigStore(context: Context) {
     }
 
     /**
-     * 保存所有提供商配置（apiKey 单独加密存储）
+     * 保存所有提供商配置(apiKey 单独加密存储)
      */
     fun saveProviders(providers: List<AiProvider>) {
-        // 将 apiKey 从 provider 中剥离，单独加密存储
+        // 将 apiKey 从 provider 中剥离,单独加密存储
         providers.forEach { provider ->
             configManager.saveAiProviderApiKey(provider.id, provider.apiKey)
         }
@@ -107,10 +107,10 @@ class AiModelConfigStore(context: Context) {
     }
 
     /**
-     * 加载所有提供商配置（从加密存储恢复 apiKey，含旧格式迁移）
+     * 加载所有提供商配置(从加密存储恢复 apiKey,含旧格式迁移)
      */
     fun loadProviders(): List<AiProvider> {
-        // 如果有缓存，直接返回
+        // 如果有缓存,直接返回
         cachedProviders?.let {
             Log.d(TAG, "Returning cached providers: ${it.size}")
             return it
@@ -133,11 +133,15 @@ class AiModelConfigStore(context: Context) {
 
             val result = metadataList.map { provider ->
                 var apiKey = configManager.getAiProviderApiKey(provider.id)
+            if (com.yolo.openiris.BuildConfig.DEBUG) {
                 Log.d(TAG, "Provider '${provider.name}' (ID: ${provider.id}): apiKey present=${apiKey.isNotBlank()}")
+            }
                 
-                // 旧格式迁移：加密存储为空但 JSON 中有旧 key
+                // 旧格式迁移:加密存储为空但 JSON 中有旧 key
                 if (apiKey.isBlank() && provider.apiKey.isNotBlank()) {
-                    Log.w(TAG, "Migrating apiKey for provider: ${provider.id}")
+                    if (com.yolo.openiris.BuildConfig.DEBUG) {
+                        Log.w(TAG, "Migrating apiKey for provider: ${provider.id}")
+                    }
                     configManager.saveAiProviderApiKey(provider.id, provider.apiKey)
                     apiKey = provider.apiKey
                     needMigration = true
@@ -171,20 +175,20 @@ class AiModelConfigStore(context: Context) {
             result
         } catch (e: Exception) {
             Log.e(TAG, "Failed to load providers", e)
-            // 不清除数据，返回空列表但保留原始数据
+            // 不清除数据,返回空列表但保留原始数据
             emptyList()
         }
     }
 
     /**
-     * 清除缓存（在数据变更后调用）
+     * 清除缓存(在数据变更后调用)
      */
     private fun invalidateCache() {
         cachedProviders = null
     }
 
     /**
-     * 添加提供商（apiKey 加密存储）
+     * 添加提供商(apiKey 加密存储)
      */
     @Synchronized
     fun addProvider(provider: AiProvider) {
@@ -198,7 +202,7 @@ class AiModelConfigStore(context: Context) {
     }
 
     /**
-     * 更新提供商（apiKey 加密存储）
+     * 更新提供商(apiKey 加密存储)
      */
     @Synchronized
     fun updateProvider(provider: AiProvider) {
@@ -213,7 +217,7 @@ class AiModelConfigStore(context: Context) {
     }
 
     /**
-     * 删除提供商（同时删除加密的 apiKey）
+     * 删除提供商(同时删除加密的 apiKey)
      */
     @Synchronized
     fun deleteProvider(providerId: String) {
@@ -274,7 +278,7 @@ class AiModelConfigStore(context: Context) {
     }
 
     /**
-     * 获取 AI 调用间隔（秒）
+     * 获取 AI 调用间隔(秒)
      */
     fun getCallIntervalSeconds(): Int {
         return prefs.getInt(KEY_CALL_INTERVAL_SECONDS, 5)
@@ -316,17 +320,23 @@ class AiModelConfigStore(context: Context) {
     }
 
     /**
-     * 根据提供商 ID 获取提供商（含加密 apiKey）
+     * 根据提供商 ID 获取提供商(含加密 apiKey)
      */
     fun getProvider(providerId: String): AiProvider? {
-        Log.d(TAG, "getProvider called with ID: '$providerId'")
+        if (com.yolo.openiris.BuildConfig.DEBUG) {
+            Log.d(TAG, "getProvider called with ID: '$providerId'")
+        }
         val providers = loadProviders()
-        Log.d(TAG, "Loaded ${providers.size} providers, searching for ID: '$providerId'")
-        providers.forEach { p ->
-            Log.d(TAG, "  Provider: '${p.name}', ID: '${p.id}'")
+        if (com.yolo.openiris.BuildConfig.DEBUG) {
+            Log.d(TAG, "Loaded ${providers.size} providers, searching for ID: '$providerId'")
+            providers.forEach { p ->
+                Log.d(TAG, "  Provider: '${p.name}', ID: '${p.id}'")
+            }
         }
         val found = providers.find { it.id == providerId }
-        Log.d(TAG, "Found provider: ${found?.name ?: "null"}")
+        if (com.yolo.openiris.BuildConfig.DEBUG) {
+            Log.d(TAG, "Found provider: ${found?.name ?: "null"}")
+        }
         return found
     }
 
@@ -385,7 +395,7 @@ class AiModelConfigStore(context: Context) {
     }
 
     /**
-     * 从存储加载原始 provider 元数据（不含 apiKey）
+     * 从存储加载原始 provider 元数据(不含 apiKey)
      */
     private fun loadRawProviders(): List<AiProvider> {
         val json = prefs.getString(KEY_PROVIDERS, null) ?: return emptyList()
@@ -399,7 +409,7 @@ class AiModelConfigStore(context: Context) {
     }
 
     /**
-     * 保存原始 provider 元数据（不含 apiKey）
+     * 保存原始 provider 元数据(不含 apiKey)
      */
     private fun saveRawProviders(providers: List<AiProvider>) {
         val json = gson.toJson(providers)

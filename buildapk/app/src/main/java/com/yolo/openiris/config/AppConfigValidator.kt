@@ -4,7 +4,7 @@ import java.net.URI
 
 /**
  * 应用配置校验器
- * 仅包含纯 Kotlin/JVM 逻辑，便于单元测试
+ * 仅包含纯 Kotlin/JVM 逻辑,便于单元测试
  */
 object AppConfigValidator {
 

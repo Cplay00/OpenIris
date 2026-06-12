@@ -1,143 +1,143 @@
-# OpenIris 训练适配指南
+# OpenIris 璁粌閫傞厤鎸囧崡
 
-## 基于 D:\YOLO11Preinit 参考环境的分析与适配
+## 鍩轰簬 <your-training-root> 鍙傝€冪幆澧冪殑鍒嗘瀽涓庨€傞厤
 
 ---
 
-## 1. 参考环境分析
+## 1. 鍙傝€冪幆澧冨垎鏋?
 
-### 1.1 环境配置
+### 1.1 鐜閰嶇疆
 
-| 项目 | 参考环境 (YOLO11Preinit) | OpenIris 项目要求 |
+| 椤圭洰 | 鍙傝€冪幆澧?(TrainingEnv) | OpenIris 椤圭洰瑕佹眰 |
 ------|--------------------------|-------------------|
 | Python | 3.13.2 (Conda) | >= 3.9 |
 | PyTorch | 2.6.0+cu126 | >= 2.0.0 |
 | Ultralytics | 8.3.105 | >= 8.3.0 |
 | CUDA | 12.4/12.6 | 12.x |
-| GPU | 未指定 | RTX 4060 Laptop (8GB) |
-| 模型 | yolo11x.pt (大模型) | **yolo11n.pt** (移动端) |
-| 输入尺寸 | 416-640 (不一致) | **640** (固定) |
-| 优化器 | SGD | AdamW (推荐) |
-| AMP | 部分禁用 | **启用** |
+| GPU | 鏈寚瀹?| RTX 4060 Laptop (8GB) |
+| 妯″瀷 | yolo11x.pt (澶фā鍨? | **yolo11n.pt** (绉诲姩绔? |
+| 杈撳叆灏哄 | 416-640 (涓嶄竴鑷? | **640** (鍥哄畾) |
+| 浼樺寲鍣?| SGD | AdamW (鎺ㄨ崘) |
+| AMP | 閮ㄥ垎绂佺敤 | **鍚敤** |
 
-### 1.2 数据集
+### 1.2 鏁版嵁闆?
 
-| 数据集 | 类别数 | 训练图片 | 格式 |
+| 鏁版嵁闆?| 绫诲埆鏁?| 璁粌鍥剧墖 | 鏍煎紡 |
 --------|--------|----------|------|
 | Mahjong | 42 | 5,376 | Roboflow YOLO11 |
 | Pig Behavior | 1 | 2,352 | Roboflow YOLO11 |
 | Pig Object Detection | 3 | 844 | Roboflow YOLO11 |
-| COCO8 | 2 | 4 | 测试用 |
+| COCO8 | 2 | 4 | 娴嬭瘯鐢?|
 
-### 1.3 训练脚本模式
+### 1.3 璁粌鑴氭湰妯″紡
 
-参考环境使用**绝对路径**和**分离加载**模式：
+鍙傝€冪幆澧冧娇鐢?*缁濆璺緞**鍜?*鍒嗙鍔犺浇**妯″紡锛?
 ```python
-# 参考写法
-model = YOLO('D:/YOLO11Preinit/Yolo11Pre/Lib/site-packages/ultralytics/cfg/models/11/yolo11.yaml')
+# 鍙傝€冨啓娉?
+model = YOLO('<your-training-env>/Lib/site-packages/ultralytics/cfg/models/11/yolo11.yaml')
 model.load('yolo11x.pt')
-model.train(data='D:/YOLO11Preinit/Mahjong.v57i.yolov11/data.yaml', ...)
+model.train(data='<your-dataset-path>/data.yaml', ...)
 ```
 
 ---
 
-## 2. 必须更改的内容
+## 2. 蹇呴』鏇存敼鐨勫唴瀹?
 
-### 2.1 模型变体：必须使用 nano
+### 2.1 妯″瀷鍙樹綋锛氬繀椤讳娇鐢?nano
 
-**原因**: OpenIris 部署到 Android NCNN，必须使用轻量级模型。
+**鍘熷洜**: OpenIris 閮ㄧ讲鍒?Android NCNN锛屽繀椤讳娇鐢ㄨ交閲忕骇妯″瀷銆?
 
-| 参考 | OpenIris |
+| 鍙傝€?| OpenIris |
 ------|----------|
-| `yolo11x.pt` (56.9M 参数, 196 GFLOPs) | `yolo11n.pt` (2.6M 参数, 6.6 GFLOPs) |
+| `yolo11x.pt` (56.9M 鍙傛暟, 196 GFLOPs) | `yolo11n.pt` (2.6M 鍙傛暟, 6.6 GFLOPs) |
 
 ```python
-# 参考写法（不适合移动端）
+# 鍙傝€冨啓娉曪紙涓嶉€傚悎绉诲姩绔級
 model = YOLO('yolo11x.pt')
 
-# OpenIris 正确写法
+# OpenIris 姝g'鍐欐硶
 model = YOLO('yolo11n.pt')
 ```
 
-### 2.2 输入尺寸：必须固定 640
+### 2.2 杈撳叆灏哄锛氬繀椤诲浐瀹?640
 
-**原因**: NCNN 推理端固定使用 640，训练时必须一致。
+**鍘熷洜**: NCNN 鎺ㄧ悊绔浐瀹氫娇鐢?640锛岃缁冩椂蹇呴』涓€鑷淬€?
 
-| 参考 | OpenIris |
+| 鍙傝€?| OpenIris |
 ------|----------|
-| `imgsz=416` 或 `imgsz=640` (不一致) | `imgsz=640` (固定) |
+| `imgsz=416` 鎴?`imgsz=640` (涓嶄竴鑷? | `imgsz=640` (鍥哄畾) |
 
 ```python
-# 参考写法（尺寸不一致会导致精度问题）
+# 鍙傝€冨啓娉曪紙灏哄涓嶄竴鑷翠細瀵艰嚧绮惧害闂锛?
 model.train(imgsz=416)  # Pig Behavior
 model.train(imgsz=640)  # Mahjong
 
-# OpenIris 正确写法（必须固定）
+# OpenIris 姝g'鍐欐硶锛堝繀椤诲浐瀹氾級
 model.train(imgsz=640)
 ```
 
-### 2.3 路径处理：相对路径优先
+### 2.3 璺緞澶勭悊锛氱浉瀵硅矾寰勪紭鍏?
 
-**原因**: 便于项目迁移和团队协作。
+**鍘熷洜**: 渚夸簬椤圭洰杩佺Щ鍜屽洟闃熷崗浣溿€?
 
 ```python
-# 参考写法（绝对路径，不便迁移）
-data='D:/YOLO11Preinit/Mahjong.v57i.yolov11/data.yaml'
+# 鍙傝€冨啓娉曪紙缁濆璺緞锛屼笉渚胯縼绉伙級
+data='<your-dataset-path>/data.yaml'
 
-# OpenIris 正确写法（相对路径）
+# OpenIris 姝g'鍐欐硶锛堢浉瀵硅矾寰勶級
 data='configs/dataset_custom.yaml'
-# 或使用 Path 对象
+# 鎴栦娇鐢?Path 瀵硅薄
 from pathlib import Path
 data = Path(__file__).parent.parent / 'configs' / 'dataset_custom.yaml'
 ```
 
-### 2.4 优化器：推荐 AdamW
+### 2.4 浼樺寲鍣細鎺ㄨ崘 AdamW
 
-**原因**: AdamW 对移动端小模型更稳定。
+**鍘熷洜**: AdamW 瀵圭Щ鍔ㄧ灏忔ā鍨嬫洿绋冲畾銆?
 
-| 参考 | OpenIris |
+| 鍙傝€?| OpenIris |
 ------|----------|
 | `optimizer='SGD'` | `optimizer='AdamW'` |
 
-### 2.5 AMP 必须启用
+### 2.5 AMP 蹇呴』鍚敤
 
-**原因**: 加速训练，节省显存，RTX 4060 完全支持。
+**鍘熷洜**: 鍔犻€熻缁冿紝鑺傜渷鏄惧瓨锛孯TX 4060 瀹屽叏鏀寔銆?
 
-| 参考 | OpenIris |
+| 鍙傝€?| OpenIris |
 ------|----------|
-| `amp=False` (部分禁用) | `amp=True` (必须启用) |
+| `amp=False` (閮ㄥ垎绂佺敤) | `amp=True` (蹇呴』鍚敤) |
 
 ```python
-# 参考写法（不推荐）
+# 鍙傝€冨啓娉曪紙涓嶆帹鑽愶級
 model.train(amp=False)
 
-# OpenIris 正确写法
+# OpenIris 姝g'鍐欐硶
 model.train(amp=True)
 ```
 
 ---
 
-## 3. 数据集适配
+## 3. 鏁版嵁闆嗛€傞厤
 
-### 3.1 从 Roboflow 导出的数据集
+### 3.1 浠?Roboflow 瀵煎嚭鐨勬暟鎹泦
 
-参考环境的数据集来自 Roboflow，格式为 YOLO11，但需要调整路径。
+鍙傝€冪幆澧冪殑鏁版嵁闆嗘潵鑷?Roboflow锛屾牸寮忎负 YOLO11锛屼絾闇€瑕佽皟鏁磋矾寰勩€?
 
-#### Mahjong 数据集适配
+#### Mahjong 鏁版嵁闆嗛€傞厤
 
 ```yaml
-# 原始 data.yaml（相对路径）
+# 鍘熷 data.yaml锛堢浉瀵硅矾寰勶級
 train: ../train/images
 val: ../valid/images
 test: ../test/images
 
-# OpenIris 适配后（使用绝对路径或正确的相对路径）
-train: D:/YOLO11Preinit/Mahjong.v57i.yolov11/train/images
-val: D:/YOLO11Preinit/Mahjong.v57i.yolov11/valid/images
-test: D:/YOLO11Preinit/Mahjong.v57i.yolov11/test/images
+# OpenIris 閫傞厤鍚庯紙浣跨敤缁濆璺緞鎴栨纭殑鐩稿璺緞锛?
+train: <your-dataset-path>/train/images
+val: <your-dataset-path>/valid/images
+test: <your-dataset-path>/test/images
 ```
 
-### 3.2 创建 OpenIris 自定义数据集
+### 3.2 鍒涘缓 OpenIris 鑷畾涔夋暟鎹泦
 
 ```yaml
 # training/configs/dataset_custom.yaml
@@ -145,84 +145,84 @@ path: ./datasets/your_dataset
 train: images/train
 val: images/val
 
-nc: 你的类别数
+nc: 浣犵殑绫诲埆鏁?
 names:
   0: class_0
   1: class_1
   # ...
 ```
 
-### 3.3 使用参考数据集训练
+### 3.3 浣跨敤鍙傝€冩暟鎹泦璁粌
 
-如果要使用参考环境的数据集进行训练：
+濡傛灉瑕佷娇鐢ㄥ弬鑰冪幆澧冪殑鏁版嵁闆嗚繘琛岃缁冿細
 
 ```bash
-# 复制数据集到 OpenIris 项目
-xcopy "D:\YOLO11Preinit\Mahjong.v57i.yolov11\train" "training\datasets\mahjong\images\train" /E /I
-xcopy "D:\YOLO11Preinit\Mahjong.v57i.yolov11\valid" "training\datasets\mahjong\images\val" /E /I
-xcopy "D:\YOLO11Preinit\Mahjong.v57i.yolov11\train\labels" "training\datasets\mahjong\labels\train" /E /I
-xcopy "D:\YOLO11Preinit\Mahjong.v57i.yolov11\valid\labels" "training\datasets\mahjong\labels\val" /E /I
+# 澶嶅埗鏁版嵁闆嗗埌 OpenIris 椤圭洰
+xcopy "<your-dataset-path>\train" "training\datasets\mahjong\images\train" /E /I
+xcopy "<your-dataset-path>\valid" "training\datasets\mahjong\images\val" /E /I
+xcopy "<your-dataset-path>\train\labels" "training\datasets\mahjong\labels\train" /E /I
+xcopy "<your-dataset-path>\valid\labels" "training\datasets\mahjong\labels\val" /E /I
 ```
 
 ---
 
-## 4. 硬件适配 (RTX 4060 Laptop)
+## 4. 纭欢閫傞厤 (RTX 4060 Laptop)
 
-### 4.1 显存限制
+### 4.1 鏄惧瓨闄愬埗
 
-RTX 4060 Laptop 只有 **8GB 显存**，需要调整批次大小。
+RTX 4060 Laptop 鍙湁 **8GB 鏄惧瓨**锛岄渶瑕佽皟鏁存壒娆″ぇ灏忋€?
 
-| 模型 | 参考批次 | OpenIris 推荐批次 | 说明 |
+| 妯″瀷 | 鍙傝€冩壒娆?| OpenIris 鎺ㄨ崘鎵规 | 璇存槑 |
 ------|----------|-------------------|------|
-| yolo11x | 16 | 不适用 | 大模型不适合移动端 |
-| yolo11n | - | **32-48** | nano 模型显存占用小 |
+| yolo11x | 16 | 涓嶉€傜敤 | 澶фā鍨嬩笉閫傚悎绉诲姩绔?|
+| yolo11n | - | **32-48** | nano 妯″瀷鏄惧瓨鍗犵敤灏?|
 
-### 4.2 最佳配置
+### 4.2 鏈€浣抽厤缃?
 
 ```python
-# RTX 4060 Laptop (8GB) 最佳配置
+# RTX 4060 Laptop (8GB) 鏈€浣抽厤缃?
 model.train(
     model='yolo11n.pt',
     imgsz=640,
-    batch=32,        # 8GB 显存可支持
-    amp=True,        # 启用混合精度，节省显存
-    workers=4,       # Windows 下建议 4
+    batch=32,        # 8GB 鏄惧瓨鍙敮鎸?
+    amp=True,        # 鍚敤娣峰悎绮惧害锛岃妭鐪佹樉瀛?
+    workers=4,       # Windows 涓嬪缓璁?4
     device=0,
 )
 ```
 
-### 4.3 显存不足时的解决方案
+### 4.3 鏄惧瓨涓嶈冻鏃剁殑瑙e喅鏂规
 
 ```python
-# 方案1: 减小批次
+# 鏂规1: 鍑忓皬鎵规
 batch=16
 
-# 方案2: 梯度累积（模拟大批次）
+# 鏂规2: 姊害绱Н锛堟ā鎷熷ぇ鎵规锛?
 batch=16
-accumulate=2  # 有效 batch = 16 * 2 = 32
+accumulate=2  # 鏈夋晥 batch = 16 * 2 = 32
 
-# 方案3: 启用梯度检查点
+# 鏂规3: 鍚敤姊害妫€鏌ョ偣
 gradient_checkpointing=True
 ```
 
 ---
 
-## 5. 训练脚本适配
+## 5. 璁粌鑴氭湰閫傞厤
 
-### 5.1 参考脚本 vs OpenIris 脚本
+### 5.1 鍙傝€冭剼鏈?vs OpenIris 鑴氭湰
 
-| 特性 | 参考脚本 | OpenIris 脚本 |
+| 鐗规€?| 鍙傝€冭剼鏈?| OpenIris 鑴氭湰 |
 ------|----------|---------------|
-| 路径 | 绝对路径 | 相对路径 |
-| 模型 | yolo11x | yolo11n |
-| 尺寸 | 416/640 混用 | 固定 640 |
-| 优化器 | SGD | AdamW |
-| AMP | 可选 | 必须启用 |
-| 早停 | 无 | patience=50 |
-| EMA | 无 | 启用 |
-| 标签平滑 | 无 | 0.02 |
+| 璺緞 | 缁濆璺緞 | 鐩稿璺緞 |
+| 妯″瀷 | yolo11x | yolo11n |
+| 灏哄 | 416/640 娣风敤 | 鍥哄畾 640 |
+| 浼樺寲鍣?| SGD | AdamW |
+| AMP | 鍙€?| 蹇呴』鍚敤 |
+| 鏃╁仠 | 鏃?| patience=50 |
+| EMA | 鏃?| 鍚敤 |
+| 鏍囩骞虫粦 | 鏃?| 0.02 |
 
-### 5.2 适配后的训练脚本
+### 5.2 閫傞厤鍚庣殑璁粌鑴氭湰
 
 ```python
 # training/scripts/train_adapted.py
@@ -232,36 +232,36 @@ warnings.filterwarnings('ignore')
 from ultralytics import YOLO
 from pathlib import Path
 
-# 使用相对路径
+# 浣跨敤鐩稿璺緞
 PROJECT_ROOT = Path(__file__).parent.parent.parent
 
 if __name__ == '__main__':
-    # 使用 nano 模型（移动端必须）
+    # 浣跨敤 nano 妯″瀷锛堢Щ鍔ㄧ蹇呴』锛?
     model = YOLO('yolo11n.pt')
 
     results = model.train(
-        # 数据集配置（相对路径）
+        # 鏁版嵁闆嗛厤缃紙鐩稿璺緞锛?
         data=str(PROJECT_ROOT / 'training' / 'configs' / 'dataset_custom.yaml'),
 
-        # 模型配置
-        imgsz=640,           # 必须固定 640
+        # 妯″瀷閰嶇疆
+        imgsz=640,           # 蹇呴』鍥哄畾 640
         epochs=200,
         batch=32,
 
-        # 优化器（推荐 AdamW）
+        # 浼樺寲鍣紙鎺ㄨ崘 AdamW锛?
         optimizer='AdamW',
         lr0=0.001,
 
-        # 硬件
+        # 纭欢
         device=0,
-        amp=True,            # 必须启用
-        workers=4,           # Windows 推荐 4
+        amp=True,            # 蹇呴』鍚敤
+        workers=4,           # Windows 鎺ㄨ崘 4
 
-        # 正则化
+        # 姝e垯鍖?
         label_smoothing=0.02,
         patience=50,
 
-        # 输出
+        # 杈撳嚭
         project=str(PROJECT_ROOT / 'runs' / 'train'),
         name='openiris_v1',
     )
@@ -269,87 +269,89 @@ if __name__ == '__main__':
 
 ---
 
-## 6. 环境搭建
+## 6. 鐜鎼缓
 
-### 6.1 方案A: 使用现有 Conda 环境
+### 6.1 鏂规A: 浣跨敤鐜版湁 Conda 鐜
 
-如果已安装 Anaconda/Miniconda：
+濡傛灉宸插畨瑁?Anaconda/Miniconda锛?
 
 ```bash
-# 创建新环境
+# 鍒涘缓鏂扮幆澧?
 conda create -n openiris python=3.11
 conda activate openiris
 
-# 安装 PyTorch (CUDA 12.x)
+# 瀹夎 PyTorch (CUDA 12.x)
 pip install torch torchvision --index-url https://download.pytorch.org/whl/cu121
 
-# 安装其他依赖
+# 瀹夎鍏朵粬渚濊禆
 pip install -r training/requirements.txt
 ```
 
-### 6.2 方案B: 使用 venv (无需 Anaconda)
+### 6.2 鏂规B: 浣跨敤 venv (鏃犻渶 Anaconda)
 
 ```bash
-# 创建虚拟环境
+# 鍒涘缓铏氭嫙鐜
 python -m venv training/venv
 training\venv\Scripts\activate
 
-# 安装 PyTorch
+# 瀹夎 PyTorch
 pip install torch torchvision --index-url https://download.pytorch.org/whl/cu121
 
-# 安装其他依赖
+# 瀹夎鍏朵粬渚濊禆
 pip install -r training/requirements.txt
 ```
 
-### 6.3 方案C: 直接使用参考环境
+### 6.3 鏂规C: 鐩存帴浣跨敤鍙傝€冪幆澧?
 
-如果不想新建环境，可以直接使用 D:\YOLO11Preinit\Yolo11Pre：
+濡傛灉涓嶆兂鏂板缓鐜锛屽彲浠ョ洿鎺ヤ娇鐢?<your-training-env>锛?
 
 ```bash
-# 激活参考环境
-D:\YOLO11Preinit\Yolo11Pre\Scripts\activate
+# 婵€娲诲弬鑰冪幆澧?
+<your-training-env>\Scripts\activate
 
-# 安装额外依赖（如果有）
+# 瀹夎棰濆渚濊禆锛堝鏋滄湁锛?
 pip install pyyaml matplotlib seaborn
 ```
 
 ---
 
-## 7. 关键差异总结
+## 7. 鍏抽敭宸紓鎬荤粨
 
-### 必须更改
+### 蹇呴』鏇存敼
 
-| 项目 | 参考值 | OpenIris 要求 | 原因 |
+| 椤圭洰 | 鍙傝€冨€?| OpenIris 瑕佹眰 | 鍘熷洜 |
 ------|--------|---------------|------|
-| 模型 | yolo11x | **yolo11n** | 移动端部署 |
-| 输入尺寸 | 416/640 | **640** | NCNN 推理固定 |
-| AMP | 可选 | **必须启用** | 性能优化 |
-| 路径 | 绝对路径 | **相对路径** | 可移植性 |
+| 妯″瀷 | yolo11x | **yolo11n** | 绉诲姩绔儴缃?|
+| 杈撳叆灏哄 | 416/640 | **640** | NCNN 鎺ㄧ悊鍥哄畾 |
+| AMP | 鍙€?| **蹇呴』鍚敤** | 鎬ц兘浼樺寲 |
+| 璺緞 | 缁濆璺緞 | **鐩稿璺緞** | 鍙Щ妞嶆€?|
 
-### 推荐更改
+### 鎺ㄨ崘鏇存敼
 
-| 项目 | 参考值 | OpenIris 推荐 | 原因 |
+| 椤圭洰 | 鍙傝€冨€?| OpenIris 鎺ㄨ崘 | 鍘熷洜 |
 ------|--------|---------------|------|
-| 优化器 | SGD | **AdamW** | 小模型更稳定 |
-| 学习率 | 0.01 | **0.001** | AdamW 推荐 |
-| 标签平滑 | 0 | **0.02** | 防止过拟合 |
-| 早停 | 无 | **patience=50** | 避免过训练 |
-| EMA | 无 | **启用** | 模型平滑 |
+| 浼樺寲鍣?| SGD | **AdamW** | 灏忔ā鍨嬫洿绋冲畾 |
+| 瀛︿範鐜?| 0.01 | **0.001** | AdamW 鎺ㄨ崘 |
+| 鏍囩骞虫粦 | 0 | **0.02** | 闃叉杩囨嫙鍚?|
+| 鏃╁仠 | 鏃?| **patience=50** | 閬垮厤杩囪缁?|
+| EMA | 鏃?| **鍚敤** | 妯″瀷骞虫粦 |
 
 ---
 
-## 8. 快速开始命令
+## 8. 蹇€熷紑濮嬪懡浠?
 
 ```bash
-# 1. 激活环境
-D:\YOLO11Preinit\Yolo11Pre\Scripts\activate
+# 1. 婵€娲荤幆澧?
+<your-training-env>\Scripts\activate
 
-# 2. 进入项目目录
+# 2. 杩涘叆椤圭洰鐩綍
 cd D:\Opencode,OCCM\Items\Yolo11forAndroid
 
-# 3. 运行适配后的训练
+# 3. 杩愯閫傞厤鍚庣殑璁粌
 python training/scripts/train.py --data training/configs/dataset_custom.yaml --epochs 200
 
-# 4. 或使用 GUI
+# 4. 鎴栦娇鐢?GUI
 python training/gui/launcher.py
 ```
+
+

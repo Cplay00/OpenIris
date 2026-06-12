@@ -9,7 +9,7 @@ data class VlmObject(
     val name: String,                           // 对象名称
     val count: Int = 1,                         // 数量
     val attributes: List<String> = emptyList(),  // 属性列表
-    val confidence: Float? = null               // 置信度（可选）
+    val confidence: Float? = null               // 置信度(可选)
 ) {
     fun toUnifiedObjectResult(): UnifiedObjectResult {
         return UnifiedObjectResult(
@@ -28,10 +28,10 @@ data class VlmObject(
 data class VlmResult(
     val source: String = "vlm",
     val timestampMs: Long = System.currentTimeMillis(),
-    val imageBase64: String? = null,            // 输入图片（可选）
+    val imageBase64: String? = null,            // 输入图片(可选)
     val objects: List<VlmObject> = emptyList(),
     val sceneSummary: String = "",               // 场景摘要
-    val rawResponse: String = ""                 // 原始响应（用于调试）
+    val rawResponse: String = ""                 // 原始响应(用于调试)
 ) {
     /**
      * 按名称统计对象数量

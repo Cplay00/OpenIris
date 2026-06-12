@@ -87,9 +87,9 @@ class DefaultModelPickerDialog : BottomSheetDialogFragment() {
     private fun updateCurrentDefaultText() {
         val defaultItem = allModels.find { it.model.id == currentDefaultModelId }
         textCurrentDefault.text = if (defaultItem != null) {
-            "当前默认模型：${defaultItem.model.displayName} (${defaultItem.providerName})"
+            "当前默认模型:${defaultItem.model.displayName} (${defaultItem.providerName})"
         } else {
-            "当前默认模型：无"
+            "当前默认模型:无"
         }
     }
 

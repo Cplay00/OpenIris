@@ -144,7 +144,7 @@ def main():
         print(f"Device: {train_args['device']}")
         print("\nStarting training...\n")
 
-        model_path = train_args.pop("model")
+        train_args.pop("model")
         results = model.train(**train_args)
 
         print("\nTraining complete!")
@@ -161,3 +161,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+

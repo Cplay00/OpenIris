@@ -5,7 +5,7 @@ import android.content.SharedPreferences
 /**
  * API Key 加密存储适配层。
  *
- * 底层仍然使用 ConfigManager 提供的 EncryptedSharedPreferences，
+ * 底层仍然使用 ConfigManager 提供的 EncryptedSharedPreferences,
  * 调用方只通过明确的保存、读取、更新、清空接口访问敏感字段。
  */
 internal class EncryptedApiKeyStore(

@@ -3,85 +3,85 @@
 """
 OpenIris Training with Algorithm Improvements
 
-支持使用改进模型进行训练的脚本。
+鏀寔浣跨敤鏀硅繘妯″瀷杩涜璁粌鐨勮剼鏈€?
 
-使用方法:
-    # 使用 SE 注意力
+浣跨敤鏂规硶:
+    # 浣跨敤 SE 娉ㄦ剰鍔?
     python training/scripts/train_with_improvements.py --model se
 
-    # 使用 CBAM 注意力
+    # 浣跨敤 CBAM 娉ㄦ剰鍔?
     python training/scripts/train_with_improvements.py --model cbam
 
-    # 使用 GhostConv
+    # 浣跨敤 GhostConv
     python training/scripts/train_with_improvements.py --model ghost
 
-    # 使用综合改进
+    # 浣跨敤缁煎悎鏀硅繘
     python training/scripts/train_with_improvements.py --model enhanced
 
-    # 自定义模型配置
+    # 鑷畾涔夋ā鍨嬮厤缃?
     python training/scripts/train_with_improvements.py --model-yaml path/to/model.yaml
 """
 
 import warnings
-warnings.filterwarnings('ignore')
+warnings.filterwarnings('ignore', category=UserWarning, module='ultralytics')
 
 import argparse
 import sys
 from pathlib import Path
 
-# 项目根目录
+# 椤圭洰鏍圭洰褰?
 PROJECT_ROOT = Path(__file__).parent.parent.parent
 MODELS_DIR = PROJECT_ROOT / 'training' / 'configs' / 'models'
 
-# 预定义的改进模型
+# 棰勫畾涔夌殑鏀硅繘妯″瀷
 MODEL_PRESETS = {
     'original': {
         'yaml': None,
         'weights': 'yolo11n.pt',
-        'description': '原始 YOLO11n 模型'
+        'description': '鍘熷 YOLO11n 妯″瀷'
     },
     'se': {
         'yaml': MODELS_DIR / 'yolo11-se.yaml',
         'weights': 'yolo11n.pt',
-        'description': 'YOLO11n + SE 注意力'
+        'description': 'YOLO11n + SE 娉ㄦ剰鍔?
     },
     'cbam': {
         'yaml': MODELS_DIR / 'yolo11-cbam.yaml',
         'weights': 'yolo11n.pt',
-        'description': 'YOLO11n + CBAM 注意力'
+        'description': 'YOLO11n + CBAM 娉ㄦ剰鍔?
     },
     'ghost': {
         'yaml': MODELS_DIR / 'yolo11-ghost.yaml',
         'weights': 'yolo11n.pt',
-        'description': 'YOLO11n + GhostConv 轻量级'
+        'description': 'YOLO11n + GhostConv 杞婚噺绾?
     },
     'enhanced': {
         'yaml': MODELS_DIR / 'yolo11-enhanced.yaml',
         'weights': 'yolo11n.pt',
-        'description': 'YOLO11n + CBAM + C2fCIB 综合改进'
+        'description': 'YOLO11n + CBAM + C2fCIB 缁煎悎鏀硅繘'
     }
 }
 
 
 def get_model_config(preset_name, custom_yaml=None):
-    """获取模型配置"""
+    """鑾峰彇妯″瀷閰嶇疆"""
     if custom_yaml:
         return {
             'yaml': Path(custom_yaml),
             'weights': 'yolo11n.pt',
-            'description': f'自定义模型: {custom_yaml}'
+            'description': f'鑷畾涔夋ā鍨? {custom_yaml}'
         }
 
     if preset_name not in MODEL_PRESETS:
-        print(f"错误: 未知的模型预设 '{preset_name}'")
-        print(f"可用预设: {', '.join(MODEL_PRESETS.keys())}")
+        print(f"閿欒: 鏈煡鐨勬ā鍨嬮璁?'{preset_name}'")
+        print(f"鍙敤棰勮: {', '.join(MODEL_PRESETS.keys())}")
         sys.exit(1)
 
     return MODEL_PRESETS[preset_name]
 
 
 def build_train_args(args, model_config):
-    """构建训练参数"""
+    """鏋勫缓璁粌鍙傛暟"""
     config = {
         'data': args.data or str(PROJECT_ROOT / 'training' / 'configs' / 'dataset_custom.yaml'),
         'epochs': args.epochs or 200,
@@ -117,14 +117,14 @@ def main():
         description="OpenIris Training with Algorithm Improvements",
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
-可用的模型预设:
-  original   - 原始 YOLO11n 模型
-  se         - YOLO11n + SE 注意力 (轻量级)
-  cbam       - YOLO11n + CBAM 注意力 (高精度)
-  ghost      - YOLO11n + GhostConv (极致轻量)
-  enhanced   - YOLO11n + CBAM + C2fCIB (最高精度)
+鍙敤鐨勬ā鍨嬮璁?
+  original   - 鍘熷 YOLO11n 妯″瀷
+  se         - YOLO11n + SE 娉ㄦ剰鍔?(杞婚噺绾?
+  cbam       - YOLO11n + CBAM 娉ㄦ剰鍔?(楂樼簿搴?
+  ghost      - YOLO11n + GhostConv (鏋佽嚧杞婚噺)
+  enhanced   - YOLO11n + CBAM + C2fCIB (鏈€楂樼簿搴?
 
-示例:
+绀轰緥:
   python training/scripts/train_with_improvements.py --model cbam --data configs/dataset_custom.yaml
         """
     )
@@ -134,105 +134,105 @@ def main():
         type=str,
         default='original',
         choices=list(MODEL_PRESETS.keys()),
-        help='模型预设 (默认: original)'
+        help='妯″瀷棰勮 (榛樿: original)'
     )
     parser.add_argument(
         '--model-yaml',
         type=str,
         default=None,
-        help='自定义模型 YAML 配置文件路径'
+        help='鑷畾涔夋ā鍨?YAML 閰嶇疆鏂囦欢璺緞'
     )
     parser.add_argument(
         '--data',
         type=str,
         default=None,
-        help='数据集配置文件路径'
+        help='鏁版嵁闆嗛厤缃枃浠惰矾寰?
     )
     parser.add_argument(
         '--epochs',
         type=int,
         default=None,
-        help='训练轮次 (默认: 200)'
+        help='璁粌杞 (榛樿: 200)'
     )
     parser.add_argument(
         '--batch',
         type=int,
         default=None,
-        help='批次大小 (默认: 32)'
+        help='鎵规澶у皬 (榛樿: 32)'
     )
     parser.add_argument(
         '--device',
         type=str,
         default=None,
-        help='设备 (默认: 0)'
+        help='璁惧 (榛樿: 0)'
     )
     parser.add_argument(
         '--name',
         type=str,
         default=None,
-        help='实验名称'
+        help='瀹為獙鍚嶇О'
     )
     parser.add_argument(
         '--dry-run',
         action='store_true',
-        help='仅显示配置，不执行训练'
+        help='浠呮樉绀洪厤缃紝涓嶆墽琛岃缁?
     )
 
     args = parser.parse_args()
 
-    # 获取模型配置
+    # 鑾峰彇妯″瀷閰嶇疆
     model_config = get_model_config(args.model, args.model_yaml)
 
     print("=" * 60)
-    print("OpenIris 训练 - 算法改进模式")
+    print("OpenIris 璁粌 - 绠楁硶鏀硅繘妯″紡")
     print("=" * 60)
 
-    print("\n【模型配置】")
-    print(f"  预设: {args.model}")
-    print(f"  描述: {model_config['description']}")
+    print("\n銆愭ā鍨嬮厤缃€?)
+    print(f"  棰勮: {args.model}")
+    print(f"  鎻忚堪: {model_config['description']}")
     if model_config['yaml']:
         print(f"  YAML: {model_config['yaml']}")
-    print(f"  预训练权重: {model_config['weights']}")
+    print(f"  棰勮缁冩潈閲? {model_config['weights']}")
 
-    # 构建训练参数
+    # 鏋勫缓璁粌鍙傛暟
     train_config = build_train_args(args, model_config)
 
-    print("\n【训练配置】")
-    print(f"  数据集: {train_config['data']}")
-    print(f"  轮次: {train_config['epochs']}")
-    print(f"  批次大小: {train_config['batch']}")
-    print(f"  优化器: {train_config['optimizer']}")
-    print(f"  学习率: {train_config['lr0']}")
-    print(f"  设备: {train_config['device']}")
+    print("\n銆愯缁冮厤缃€?)
+    print(f"  鏁版嵁闆? {train_config['data']}")
+    print(f"  杞: {train_config['epochs']}")
+    print(f"  鎵规澶у皬: {train_config['batch']}")
+    print(f"  浼樺寲鍣? {train_config['optimizer']}")
+    print(f"  瀛︿範鐜? {train_config['lr0']}")
+    print(f"  璁惧: {train_config['device']}")
     print(f"  AMP: {train_config['amp']}")
 
     if args.dry_run:
-        print("\n[Dry Run] 仅显示配置，不执行训练")
+        print("\n[Dry Run] 浠呮樉绀洪厤缃紝涓嶆墽琛岃缁?)
         return
 
-    # 开始训练
+    # 寮€濮嬭缁?
     try:
         from ultralytics import YOLO
 
-        print("\n加载模型...")
+        print("\n鍔犺浇妯″瀷...")
         if model_config['yaml']:
             model = YOLO(str(model_config['yaml']))
             model.load(model_config['weights'])
         else:
             model = YOLO(model_config['weights'])
 
-        print("开始训练...\n")
+        print("寮€濮嬭缁?..\n")
         results = model.train(**train_config)
 
-        print("\n训练完成!")
-        print(f"最优权重: {train_config['project']}/{train_config['name']}/weights/best.pt")
+        print("\n璁粌瀹屾垚!")
+        print(f"鏈€浼樻潈閲? {train_config['project']}/{train_config['name']}/weights/best.pt")
 
     except ImportError:
-        print("\n错误: 未安装 ultralytics")
-        print("请先激活环境: D:\\YOLO11Preinit\\Yolo11Pre\\Scripts\\activate")
+        print("\n閿欒: 鏈畨瑁?ultralytics")
+        print("璇峰厛婵€娲荤幆澧? your training environment")
         sys.exit(1)
     except Exception as e:
-        print(f"\n训练失败: {e}")
+        print(f"\n璁粌澶辫触: {e}")
         import traceback
         traceback.print_exc()
         sys.exit(1)
@@ -240,3 +240,5 @@ def main():
 
 if __name__ == '__main__':
     main()
+
+

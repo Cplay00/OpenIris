@@ -3,7 +3,7 @@ package com.yolo.openiris.detection
 /**
  * 统一对象结果模型。
  *
- * 这是一个面向融合与导出的派生读模型：
+ * 这是一个面向融合与导出的派生读模型:
  * - YOLO 提供 bbox / confidence
  * - VLM 提供 count / attributes
  * - LLM 提供 evidence / discrepancies 归纳

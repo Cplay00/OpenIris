@@ -79,7 +79,7 @@ class AiProviderEditActivity : AppCompatActivity(), ModelSettingsDialog.OnModelS
         val toolbar = findViewById<MaterialToolbar>(R.id.toolbar)
         toolbar.setNavigationOnClickListener { finish() }
 
-        // API 格式选择
+        // API 鏍煎紡閫夋嫨
         toggleGroupApiFormat = findViewById(R.id.toggleGroupApiFormat)
         toggleGroupApiFormat.addOnButtonCheckedListener { _, checkedId, isChecked ->
             if (isChecked) {
@@ -100,8 +100,7 @@ class AiProviderEditActivity : AppCompatActivity(), ModelSettingsDialog.OnModelS
         switchResponseApi = findViewById(R.id.switchResponseApi)
         editSearchModel = findViewById(R.id.editSearchModel)
 
-        // Response API 开关监听
-        switchResponseApi.setOnCheckedChangeListener { _, isChecked ->
+        // Response API 寮€鍏崇洃鍚?        switchResponseApi.setOnCheckedChangeListener { _, isChecked ->
             if (isChecked) {
                 editApiPath.setText("/responses")
             } else {
@@ -109,17 +108,16 @@ class AiProviderEditActivity : AppCompatActivity(), ModelSettingsDialog.OnModelS
             }
         }
 
-        // 流式输出开关
-        switchEnableStream = findViewById(R.id.switchEnableStream)
+        // 娴佸紡杈撳嚭寮€鍏?        switchEnableStream = findViewById(R.id.switchEnableStream)
 
         buttonFetchModels = findViewById(R.id.buttonFetchModels)
         buttonFetchModels.setOnClickListener { fetchModelList() }
 
-        // 测试连接按钮
+        // 娴嬭瘯杩炴帴鎸夐挳
         val buttonTestConnection = findViewById<MaterialButton>(R.id.buttonTestConnection)
         buttonTestConnection.setOnClickListener { showConnectionTestDialog() }
 
-        // 手动输入模型ID
+        // 鎵嬪姩杈撳叆妯″瀷ID
         editManualModelId = findViewById(R.id.editManualModelId)
         buttonAddManualModel = findViewById(R.id.buttonAddManualModel)
         buttonAddManualModel.setOnClickListener { addManualModel() }
@@ -135,7 +133,7 @@ class AiProviderEditActivity : AppCompatActivity(), ModelSettingsDialog.OnModelS
         buttonSave = findViewById(R.id.buttonSave)
         buttonSave.setOnClickListener { saveProvider() }
 
-        // 搜索功能
+        // 鎼滅储鍔熻兘
         editSearchModel.addTextChangedListener(object : TextWatcher {
             override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
             override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {}
@@ -153,7 +151,7 @@ class AiProviderEditActivity : AppCompatActivity(), ModelSettingsDialog.OnModelS
                 if (editBaseUrl.text.toString().isEmpty() || editBaseUrl.text.toString().contains("anthropic")) {
                     editBaseUrl.setText("https://api.openai.com/v1")
                 }
-                // 只有启用 Response API 时才使用 /responses
+                // 鍙湁鍚敤 Response API 鏃舵墠浣跨敤 /responses
                 if (switchResponseApi.isChecked) {
                     editApiPath.setText("/responses")
                 } else {
@@ -173,7 +171,7 @@ class AiProviderEditActivity : AppCompatActivity(), ModelSettingsDialog.OnModelS
 
     private fun loadProviderData() {
         if (providerId != null) {
-            existingProvider = aiModelManager.getProvider(providerId!!)
+            existingProvider = providerId?.let { aiModelManager.getProvider(it) }
             existingProvider?.let { provider ->
                 editProviderName.setText(provider.name)
                 editBaseUrl.setText(provider.baseUrl)
@@ -183,7 +181,7 @@ class AiProviderEditActivity : AppCompatActivity(), ModelSettingsDialog.OnModelS
                 switchResponseApi.isChecked = provider.useResponseApi
                 switchEnableStream.isChecked = provider.enableStream
 
-                // 设置 API 格式
+                // 璁剧疆 API 鏍煎紡
                 currentApiFormat = provider.apiFormat
                 when (currentApiFormat) {
                     ApiFormat.OPENAI_COMPATIBLE -> toggleGroupApiFormat.check(R.id.buttonOpenAi)
@@ -201,12 +199,12 @@ class AiProviderEditActivity : AppCompatActivity(), ModelSettingsDialog.OnModelS
         val apiKey = editApiKey.text.toString().trim()
 
         if (baseUrl.isEmpty() || apiKey.isEmpty()) {
-            Toast.makeText(this, "请先填写 Base URL 和 API Key", Toast.LENGTH_SHORT).show()
+            Toast.makeText(this, "璇峰厛濉啓 Base URL 鍜?API Key", Toast.LENGTH_SHORT).show()
             return
         }
 
         buttonFetchModels.isEnabled = false
-        buttonFetchModels.text = "获取中..."
+        buttonFetchModels.text = "鑾峰彇涓?.."
 
         val provider = AiProvider(
             id = providerId ?: UUID.randomUUID().toString(),
@@ -222,16 +220,16 @@ class AiProviderEditActivity : AppCompatActivity(), ModelSettingsDialog.OnModelS
                 allAvailableModels = models.toMutableList()
                 filteredModels = models.toMutableList()
                 updateAvailableModelsList()
-                textModelCount.text = "${models.size} 个模型"
-                Toast.makeText(this@AiProviderEditActivity, "获取到 ${models.size} 个模型", Toast.LENGTH_SHORT).show()
+                textModelCount.text = "${models.size} 涓ā鍨?
+                Toast.makeText(this@AiProviderEditActivity, "鑾峰彇鍒?${models.size} 涓ā鍨?, Toast.LENGTH_SHORT).show()
             }
 
             result.onFailure { error ->
-                Toast.makeText(this@AiProviderEditActivity, "获取失败: ${error.message}", Toast.LENGTH_SHORT).show()
+                Toast.makeText(this@AiProviderEditActivity, "鑾峰彇澶辫触: ${error.message}", Toast.LENGTH_SHORT).show()
             }
 
             buttonFetchModels.isEnabled = true
-            buttonFetchModels.text = "获取模型列表"
+            buttonFetchModels.text = "鑾峰彇妯″瀷鍒楄〃"
         }
     }
 
@@ -273,13 +271,13 @@ class AiProviderEditActivity : AppCompatActivity(), ModelSettingsDialog.OnModelS
         selectedModels.removeAll { it.id == model.id }
         updateSelectedModelsList()
         updateAvailableModelsList()
-        Toast.makeText(this, "已删除模型: ${model.displayName}", Toast.LENGTH_SHORT).show()
+        Toast.makeText(this, "宸插垹闄ゆā鍨? ${model.displayName}", Toast.LENGTH_SHORT).show()
     }
 
     private fun addManualModel() {
         val modelId = editManualModelId.text?.toString()?.trim() ?: ""
         if (modelId.isBlank()) {
-            Toast.makeText(this, "请输入模型ID", Toast.LENGTH_SHORT).show()
+            Toast.makeText(this, "璇疯緭鍏ユā鍨婭D", Toast.LENGTH_SHORT).show()
             return
         }
         addModel(modelId)
@@ -293,18 +291,17 @@ class AiProviderEditActivity : AppCompatActivity(), ModelSettingsDialog.OnModelS
                 modelId = newModelId,
                 displayName = if (model.displayName == model.modelId) newModelId else model.displayName
             )
-            Toast.makeText(this, "模型ID已更新: $newModelId", Toast.LENGTH_SHORT).show()
+            Toast.makeText(this, "妯″瀷ID宸叉洿鏂? $newModelId", Toast.LENGTH_SHORT).show()
         }
     }
 
     private fun addModel(modelId: String) {
         if (selectedModels.any { it.modelId == modelId }) {
-            Toast.makeText(this, "该模型已添加", Toast.LENGTH_SHORT).show()
+            Toast.makeText(this, "璇ユā鍨嬪凡娣诲姞", Toast.LENGTH_SHORT).show()
             return
         }
 
-        // 确保使用当前的 providerId（如果未保存则使用临时ID）
-        val currentProviderId = providerId ?: existingProvider?.id ?: UUID.randomUUID().toString()
+        // 纭繚浣跨敤褰撳墠鐨?providerId锛堝鏋滄湭淇濆瓨鍒欎娇鐢ㄤ复鏃禝D锛?        val currentProviderId = providerId ?: existingProvider?.id ?: UUID.randomUUID().toString()
 
         val model = AiModel(
             id = UUID.randomUUID().toString(),
@@ -331,7 +328,7 @@ class AiProviderEditActivity : AppCompatActivity(), ModelSettingsDialog.OnModelS
         val enableStream = switchEnableStream.isChecked
 
         if (name.isEmpty() || baseUrl.isEmpty() || apiKey.isEmpty()) {
-            Toast.makeText(this, "请填写完整信息", Toast.LENGTH_SHORT).show()
+            Toast.makeText(this, "璇峰~鍐欏畬鏁翠俊鎭?, Toast.LENGTH_SHORT).show()
             return
         }
 
@@ -342,7 +339,7 @@ class AiProviderEditActivity : AppCompatActivity(), ModelSettingsDialog.OnModelS
             name = name,
             baseUrl = baseUrl,
             apiKey = apiKey,
-            // 确保所有模型的 providerId 都是当前提供商的 ID
+            // 纭繚鎵€鏈夋ā鍨嬬殑 providerId 閮芥槸褰撳墠鎻愪緵鍟嗙殑 ID
             models = selectedModels.map { it.copy(providerId = currentProviderId) },
             isEnabled = isEnabled,
             apiFormat = currentApiFormat,
@@ -357,17 +354,17 @@ class AiProviderEditActivity : AppCompatActivity(), ModelSettingsDialog.OnModelS
             aiModelManager.saveProvider(provider)
         }
 
-        // 更新 providerId 和 existingProvider
+        // 鏇存柊 providerId 鍜?existingProvider
         providerId = currentProviderId
         existingProvider = provider
 
-        // 同步更新 selectedModels 的 providerId
+        // 鍚屾鏇存柊 selectedModels 鐨?providerId
         selectedModels = selectedModels.map { it.copy(providerId = currentProviderId) }.toMutableList()
 
-        Toast.makeText(this, "保存成功", Toast.LENGTH_SHORT).show()
+        Toast.makeText(this, "淇濆瓨鎴愬姛", Toast.LENGTH_SHORT).show()
     }
 
-    // ModelSettingsDialog.OnModelSettingsListener 实现
+    // ModelSettingsDialog.OnModelSettingsListener 瀹炵幇
     override fun onModelSettingsConfirmed(
         modelId: String, displayName: String, hasVision: Boolean,
         enableReasoning: Boolean, assignedTasks: List<String>,
@@ -455,20 +452,18 @@ class AiProviderEditActivity : AppCompatActivity(), ModelSettingsDialog.OnModelS
                 textModelName.text = model.displayName
                 editModelId.setText(model.modelId)
 
-                // 设置供应商图标
-                setProviderIcon(model.modelId)
+                // 璁剧疆渚涘簲鍟嗗浘鏍?                setProviderIcon(model.modelId)
 
-                // 设置视觉图标
+                // 璁剧疆瑙嗚鍥炬爣
                 iconVision.alpha = if (model.hasVision) 1.0f else 0.3f
 
-                // 设置高级选项按钮
+                // 璁剧疆楂樼骇閫夐」鎸夐挳
                 buttonSettings.setOnClickListener { onSettingsClick(model) }
 
-                // 设置删除按钮
+                // 璁剧疆鍒犻櫎鎸夐挳
                 buttonDelete.setOnClickListener { onDeleteClick(model) }
 
-                // 模型ID编辑失去焦点时保存
-                editModelId.setOnFocusChangeListener { _, hasFocus ->
+                // 妯″瀷ID缂栬緫澶卞幓鐒︾偣鏃朵繚瀛?                editModelId.setOnFocusChangeListener { _, hasFocus ->
                     if (!hasFocus) {
                         val newModelId = editModelId.text?.toString()?.trim() ?: ""
                         if (newModelId.isNotBlank() && newModelId != model.modelId) {
@@ -495,13 +490,12 @@ class AiProviderEditActivity : AppCompatActivity(), ModelSettingsDialog.OnModelS
                     imageProvider.visibility = View.VISIBLE
                     textInitial.visibility = View.GONE
                 } else {
-                    // 显示首字母
-                    val initial = modelId.firstOrNull()?.uppercase() ?: "?"
+                    // 鏄剧ず棣栧瓧姣?                    val initial = modelId.firstOrNull()?.uppercase() ?: "?"
                     textInitial.text = initial
                     textInitial.visibility = View.VISIBLE
                     imageProvider.visibility = View.GONE
 
-                    // 设置圆形背景颜色
+                    // 璁剧疆鍦嗗舰鑳屾櫙棰滆壊
                     val colors = listOf("#4CAF50", "#2196F3", "#FF9800", "#9C27B0", "#F44336", "#00BCD4")
                     val colorIndex = modelId.hashCode().mod(colors.size).let { if (it < 0) it + colors.size else it }
                     textInitial.setBackgroundColor(android.graphics.Color.parseColor(colors[colorIndex]))
@@ -519,10 +513,11 @@ class AiProviderEditActivity : AppCompatActivity(), ModelSettingsDialog.OnModelS
     private fun showConnectionTestDialog() {
         val currentProviderId = providerId
         if (currentProviderId == null) {
-            Toast.makeText(this, "请先保存提供商再进行测试", Toast.LENGTH_SHORT).show()
+            Toast.makeText(this, "璇峰厛淇濆瓨鎻愪緵鍟嗗啀杩涜娴嬭瘯", Toast.LENGTH_SHORT).show()
             return
         }
         val dialog = ConnectionTestDialog.newInstance(currentProviderId)
         dialog.show(supportFragmentManager, "ConnectionTestDialog")
     }
 }
+

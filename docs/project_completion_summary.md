@@ -2,7 +2,7 @@
 
 ## 项目概述
 
-OpenIris 是一个基于 YOLOv11 + NCNN 的 Android 原生应用，结合 AI 多提供商系统（支持 VLM/LLM）进行智能图像分析。
+OpenIris 是一个基于 YOLOv11 + NCNN 的 Android 原生应用,结合 AI 多提供商系统(支持 VLM/LLM)进行智能图像分析。
 
 ## 当前版本
 
@@ -14,7 +14,7 @@ OpenIris 是一个基于 YOLOv11 + NCNN 的 Android 原生应用，结合 AI 多
 ### Wave 1: 项目基础与模型转换 ✅
 
 - [x] 基于 ncnn-android-yolov11 二次开发
-- [x] 应用名调整为 OpenIris，包名 com.yolo.openiris
+- [x] 应用名调整为 OpenIris,包名 com.yolo.openiris
 - [x] 模型转换脚本 (tools/export_yolov11_ncnn.py)
 - [x] 模型目录规范 (assets/models/yolov11n/)
 - [x] 配置与结果数据结构设计
@@ -61,9 +61,9 @@ OpenIris 是一个基于 YOLOv11 + NCNN 的 Android 原生应用，结合 AI 多
 ### Wave 6: AI 多提供商系统 ✅
 
 - [x] AiProvider / AiModel 数据模型
-- [x] AiModelManager 单例管理器（流式/非流式调用）
-- [x] AiModelConfigStore 持久化存储（apiKey 加密分离）
-- [x] AiApiClient 统一 HTTP 客户端（OpenAI-compatible + Anthropic）
+- [x] AiModelManager 单例管理器(流式/非流式调用)
+- [x] AiModelConfigStore 持久化存储(apiKey 加密分离)
+- [x] AiApiClient 统一 HTTP 客户端(OpenAI-compatible + Anthropic)
 - [x] AiResult 结构化输出解析
 - [x] AiModelSettingsActivity 模型管理页面
 - [x] AiProviderEditActivity 提供商编辑页面
@@ -75,9 +75,9 @@ OpenIris 是一个基于 YOLOv11 + NCNN 的 Android 原生应用，结合 AI 多
 
 ### GPU 兼容性修复 ✅
 
-- [x] AppConfig.useGpu 默认值改为 false（兼容不支持 Vulkan 的设备）
+- [x] AppConfig.useGpu 默认值改为 false(兼容不支持 Vulkan 的设备)
 - [x] JNI 层 GPU 不可用时自动回退 CPU 模式
-- [x] loadNcnnNetwork 返回值检查，加载失败有明确日志
+- [x] loadNcnnNetwork 返回值检查,加载失败有明确日志
 
 ## 文件清单
 
@@ -109,9 +109,9 @@ OpenIris 是一个基于 YOLOv11 + NCNN 的 Android 原生应用，结合 AI 多
 
 | 文件 | 修改内容 |
 |------|---------|
-| `config/AppConfig.kt` | useGpu 默认值改为 false，新增摄像头分辨率/自定义分辨率/抓取预览字段 |
+| `config/AppConfig.kt` | useGpu 默认值改为 false,新增摄像头分辨率/自定义分辨率/抓取预览字段 |
 | `yolov11ncnn.cpp` | GPU 回退 CPU、loadNcnnNetwork 返回值检查 |
-| `settings.gradle` | 添加 pluginManagement，禁用 foojay 自动下载 |
+| `settings.gradle` | 添加 pluginManagement,禁用 foojay 自动下载 |
 
 ## 技术栈
 
@@ -120,7 +120,7 @@ OpenIris 是一个基于 YOLOv11 + NCNN 的 Android 原生应用，结合 AI 多
 | 语言 | Kotlin + Java + C++ |
 | UI | Android Views (XML Layout) + ViewBinding |
 | 推理框架 | NCNN (CPU + Vulkan GPU) |
-| 网络 | OkHttp3（流式 + 非流式） |
+| 网络 | OkHttp3(流式 + 非流式) |
 | 序列化 | Gson |
 | 存储 | EncryptedSharedPreferences + SharedPreferences |
 | 测试 | JUnit 4 + Mockito |
@@ -131,9 +131,9 @@ OpenIris 是一个基于 YOLOv11 + NCNN 的 Android 原生应用，结合 AI 多
 1. **补充 ai/ 包单元测试** — AiApiClient、AiModelConfigStore、AiModelManager
 2. **旧模块整合** — 将 vlm/llm 模块的功能迁移到 ai/ 系统
 3. **性能优化** — 根据真机测试结果优化推理速度和内存占用
-4. **本地 LLM 集成** — 参考 wave6 调研报告，集成 llama.cpp
+4. **本地 LLM 集成** — 参考 wave6 调研报告,集成 llama.cpp
 
 ---
 
 **最后更新**: 2026-05-28
-**项目状态**: 核心功能开发完成，已构建验证
+**项目状态**: 核心功能开发完成,已构建验证
