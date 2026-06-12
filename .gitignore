@@ -72,3 +72,6 @@ usable-apk/
 gradle-9.4.1-all.zip
 # Build output packages
 Package/
+
+# Built APKs
+apks/
