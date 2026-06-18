@@ -1,4 +1,4 @@
-# OpenIris - 智能目标检测与 AI 识别 Android 应用
+# OpenIris - YOLOv11 端到端目标检测生态系统
 
 <div align="center">
 
@@ -7,7 +7,7 @@
 ![YOLO](https://img.shields.io/badge/YOLO-v11-orange?style=for-the-badge)
 ![License](https://img.shields.io/badge/License-Apache%202.0-yellowgreen?style=for-the-badge)
 
-**基于 YOLOv11 + VLM/LLM 的实时目标检测与智能识别系统**
+**从数据训练到 APP 推理的完整 YOLO-NCNN 生态闭环**
 
 [English](#english) | [中文](#中文)
 
@@ -19,19 +19,21 @@
 
 ### 项目简介
 
-OpenIris 是一款基于 **YOLOv11** 目标检测模型和 **VLM/LLM** 视觉语言大模型的 Android 智能识别应用。支持实时摄像头检测、图片分析、视频处理，并提供 AI 辅助识别与结果融合功能。
+OpenIris 是一套完整的 **YOLOv11 端到端目标检测生态系统**，涵盖从数据准备、模型训练、模型导出到 Android APP 推理的全流程。项目包含：
 
-### 完整 YOLO-NCNN 生态系统
+- **Android 智能识别应用**：支持实时摄像头检测、图片分析、视频处理，集成 VLM/LLM 视觉语言大模型进行 AI 辅助识别
+- **图形化训练平台**：提供 tkinter GUI 界面，支持自建数据集、多策略训练、一键导出部署
 
-**OpenIris 已实现从数据训练到 APP 推理的完整闭环：**
+### 生态闭环
 
-`
-数据准备 → 模型训练 → 模型导出 → APP 推理 → 结果分析
-   ↓           ↓           ↓           ↓           ↓
- 自建数据集   GUI训练    NCNN转换    实时检测    综合分析
- 标注转换     命令行训练   自动部署    图片/视频    AI融合
- 数据增强     高精度训练   自训练模型   导出功能    结果可视化
-`
+```
+数据准备 ──→ 模型训练 ──→ 模型导出 ──→ APP 推理 ──→ 结果分析
+   │            │            │            │            │
+   ▼            ▼            ▼            ▼            ▼
+ 自建数据集   GUI训练     NCNN转换    实时检测     综合分析
+ 标注转换     命令行训练   自动部署    图片/视频     AI融合
+ 数据增强     高精度训练   自训练模型   导出功能     结果可视化
+```
 
 | 环节 | 功能 | 技术实现 |
 |------|------|----------|
@@ -41,27 +43,31 @@ OpenIris 是一款基于 **YOLOv11** 目标检测模型和 **VLM/LLM** 视觉语
 | **APP 推理** | 实时检测、图片/视频分析 | NCNN C++ 推理引擎，GPU 加速 |
 | **结果分析** | 综合分析、AI 融合、结果导出 | YOLO + VLM/LLM 多模型融合 |
 
-**自训练模型支持：**
+### 自训练模型支持
+
 - 支持从任意路径加载自训练 NCNN 模型（param + bin + labels.txt）
 - 自动检测模型格式（ultralytics decoded / raw DFL）
 - 设置页支持导入/重命名/删除自定义模型
 - 内置 COCO-80、COCO-128、VOC-20、ImageNet-1000 标签预设
+
+---
+
 ### 主要功能
 
 | 功能 | 说明 |
-------|------|
-| **实时检测** | 摄像头实时预览,YOLO 实时检测,15 秒滑动窗口统计 |
-| **图片检测** | 本地图片分析,支持 HEIF/HEIC 格式,高分辨率拍照 |
-| **视频检测** | 视频抽帧分析,时间轴结果展示,AI 辅助识别 |
-| **AI 模型管理** | 多供应商支持,模型列表获取,视觉能力配置 |
-| **检测结果** | 三栏卡片式展示 (YOLO/AI/综合),胶囊式结果 UI |
-| **导出功能** | JSON 数据导出,标注图片导出,可配置导出路径 |
-| **训练平台** | 图形化训练界面,自建数据集,模型改进,一键部署 |
+|------|------|
+| **实时检测** | 摄像头实时预览，YOLO 实时检测，15 秒滑动窗口统计 |
+| **图片检测** | 本地图片分析，支持 HEIF/HEIC 格式，高分辨率拍照 |
+| **视频检测** | 视频抽帧分析，时间轴结果展示，AI 辅助识别 |
+| **AI 模型管理** | 多供应商支持，模型列表获取，视觉能力配置 |
+| **检测结果** | 三栏卡片式展示 (YOLO/AI/综合)，胶囊式结果 UI |
+| **导出功能** | JSON 数据导出，标注图片导出，可配置导出路径 |
+| **训练平台** | 图形化训练界面，自建数据集，模型改进，一键部署 |
 
 ### 技术栈
 
 | 组件 | 技术 |
-------|------|
+|------|------|
 | 检测模型 | YOLOv11 (NCNN 推理引擎) |
 | AI 模型 | VLM/LLM (OpenAI 兼容 API) |
 | UI 框架 | Material Design 3 |
@@ -80,7 +86,6 @@ Yolo11forAndroid/
 │       ├── assets/models/       # NCNN 模型文件
 │       ├── java/com/yolo/openiris/  # Kotlin/Java 源码
 │       └── jni/                 # C++ NCNN 推理代码
-├── ncnn-android-yolov11/        # NCNN Android 原始项目
 ├── training/                    # 训练框架 (详见下方)
 │   ├── run_gui.py               # GUI 入口
 │   ├── build_gui.bat            # 打包 exe 脚本
@@ -109,13 +114,13 @@ Yolo11forAndroid/
 **构建步骤:**
 ```bash
 # 克隆仓库
-git clone -b alpha https://github.com/your-org/OpenIris.git
+git clone -b alpha https://github.com/Cplay00/OpenIris.git
 cd OpenIris/buildapk
 
 # 构建 debug 版本
 ./gradlew assembleDebug
 
-# APK 输出: buildapk/app/build/outputs/apk/debug/
+# APK 输出: buildapk/app/outputs/apk/debug/
 ```
 
 ### 2. 模型训练 (图形界面)
@@ -270,7 +275,7 @@ label_smoothing: 0.02
 ### 关键约束
 
 | 约束项 | 值 | 说明 |
---------|-----|------|
+|--------|-----|------|
 | 模型变体 | YOLOv11n | 移动端推荐用 nano |
 | 输入尺寸 | 640 | 与 NCNN 推理端一致 |
 | 归一化 | /255, mean=0 | ultralytics 默认 |
@@ -289,7 +294,7 @@ label_smoothing: 0.02
 # 训练完成后导出到 Android
 python training/tools/export_pipeline.py \
     --weights runs/train/openiris_v1/weights/best.pt \
-    --assets ncnn-android-yolov11/app/src/main/assets/models/my_model
+    --assets buildapk/app/src/main/assets/models/my_model
 ```
 
 ### 导出流程
@@ -359,27 +364,27 @@ pip install -r training/requirements.txt
 ### 训练相关
 
 **Q: 训练时 GPU 没有使用怎么办?**
-A: 确认已安装 CUDA 版本的 PyTorch,检查 `device` 参数是否为 `0`。
+A: 确认已安装 CUDA 版本的 PyTorch，检查 `device` 参数是否为 `0`。
 
 **Q: 显存不足怎么办?**
-A: 减小 `batch` 大小 (如 16),或启用 `gradient_checkpointing`。
+A: 减小 `batch` 大小 (如 16)，或启用 `gradient_checkpointing`。
 
 **Q: 如何处理非标准尺寸图片?**
-A: 训练脚本默认启用 `rect=True`,会自动适配不同长宽比的图片。
+A: 训练脚本默认启用 `rect=True`，会自动适配不同长宽比的图片。
 
 **Q: 如何提高精度?**
-A: 增加训练轮次 (200+),使用 CBAM 注意力,增加数据量或增强。
+A: 增加训练轮次 (200+)，使用 CBAM 注意力，增加数据量或增强。
 
 ### 部署相关
 
 **Q: 如何更新 Android 应用中的模型?**
-A: 使用 `export_pipeline.py` 导出后,替换 `assets/models/` 下的文件。
+A: 使用 `export_pipeline.py` 导出后，替换 `assets/models/` 下的文件，或在 APP 设置页导入自训练模型。
 
 **Q: exe 打包后训练不执行?**
-A: 已修复。新版本会自动检测打包模式,直接调用 ultralytics API。
+A: 已修复。新版本会自动检测打包模式，直接调用 ultralytics API。
 
 **Q: GUI 界面缩放不正常?**
-A: 已支持系统 DPI 自适应。如仍有问题,尝试调整系统显示缩放设置。
+A: 已支持系统 DPI 自适应。如仍有问题，尝试调整系统显示缩放设置。
 
 ---
 
@@ -393,12 +398,33 @@ A: 已支持系统 DPI 自适应。如仍有问题,尝试调整系统显示缩�
 
 ### Overview
 
-OpenIris is an Android intelligent recognition application based on **YOLOv11** object detection model and **VLM/LLM** vision-language models. It supports real-time camera detection, image analysis, video processing, and provides AI-assisted recognition with result fusion.
+OpenIris is a complete **YOLOv11 end-to-end object detection ecosystem** covering the entire workflow from data preparation, model training, model export to Android APP inference. The project includes:
+
+- **Android Smart Recognition App**: Real-time camera detection, image analysis, video processing with VLM/LLM AI-assisted recognition
+- **GUI Training Platform**: tkinter GUI interface for custom dataset building, multi-strategy training, and one-click export deployment
+
+### Ecosystem
+
+```
+Data Preparation → Model Training → Model Export → APP Inference → Result Analysis
+      ↓                ↓                ↓                ↓                ↓
+  Custom Dataset    GUI Training    NCNN Conversion   Real-time Detect  Combined Analysis
+  Annotation        Command-line    Auto Deploy       Image/Video       AI Fusion
+  Data Augmentation High-precision  Custom Models     Export            Visualization
+```
+
+| Stage | Function | Implementation |
+|-------|----------|----------------|
+| **Data Preparation** | Custom dataset, annotation conversion, augmentation | COCO/VOC/LabelMe format, smart splitting, offline augmentation |
+| **Model Training** | GUI training, command-line, high-precision | Ultralytics + tkinter GUI, multi-stage strategy |
+| **Model Export** | Auto export, one-click deploy | ONNX → NCNN conversion, auto copy to assets |
+| **APP Inference** | Real-time detection, image/video analysis | NCNN C++ engine, GPU acceleration |
+| **Result Analysis** | Combined analysis, AI fusion, export | YOLO + VLM/LLM multi-model fusion |
 
 ### Features
 
 | Feature | Description |
----------|-------------|
+|---------|-------------|
 | **Real-time Detection** | Camera preview with YOLO real-time detection, 15-second sliding window statistics |
 | **Image Detection** | Local image analysis, HEIF/HEIC support, high-resolution capture |
 | **Video Detection** | Video frame extraction analysis, timeline results, AI-assisted recognition |
@@ -410,7 +436,7 @@ OpenIris is an Android intelligent recognition application based on **YOLOv11** 
 ### Tech Stack
 
 | Component | Technology |
------------|------------|
+|-----------|------------|
 | Detection Model | YOLOv11 (NCNN inference engine) |
 | AI Models | VLM/LLM (OpenAI-compatible API) |
 | UI Framework | Material Design 3 |
@@ -422,7 +448,7 @@ OpenIris is an Android intelligent recognition application based on **YOLOv11** 
 
 #### Android App
 ```bash
-git clone -b alpha https://github.com/your-org/OpenIris.git
+git clone -b alpha https://github.com/Cplay00/OpenIris.git
 cd OpenIris/buildapk
 ./gradlew assembleDebug
 ```
@@ -443,8 +469,8 @@ training\build_gui.bat
 ### Training Constraints
 
 | Constraint | Value | Note |
-------------|-------|------|
-| Model | YOLOv11n | Recommend to use nano for mobile |
+|------------|-------|------|
+| Model | YOLOv11n | Recommend nano for mobile |
 | Input Size | 640 | Match NCNN inference |
 | Normalization | /255, mean=0 | Ultralytics default |
 | ONNX opset | ≥12 | NCNN compatibility |
@@ -460,9 +486,9 @@ Apache License 2.0 - See [LICENSE](LICENSE) for details.
 
 <div align="center">
 
-**Made with ❤️ for Android developers**
+**Made with ❤️ for the YOLO-NCNN ecosystem**
 
-[⬆ Back to Top](#openiris---智能目标检测与-ai-识别-android-应用)
+[⬆ Back to Top](#openiris---yolov11-端到端目标检测生态系统)
 
 </div>
 
