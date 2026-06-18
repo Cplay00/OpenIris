@@ -2,7 +2,7 @@
 
 <div align="center">
 
-![OpenIris](https://img.shields.io/badge/OpenIris-v0.3--Alpha-blue?style=for-the-badge)
+![OpenIris](https://img.shields.io/badge/OpenIris-v0.5--Alpha-blue?style=for-the-badge)
 ![Android](https://img.shields.io/badge/Android-12%2B-green?style=for-the-badge)
 ![YOLO](https://img.shields.io/badge/YOLO-v11-orange?style=for-the-badge)
 ![License](https://img.shields.io/badge/License-Apache%202.0-yellowgreen?style=for-the-badge)
@@ -42,7 +42,7 @@ OpenIris 是一款基于 **YOLOv11** 目标检测模型和 **VLM/LLM** 视觉语
 | UI 框架 | Material Design 3 |
 | 训练框架 | Ultralytics + tkinter GUI |
 | 最低版本 | Android 12 (API 31) |
-| 目标版本 | Android 15 (API 35) |
+| 目标版本 | Android 16 (API 36) |
 
 ---
 
