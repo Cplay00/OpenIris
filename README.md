@@ -471,3 +471,25 @@ Apache License 2.0 - See [LICENSE](LICENSE) for details.
 - 新增 20+ 份审查报告和修复记录
 - 更新架构流程图
 - 新增待修复问题清单
+
+---
+
+## v0.5-Alpha 更新日志 (2026-06-19)
+
+> 详细变更内容请查看 [Release v0.5-Alpha](https://github.com/Cplay00/OpenIris/releases/tag/v0.5-Alpha)
+
+### 🎯 自训练模型推理支持（核心更新）
+
+- **NCNN 推理引擎重构**：自动检测输出格式（ultralytics decoded / raw DFL），兼容内置模型和自训练模型
+- **从路径加载模型**：支持从任意路径加载自训练 NCNN 模型（param + bin + labels.txt）
+- **自定义模型管理**：设置页支持导入/重命名/删除自训练模型
+- **标签预设文件**：新增 COCO-80、COCO-128、VOC-20、ImageNet-1000 标签文件
+
+### APP 更新
+
+- 修复暗色模式 UI、统一子卡片样式、修复按钮拖动、优化置信度计算
+- 新增 DraggableLayout、CombinedAnalysisManager 等组件
+
+### 训练工具更新
+
+- 优化 GUI 国际化、数据集验证器、训练脚本、导出管线
