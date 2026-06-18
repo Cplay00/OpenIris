@@ -2,7 +2,7 @@
 
 <div align="center">
 
-![OpenIris](https://img.shields.io/badge/OpenIris-v0.5--Alpha-blue?style=for-the-badge)
+![OpenIris](https://img.shields.io/badge/OpenIris-v0.3--Alpha-blue?style=for-the-badge)
 ![Android](https://img.shields.io/badge/Android-12%2B-green?style=for-the-badge)
 ![YOLO](https://img.shields.io/badge/YOLO-v11-orange?style=for-the-badge)
 ![License](https://img.shields.io/badge/License-Apache%202.0-yellowgreen?style=for-the-badge)
@@ -42,7 +42,7 @@ OpenIris 是一款基于 **YOLOv11** 目标检测模型和 **VLM/LLM** 视觉语
 | UI 框架 | Material Design 3 |
 | 训练框架 | Ultralytics + tkinter GUI |
 | 最低版本 | Android 12 (API 31) |
-| 目标版本 | Android 16 (API 36) |
+| 目标版本 | Android 15 (API 35) |
 
 ---
 
@@ -447,6 +447,13 @@ Apache License 2.0 - See [LICENSE](LICENSE) for details.
 
 > 详细变更内容请查看 [Release v0.5-Alpha](https://github.com/Cplay00/OpenIris/releases/tag/v0.5-Alpha)
 
+### 🎯 自训练模型推理支持（核心更新）
+
+- **NCNN 推理引擎重构**：自动检测输出格式（ultralytics decoded / raw DFL），兼容内置模型和自训练模型
+- **从路径加载模型**：支持从任意路径加载自训练 NCNN 模型（param + bin + labels.txt）
+- **自定义模型管理**：设置页支持导入/重命名/删除自训练模型
+- **标签预设文件**：新增 COCO-80、COCO-128、VOC-20、ImageNet-1000 标签文件
+
 ### APP 更新
 
 - 修复暗色模式下检测结果卡片文字不可读问题
@@ -454,10 +461,7 @@ Apache License 2.0 - See [LICENSE](LICENSE) for details.
 - 新增 DraggableLayout 自定义视图，修复实时检测页右侧按钮拖动问题
 - 优化胶囊视图：标签名和计数加粗，置信度不加粗
 - 修复综合分析平均置信度被未检测帧稀释的问题
-- 新增 fromAvgConfidence() 工厂方法，提升代码清晰度
 - 暗色模式子卡片使用半透明背景 + 高对比度文字
-- 新增 CombinedAnalysisManager 管理综合分析逻辑
-- 新增标签预设文件（COCO-80、COCO-128、VOC-20、ImageNet-1000）
 
 ### 训练工具更新
 
@@ -471,25 +475,3 @@ Apache License 2.0 - See [LICENSE](LICENSE) for details.
 - 新增 20+ 份审查报告和修复记录
 - 更新架构流程图
 - 新增待修复问题清单
-
----
-
-## v0.5-Alpha 更新日志 (2026-06-19)
-
-> 详细变更内容请查看 [Release v0.5-Alpha](https://github.com/Cplay00/OpenIris/releases/tag/v0.5-Alpha)
-
-### 🎯 自训练模型推理支持（核心更新）
-
-- **NCNN 推理引擎重构**：自动检测输出格式（ultralytics decoded / raw DFL），兼容内置模型和自训练模型
-- **从路径加载模型**：支持从任意路径加载自训练 NCNN 模型（param + bin + labels.txt）
-- **自定义模型管理**：设置页支持导入/重命名/删除自训练模型
-- **标签预设文件**：新增 COCO-80、COCO-128、VOC-20、ImageNet-1000 标签文件
-
-### APP 更新
-
-- 修复暗色模式 UI、统一子卡片样式、修复按钮拖动、优化置信度计算
-- 新增 DraggableLayout、CombinedAnalysisManager 等组件
-
-### 训练工具更新
-
-- 优化 GUI 国际化、数据集验证器、训练脚本、导出管线
