@@ -17,6 +17,7 @@
 #include <string>
 
 #include <android/log.h>
+#include <inttypes.h>
 
 #include <opencv2/core/core.hpp>
 
@@ -149,7 +150,7 @@ void onCaptureFailed(void* context, ACameraCaptureSession* session, ACaptureRequ
 
 void onCaptureSequenceCompleted(void* context, ACameraCaptureSession* session, int sequenceId, int64_t frameNumber)
 {
-    __android_log_print(ANDROID_LOG_WARN, "NdkCamera", "onCaptureSequenceCompleted %p %d %ld", session, sequenceId, frameNumber);
+    __android_log_print(ANDROID_LOG_WARN, "NdkCamera", "onCaptureSequenceCompleted %p %d %" PRId64 "", session, sequenceId, frameNumber);
 }
 
 void onCaptureSequenceAborted(void* context, ACameraCaptureSession* session, int sequenceId)
@@ -506,7 +507,7 @@ NdkCameraWindow::NdkCameraWindow() : NdkCamera()
     accelerometer_orientation = 0;
 
     // sensor
-    sensor_manager = ASensorManager_getInstance();
+    sensor_manager = ASensorManager_getInstanceForPackage(nullptr);
 
     accelerometer_sensor = ASensorManager_getDefaultSensor(sensor_manager, ASENSOR_TYPE_ACCELEROMETER);
 }
@@ -529,6 +530,32 @@ NdkCameraWindow::~NdkCameraWindow()
     {
         ANativeWindow_release(win);
     }
+}
+
+void NdkCameraWindow::close()
+{
+    __android_log_print(ANDROID_LOG_WARN, "NdkCameraWindow", "close");
+
+    // 重置加速度计传感器状态，确保下次 openCamera 时重新初始化
+    // 解决第二次打开实时检测画面颠倒的 bug：
+    // sensor_event_queue 绑定到创建时线程的 ALooper，
+    // 如果下次摄像头回调在不同线程，旧的 sensor_event_queue 无法接收事件
+    if (sensor_event_queue)
+    {
+        if (accelerometer_sensor)
+        {
+            ASensorEventQueue_disableSensor(sensor_event_queue, accelerometer_sensor);
+        }
+        ASensorManager_destroyEventQueue(sensor_manager, sensor_event_queue);
+        sensor_event_queue = 0;
+    }
+
+    accelerometer_orientation = 0;
+    // Reinitialize sensor references to ensure consistency after close/open cycle
+    sensor_manager = ASensorManager_getInstanceForPackage(nullptr);
+    accelerometer_sensor = ASensorManager_getDefaultSensor(sensor_manager, ASENSOR_TYPE_ACCELEROMETER);
+
+    NdkCamera::close();
 }
 
 void NdkCameraWindow::set_window(ANativeWindow* _win)

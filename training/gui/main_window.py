@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+﻿#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
 OpenIris Training GUI - Main Window (i18n: zh_CN default, en_US fallback)
@@ -12,6 +12,8 @@ import threading
 import subprocess
 import sys
 import os
+import re
+import ctypes
 from pathlib import Path
 import yaml
 from datetime import datetime
@@ -185,11 +187,20 @@ class ToolTip:
             pass
         f = tk.Frame(tw, background="#333", padx=1, pady=1)
         f.pack()
-        tk.Label(f, text=self._text, justify=tk.LEFT,
-                 background="#ffffdd", foreground="#333",
-                 relief=tk.SOLID, borderwidth=1,
-                 font=("Segoe UI", 9), padx=8, pady=4,
-                 wraplength=360).pack()
+        display_text = self._text
+        try:
+            tk.Label(f, text=display_text, justify=tk.LEFT,
+                     background="#ffffdd", foreground="#333",
+                     relief=tk.SOLID, borderwidth=1,
+                     font=("Segoe UI", 9), padx=8, pady=4,
+                     wraplength=360).pack()
+        except (UnicodeEncodeError, UnicodeDecodeError):
+            safe_text = display_text.encode("utf-8", errors="replace").decode("utf-8", errors="replace")
+            tk.Label(f, text=safe_text, justify=tk.LEFT,
+                     background="#ffffdd", foreground="#333",
+                     relief=tk.SOLID, borderwidth=1,
+                     font=("Segoe UI", 9), padx=8, pady=4,
+                     wraplength=360).pack()
 
     def _hide(self):
         if self.tw:
@@ -205,12 +216,12 @@ class LabeledSlider(tk.Frame):
                  resolution=0.01, tooltip=None, is_int=False, **kw):
         super().__init__(parent, **kw)
         self.is_int = is_int
-        self.lbl = tk.Label(self, text=label, width=16, anchor="w", font=("Segoe UI", 9))
-        self.lbl.pack(side=tk.LEFT, padx=(0, 8))
+        self.lbl = tk.Label(self, text=label, width=12, anchor="w", font=("Segoe UI", 9))
+        self.lbl.pack(side=tk.LEFT, padx=(0, 4))
         if tooltip:
             ToolTip(self.lbl, tooltip)
         self.var = tk.IntVar(value=int(value)) if is_int else tk.DoubleVar(value=value)
-        self.entry = tk.Entry(self, textvariable=self.var, width=8,
+        self.entry = tk.Entry(self, textvariable=self.var, width=6,
                               justify="center", font=("Segoe UI", 9), relief=tk.FLAT, bg="#f0f0f0")
         self.entry.pack(side=tk.RIGHT, padx=(8, 0))
         self.entry.bind("<Return>", self._sync)
@@ -219,7 +230,7 @@ class LabeledSlider(tk.Frame):
             ToolTip(self.entry, tooltip)
         self.scale = tk.Scale(self, from_=from_, to=to, variable=self.var,
                               orient=tk.HORIZONTAL, showvalue=False,
-                              resolution=resolution, sliderlength=20, length=300, font=("Segoe UI", 8))
+                              resolution=resolution, sliderlength=20, font=("Segoe UI", 8))
         self.scale.pack(side=tk.LEFT, fill=tk.X, expand=True, padx=4)
         if tooltip:
             ToolTip(self.scale, tooltip)
@@ -285,6 +296,7 @@ class TrainingGUI:
         self.train_proc = None
         self.is_training = False
         self._stop_event = threading.Event()
+        self._proc_lock = threading.Lock()
         self.project_root = self._detect_project_root()
         self.config_dir = self.project_root / "training" / "configs"
         self._tooltips = {}
@@ -365,6 +377,9 @@ class TrainingGUI:
         tm.add_command(label=t("menu_visualize"), command=self._visualize)
         tm.add_separator()
         tm.add_command(label=t("menu_env_check"), command=self._check_env)
+        tm.add_separator()
+        tm.add_command(label=t("menu_install_deps"), command=self._install_deps)
+        tm.add_command(label=t("menu_check_deps"), command=self._check_deps_status)
         hm = tk.Menu(mb, tearoff=0)
         mb.add_cascade(label=t("menu_help"), menu=hm)
         hm.add_command(label=t("menu_about"), command=self._show_about)
@@ -438,7 +453,10 @@ class TrainingGUI:
         sb = ttk.Scrollbar(p, orient="vertical", command=canvas.yview)
         sf = ttk.Frame(canvas)
         sf.bind("<Configure>", lambda e: canvas.configure(scrollregion=canvas.bbox("all")))
-        canvas.create_window((0, 0), window=sf, anchor="nw")
+        canvas_window = canvas.create_window((0, 0), window=sf, anchor="nw")
+        def _on_canvas_configure(e):
+            canvas.itemconfigure(canvas_window, width=e.width)
+        canvas.bind('<Configure>', _on_canvas_configure)
         canvas.configure(yscrollcommand=sb.set)
         canvas.grid(row=r, column=0, sticky="nsew"); sb.grid(row=r, column=1, sticky="ns")
         p.rowconfigure(r, weight=1); p.columnconfigure(0, weight=1)
@@ -461,12 +479,24 @@ class TrainingGUI:
         ctrl = ttk.LabelFrame(parent, text=t("training_control"), padding=10)
         ctrl.pack(fill=tk.X, padx=(6, 0), pady=(0, 6))
         br = ttk.Frame(ctrl); br.pack(fill=tk.X)
-        self.btn_start = ttk.Button(br, text=t("start_training"), style="Accent.TButton", command=self._start)
+        self.btn_start = ttk.Button(br, text=t("start_training"), style="Accent.TButton", command=self._start, width=10)
         self.btn_start.pack(side=tk.LEFT, padx=(0, 6))
-        self.btn_stop = ttk.Button(br, text=t("stop"), style="Danger.TButton", command=self._stop, state=tk.DISABLED)
+        self._tip(self.btn_start, "tip_start")
+        self.btn_stop = ttk.Button(br, text=t("stop"), style="Danger.TButton", command=self._stop, state=tk.DISABLED, width=10)
         self.btn_stop.pack(side=tk.LEFT, padx=(0, 6))
-        ttk.Button(br, text=t("validate"), command=self._validate_dataset).pack(side=tk.LEFT, padx=(0, 6))
-        ttk.Button(br, text=t("export"), command=self._export_model).pack(side=tk.LEFT)
+        self._tip(self.btn_stop, "tip_stop")
+        self.btn_validate = ttk.Button(br, text=t("validate"), command=self._validate_dataset, width=10)
+        self.btn_validate.pack(side=tk.LEFT, padx=(0, 6))
+        self._tip(self.btn_validate, "tip_validate")
+        self.btn_export = ttk.Button(br, text=t("export"), command=self._export_model, width=10)
+        self.btn_export.pack(side=tk.LEFT)
+        self._tip(self.btn_export, "tip_export")
+        ttk.Label(br, text=t("export_format"), font=("Segoe UI", 9)).pack(side=tk.LEFT, padx=(12, 4))
+        self.export_format_var = tk.StringVar(value=t("export_format_ncnn"))
+        format_cb = ttk.Combobox(br, textvariable=self.export_format_var,
+                                 values=[t("export_format_ncnn"), t("export_format_pt")],
+                                 state="readonly", width=22)
+        format_cb.pack(side=tk.LEFT)
         self.progress_var = tk.DoubleVar(value=0)
         ttk.Progressbar(ctrl, variable=self.progress_var, maximum=100).pack(fill=tk.X, pady=(8, 0))
         self.status_lbl_var = tk.StringVar(value=t("ready_to_train"))
@@ -479,6 +509,7 @@ class TrainingGUI:
         self.log_text.pack(fill=tk.BOTH, expand=True)
         self.btn_clear = ttk.Button(lf, text=t("clear_log"), command=self._clear_log)
         self.btn_clear.pack(anchor=tk.E, pady=(4, 0))
+        self._tip(self.btn_clear, "tip_clear_log")
 
     def _tip(self, widget, key):
         tt = ToolTip(widget, t(key))
@@ -511,7 +542,7 @@ class TrainingGUI:
         f = filedialog.asksaveasfilename(title=t("menu_save_config"), defaultextension=".yaml", filetypes=[("YAML", "*.yaml"), ("All", "*.*")], initialdir=str(self.config_dir))
         if f:
             try:
-                            with open(f, "w", encoding="utf-8") as fh: yaml.dump(self._get_cfg(), fh, allow_unicode=True, default_flow_style=False)
+                with open(f, "w", encoding="utf-8") as fh: yaml.dump(self._get_cfg(), fh, allow_unicode=True, default_flow_style=False)
                 self._log(f"Config saved: {f}")
             except Exception as e:
                 messagebox.showerror(t("error_save_config"), str(e))
@@ -554,6 +585,7 @@ class TrainingGUI:
             return
 
         cfg = self._get_cfg()
+        self._total_epochs = int(cfg.get("epochs", 200))
         self._stop_event = threading.Event()
 
         self._log("=" * 50)
@@ -597,13 +629,24 @@ class TrainingGUI:
         """Run training via subprocess (for Python script mode)."""
         try:
             flags = subprocess.CREATE_NO_WINDOW if sys.platform == "win32" else 0
-            with self._proc_lock:`n
-                self.train_proc = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
-                                               universal_newlines=True, bufsize=1, creationflags=flags)
+            env = os.environ.copy()
+            env["PYTHONIOENCODING"] = "utf-8"
+            with self._proc_lock:
+                self.train_proc = subprocess.Popen(
+                    cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
+                    bufsize=1, creationflags=flags, encoding="utf-8", errors="replace", env=env)
             for line in self.train_proc.stdout:
                 if self._stop_event.is_set():
                     break
                 self.root.after(0, self._log, line.strip())
+                # Parse epoch progress from training output
+                epoch_match = re.search(r'[Ee]poch\s+(\d+)/(\d+)', line)
+                if epoch_match:
+                    current_epoch = int(epoch_match.group(1))
+                    total = int(epoch_match.group(2))
+                    if total > 0:
+                        progress = current_epoch / total * 100
+                        self.root.after(0, self.progress_var.set, progress)
             self.train_proc.wait()
             rc = self.train_proc.returncode
             if not self._stop_event.is_set():
@@ -614,7 +657,7 @@ class TrainingGUI:
             if not self._stop_event.is_set():
                 self.root.after(0, self._log, f"\nError: {e}")
         finally:
-            if self.train_proc and self.train_proc.stdout:
+            if self.train_proc:
                 try: self.train_proc.stdout.close()
                 except Exception: pass
             self.root.after(0, self._done)
@@ -631,8 +674,17 @@ class TrainingGUI:
                 self._stop_event.set()
                 with self._proc_lock:
                     if self.train_proc:
-                        self.train_proc.terminate()
+                        try:
+                            self.train_proc.stdout.close()
+                        except Exception:
+                            pass
+                        try:
+                            self.train_proc.terminate()
+                        except Exception:
+                            pass
                 self.status_lbl_var.set(t("training_stopped"))
+                self.btn_start.config(state=tk.NORMAL)
+                self.btn_stop.config(state=tk.DISABLED)
 
     # ---- Tools ----
     def _validate_dataset(self):
@@ -663,23 +715,63 @@ class TrainingGUI:
             self.root.after(0, self._done)
 
     def _export_model(self):
-        w = filedialog.askopenfilename(title=t("menu_export"), filetypes=[("PyTorch", "*.pt"), ("All", "*.*")],
-                                       initialdir=str(self.project_root / "runs" / "train"))
-        if not w: return
-        a = filedialog.askdirectory(title=t("menu_export"),
-                                    initialdir=str(self.project_root / "ncnn-android-yolov11" / "app" / "src" / "main" / "assets" / "models"))
-        if a:
-            if IS_PACKAGED:
+        # 提醒用户：导出文件命名
+        _reminder = t("export_reminder")
+        if _reminder == "export_reminder":  # i18n key 不存在时原样返回 key
+            _reminder = (
+                "即将导出模型文件。请选择训练好的模型文件(.pt)和输出目录。\n\n"
+                "导出后请注意为输出文件夹取一个有意义的名称（如模型名称），\n"
+                "避免下次导出时覆盖。每次训练完成后都会生成新的 best.pt，\n"
+                "建议用训练名称（如 pig_yolov11s）命名输出文件夹。\n\n"
+                "NCNN zip 包内含: model.param + model.bin + labels.txt + model_meta.json\n"
+                "APP 端可直接导入此 zip 文件使用。"
+            )
+        messagebox.showinfo(t("export"), _reminder)
+        w = filedialog.askopenfilename(title=t("export_select_model"),
+                                       filetypes=[("PyTorch", "*.pt"), ("ONNX", "*.onnx"), ("All", "*.*")],
+                                       initialdir=str(self.project_root / "training" / "run"))
+        if not w:
+            return
+        o = filedialog.askdirectory(title=t("export_select_output"),
+                                     initialdir=str(self.project_root / "training" / "run"))
+        if o:
+            python_exe = find_python()
+            if python_exe is None and IS_PACKAGED:
+                # 打包模式下无 Python，直接调用 export_pipeline.main()
                 self._log(f"{t('export')}... (direct mode)")
-                # Direct export not implemented, show message
-                self._log("Export requires Python environment. Use command line.")
-            else:
-                cmd = [sys.executable, str(self.project_root / "training" / "tools" / "export_pipeline.py"),
-                       "--weights", w, "--assets", a]
-                self._log(f"{t('export')}...")
+                try:
+                    from training.tools.export_pipeline import main as export_main
+                    old_argv = sys.argv
+                    sys.argv = [
+                        "export_pipeline.py",
+                        "--weights", w,
+                        "--output", o,
+                    ]
+                    # 根据格式选择添加参数
+                    fmt = self.export_format_var.get()
+                    if t("export_format_pt") in fmt or "PyTorch" in fmt:
+                        sys.argv.extend(["--format", "onnx"])
+                    self._log(f"{t('export')}... ({fmt}) (direct)")
+                    export_main()
+                except Exception as e:
+                    self._log(f"{t('export')} error: {e}")
+                finally:
+                    sys.argv = old_argv
+            elif python_exe is not None:
+                cmd = [python_exe, str(self.project_root / "training" / "tools" / "export_pipeline.py"),
+                       "--weights", w, "--output", o]
+                # 根据格式选择添加参数
+                fmt = self.export_format_var.get()
+                if t("export_format_pt") in fmt or "PyTorch" in fmt:
+                    cmd.extend(["--format", "onnx"])
+                self._log(f"{t('export')}... ({fmt})")
                 threading.Thread(target=self._run_subprocess, args=(cmd,), daemon=True).start()
+            else:
+                self._log(f"{t('export')}... (direct mode)")
+                self._log("Export requires Python environment. Use command line.")
 
     def _visualize(self):
+        messagebox.showinfo(t("menu_visualize"), t("visualize_explain"))
         d = filedialog.askdirectory(title=t("menu_visualize"), initialdir=str(self.project_root / "runs" / "train"))
         if d:
             if IS_PACKAGED:
@@ -707,6 +799,159 @@ class TrainingGUI:
     def _show_about(self):
         messagebox.showinfo(t("about_title"), t("about_text"))
 
+    def _check_deps_status(self):
+        """检查所有依赖的安装状态"""
+        deps = {
+            t("deps_group_core"): [
+                ("torch", "PyTorch 深度学习框架"),
+                ("torchvision", "计算机视觉 transforms"),
+                ("ultralytics", "YOLOv11 训练框架"),
+                ("cv2", "图像处理 (opencv-python)"),
+                ("PIL", "图像 I/O (Pillow)"),
+                ("numpy", "数组运算"),
+                ("yaml", "YAML 配置解析 (pyyaml)"),
+                ("pandas", "数据分析"),
+                ("onnx", "ONNX 导出"),
+                ("matplotlib", "训练曲线绘图"),
+                ("seaborn", "统计图表"),
+                ("sklearn", "指标计算 (scikit-learn)"),
+                ("tqdm", "进度条"),
+                ("psutil", "系统监控"),
+            ],
+            t("deps_group_optional"): [
+                ("onnxsim", "ONNX 简化"),
+                ("tensorboard", "训练日志可视化"),
+                ("ncnn", "NCNN 推理引擎"),
+                ("pnnx", "PyTorch->NCNN 转换"),
+            ],
+            t("deps_group_enhanced"): [
+                ("albumentations", "高级图像增强"),
+                ("imgaug", "图像增强"),
+                ("GPUtil", "GPU 监控"),
+            ],
+        }
+        installed = []
+        missing = []
+        for group_name, group_deps in deps.items():
+            for mod_name, desc in group_deps:
+                try:
+                    mod = __import__(mod_name)
+                    ver = getattr(mod, "__version__", "")
+                    label = f"{mod_name} {ver}" if ver else mod_name
+                    installed.append((group_name, mod_name, desc, label))
+                except ImportError:
+                    missing.append((group_name, mod_name, desc))
+
+        win = tk.Toplevel(self.root)
+        win.title(t("deps_status_title"))
+        win.geometry("620x480")
+        win.transient(self.root)
+        win.grab_set()
+
+        cols = ("group", "package", "description", "status")
+        tree = ttk.Treeview(win, columns=cols, show="headings", height=18)
+        tree.heading("group", text=t("deps_status_group"))
+        tree.heading("package", text=t("deps_status_package"))
+        tree.heading("description", text=t("deps_status_desc"))
+        tree.heading("status", text=t("deps_status_status"))
+        tree.column("group", width=80)
+        tree.column("package", width=130)
+        tree.column("description", width=250)
+        tree.column("status", width=130)
+        tree.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
+
+        for g, m, d, v in installed:
+            tree.insert("", tk.END, values=(g, m, d, f"✓ {v}"))
+        for g, m, d in missing:
+            tree.insert("", tk.END, values=(g, m, d, f"✗ {t('deps_not_installed')}"))
+
+        ok_count = len(installed)
+        total = ok_count + len(missing)
+        ttk.Label(win, text=f"{ok_count}/{total} {t('deps_installed')}").pack(pady=(0, 10))
+
+    def _get_deps_status_text(self):
+        """获取依赖状态摘要文本"""
+        deps = [
+            ("torch", "PyTorch"), ("torchvision", "TorchVision"),
+            ("ultralytics", "Ultralytics"), ("cv2", "OpenCV"),
+            ("PIL", "Pillow"), ("numpy", "NumPy"),
+            ("yaml", "PyYAML"), ("pandas", "Pandas"),
+            ("onnx", "ONNX"), ("matplotlib", "Matplotlib"),
+            ("seaborn", "Seaborn"), ("sklearn", "Scikit-learn"),
+            ("tqdm", "tqdm"), ("psutil", "psutil"),
+            ("onnxsim", "onnxsim"), ("tensorboard", "TensorBoard"),
+            ("ncnn", "NCNN"), ("pnnx", "pnnx"),
+            ("albumentations", "Albumentations"), ("imgaug", "imgaug"),
+            ("GPUtil", "GPUtil"),
+        ]
+        ok = []
+        ng = []
+        for mod, label in deps:
+            try:
+                __import__(mod)
+                ok.append(label)
+            except ImportError:
+                ng.append(label)
+        lines = [f"{t('deps_installed')} ({len(ok)}): {', '.join(ok)}"]
+        if ng:
+            lines.append(f"{t('deps_not_installed')} ({len(ng)}): {', '.join(ng)}")
+        return "\n".join(lines)
+
+    def _install_deps(self):
+        """一键安装依赖入口"""
+        self._show_install_dialog()
+
+    def _show_install_dialog(self):
+        """显示依赖安装对话框"""
+        dialog = tk.Toplevel(self.root)
+        dialog.title(t("install_deps_title"))
+        dialog.geometry("500x400")
+        dialog.transient(self.root)
+        dialog.grab_set()
+
+        status_text = self._get_deps_status_text()
+        ttk.Label(dialog, text=status_text, justify=tk.LEFT, wraplength=470).pack(padx=10, pady=10)
+
+        ttk.Label(dialog, text=t("install_deps_select")).pack(padx=10, pady=5)
+
+        var_core = tk.BooleanVar(value=True)
+        var_optional = tk.BooleanVar(value=True)
+        var_enhanced = tk.BooleanVar(value=False)
+
+        ttk.Checkbutton(dialog, text=t("install_deps_core"), variable=var_core).pack(anchor=tk.W, padx=20)
+        ttk.Checkbutton(dialog, text=t("install_deps_optional"), variable=var_optional).pack(anchor=tk.W, padx=20)
+        ttk.Checkbutton(dialog, text=t("install_deps_enhanced"), variable=var_enhanced).pack(anchor=tk.W, padx=20)
+
+        ttk.Button(dialog, text=t("install_deps_btn"), command=lambda: self._start_install(
+            var_core.get(), var_optional.get(), var_enhanced.get(), dialog
+        )).pack(pady=20)
+
+    def _start_install(self, core, optional, enhanced, dialog):
+        """在后台线程中执行 pip install"""
+        dialog.destroy()
+
+        packages = []
+        if core:
+            packages.extend(["ultralytics", "opencv-python", "Pillow", "numpy",
+                             "pyyaml", "pandas", "onnx", "matplotlib",
+                             "seaborn", "scikit-learn", "tqdm", "psutil"])
+        if optional:
+            packages.extend(["onnxsim", "tensorboard", "ncnn", "pnnx"])
+        if enhanced:
+            packages.extend(["albumentations", "imgaug", "GPUtil"])
+
+        if not packages:
+            return
+
+        cmd = [sys.executable, "-m", "pip", "install"] + packages
+        cmd.extend(["--proxy", "http://127.0.0.1:7897"])
+        cmd.extend(["-i", "https://pypi.tuna.tsinghua.edu.cn/simple"])
+        cmd.extend(["--trusted-host", "pypi.tuna.tsinghua.edu.cn"])
+        cmd.extend(["--timeout", "120"])
+
+        self._log(t("install_deps_start"))
+        threading.Thread(target=self._run_subprocess, args=(cmd,), daemon=True).start()
+
     def _log(self, msg):
         self.log_text.config(state=tk.NORMAL)
         ts = datetime.now().strftime("%H:%M:%S")
@@ -721,6 +966,14 @@ class TrainingGUI:
 
 
 def main():
+    # Hide console window on Windows (script mode); packaged exe uses console=False in spec
+    if sys.platform == "win32":
+        try:
+            _hwnd = ctypes.windll.kernel32.GetConsoleWindow()
+            if _hwnd:
+                ctypes.windll.user32.ShowWindow(_hwnd, 0)  # SW_HIDE
+        except Exception:
+            pass
     setup_dpi()
     root = tk.Tk()
     TrainingGUI(root)
@@ -729,4 +982,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-

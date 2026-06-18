@@ -4,19 +4,16 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:background="#000000">
-
     <!-- 摄像头预览 -->
     <SurfaceView
         android:id="@+id/cameraView"
         android:layout_width="match_parent"
         android:layout_height="match_parent" />
-
     <!-- 检测框覆盖层 -->
     <com.yolo.openiris.ui.OverlayView
         android:id="@+id/overlayView"
         android:layout_width="match_parent"
         android:layout_height="match_parent" />
-
     <!-- 顶部状态栏 -->
     <LinearLayout
         android:id="@+id/topStatusBar"
@@ -29,17 +26,15 @@
         android:paddingBottom="12dp"
         android:background="#80000000"
         android:gravity="center_vertical">
-
         <!-- 返回按钮 -->
         <ImageButton
             android:id="@+id/buttonBack"
             android:layout_width="40dp"
             android:layout_height="40dp"
-            android:src="@android:drawable/ic_menu_revert"
+            android:src="?attr/homeAsUpIndicator"
             android:background="?attr/selectableItemBackgroundBorderless"
             android:contentDescription="返回"
             app:tint="@android:color/white" />
-
         <!-- 标题 -->
         <com.google.android.material.textview.MaterialTextView
             android:layout_width="0dp"
@@ -49,7 +44,6 @@
             android:textColor="#FFFFFF"
             android:textAppearance="?attr/textAppearanceTitleMedium"
             android:gravity="center" />
-
         <!-- 显示抓取图按钮 -->
         <ImageButton
             android:id="@+id/buttonShowCapture"
@@ -60,7 +54,6 @@
             android:contentDescription="显示抓取图"
             android:layout_marginEnd="8dp"
             app:tint="@android:color/white" />
-
         <!-- 全屏按钮 -->
         <ImageButton
             android:id="@+id/buttonFullscreen"
@@ -71,7 +64,6 @@
             android:contentDescription="全屏"
             android:layout_marginEnd="8dp"
             app:tint="@android:color/white" />
-
         <!-- 截图按钮 -->
         <ImageButton
             android:id="@+id/buttonCapture"
@@ -82,19 +74,17 @@
             android:contentDescription="截图"
             app:tint="@android:color/white" />
     </LinearLayout>
-
-    <!-- 右侧控制按钮组 -->
-    <LinearLayout
+    <!-- 右侧控制按钮组 - Material 3 风格 -->
+    <com.yolo.openiris.ui.DraggableLayout
         android:id="@+id/rightControlPanel"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_gravity="end|center_vertical"
         android:orientation="vertical"
-        android:layout_marginEnd="12dp"
+        android:layout_marginEnd="16dp"
         android:layout_marginTop="80dp"
         android:background="@color/btn_bg_overlay"
-        android:padding="8dp">
-
+        android:padding="12dp">
         <!-- 切换摄像头卡片 -->
         <com.google.android.material.card.MaterialCardView
             android:id="@+id/cardSwitchCamera"
@@ -130,7 +120,6 @@
                     android:layout_marginTop="4dp" />
             </LinearLayout>
         </com.google.android.material.card.MaterialCardView>
-
         <!-- GPU/CPU 切换卡片 -->
         <com.google.android.material.card.MaterialCardView
             android:id="@+id/cardToggleGpu"
@@ -168,7 +157,6 @@
                     android:layout_marginTop="2dp" />
             </LinearLayout>
         </com.google.android.material.card.MaterialCardView>
-
         <!-- AI 开关卡片 -->
         <com.google.android.material.card.MaterialCardView
             android:id="@+id/cardToggleAi"
@@ -206,25 +194,66 @@
                     android:layout_marginTop="2dp" />
             </LinearLayout>
         </com.google.android.material.card.MaterialCardView>
-    </LinearLayout>
-
-    <!-- 底部结果汇总面板 -->
+        <!-- 记录开关卡片 -->
+        <com.google.android.material.card.MaterialCardView
+            android:id="@+id/cardToggleRecord"
+            android:layout_width="64dp"
+            android:layout_height="wrap_content"
+            app:cardCornerRadius="12dp"
+            app:cardElevation="0dp"
+            app:cardBackgroundColor="#4CAF50"
+            android:layout_marginTop="8dp"
+            android:clickable="true"
+            android:focusable="true">
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:gravity="center"
+                android:padding="12dp">
+                <TextView
+                    android:id="@+id/textRecordIcon"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="⏺"
+                    android:textSize="18sp"
+                    android:textColor="#FFFFFF" />
+                <TextView
+                    android:id="@+id/textRecordState"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="记录中"
+                    android:textSize="10sp"
+                    android:textColor="#FFFFFF"
+                    android:layout_marginTop="2dp" />
+            </LinearLayout>
+        </com.google.android.material.card.MaterialCardView>
+    </com.yolo.openiris.ui.DraggableLayout>
+    <!-- 底部结果汇总面板 - Material 3 风格 -->
     <com.google.android.material.card.MaterialCardView
         android:id="@+id/resultSummaryCard"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_gravity="bottom"
         app:cardCornerRadius="16dp"
-        app:cardElevation="8dp"
-        app:cardBackgroundColor="#F0F4F8"
-        android:layout_margin="12dp">
-
+        app:cardElevation="0dp"
+        app:strokeWidth="0dp"
+        app:cardBackgroundColor="?attr/colorSurfaceContainerLow"
+        android:layout_margin="16dp">
+        <ScrollView
+            android:id="@+id/resultScrollView"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:maxHeight="300dp"
+            android:minHeight="120dp"
+            android:scrollbars="vertical"
+            android:fadeScrollbars="false"
+            android:nestedScrollingEnabled="true">
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="vertical"
             android:padding="12dp">
-
             <!-- 汇总标题栏 -->
             <LinearLayout
                 android:layout_width="match_parent"
@@ -232,7 +261,6 @@
                 android:orientation="horizontal"
                 android:gravity="center_vertical"
                 android:layout_marginBottom="8dp">
-
                 <com.google.android.material.textview.MaterialTextView
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
@@ -240,40 +268,34 @@
                     android:text="检测结果汇总"
                     android:textAppearance="?attr/textAppearanceTitleSmall"
                     android:textColor="?attr/colorOnSurface" />
-
                 <com.google.android.material.textview.MaterialTextView
                     android:id="@+id/textWindowDuration"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="15秒窗口"
+                    android:text="实时刷新"
                     android:textAppearance="?attr/textAppearanceLabelSmall"
                     android:textColor="?attr/colorOnSurfaceVariant" />
             </LinearLayout>
-
-            <!-- YOLO 识别卡片 -->
+            <!-- YOLO 识别卡片 - Material 3 风格 -->
             <com.google.android.material.card.MaterialCardView
                 android:id="@+id/cardYolo"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginBottom="6dp"
-                app:cardCornerRadius="8dp"
+                android:layout_marginBottom="8dp"
+                app:cardCornerRadius="12dp"
                 app:cardElevation="0dp"
-                app:strokeWidth="1dp"
-                app:strokeColor="#2196F3"
-                app:cardBackgroundColor="#E3F2FD">
-
+                app:strokeWidth="0dp"
+                app:cardBackgroundColor="@color/capsule_yolo_bg">
                 <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:orientation="vertical"
                     android:padding="8dp">
-
                     <LinearLayout
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:orientation="horizontal"
                         android:gravity="center_vertical">
-
                         <com.google.android.material.textview.MaterialTextView
                             android:layout_width="0dp"
                             android:layout_height="wrap_content"
@@ -281,17 +303,15 @@
                             android:text="YOLO 识别"
                             android:textAppearance="?attr/textAppearanceLabelMedium"
                             android:textStyle="bold"
-                            android:textColor="#1565C0" />
-
+                            android:textColor="@color/capsule_yolo_text" />
                         <com.google.android.material.textview.MaterialTextView
                             android:id="@+id/textYoloCount"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:text="0 类"
                             android:textAppearance="?attr/textAppearanceLabelSmall"
-                            android:textColor="#1565C0" />
+                            android:textColor="@color/capsule_yolo_text" />
                     </LinearLayout>
-
                     <com.google.android.flexbox.FlexboxLayout
                         android:id="@+id/flexboxYolo"
                         android:layout_width="match_parent"
@@ -301,31 +321,26 @@
                         app:justifyContent="flex_start" />
                 </LinearLayout>
             </com.google.android.material.card.MaterialCardView>
-
-            <!-- AI 识别卡片 -->
+            <!-- AI 识别卡片 - Material 3 风格 -->
             <com.google.android.material.card.MaterialCardView
                 android:id="@+id/cardAi"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginBottom="6dp"
-                app:cardCornerRadius="8dp"
+                android:layout_marginBottom="8dp"
+                app:cardCornerRadius="12dp"
                 app:cardElevation="0dp"
-                app:strokeWidth="1dp"
-                app:strokeColor="#9C27B0"
-                app:cardBackgroundColor="#F3E5F5">
-
+                app:strokeWidth="0dp"
+                app:cardBackgroundColor="@color/capsule_ai_bg">
                 <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:orientation="vertical"
                     android:padding="8dp">
-
                     <LinearLayout
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:orientation="horizontal"
                         android:gravity="center_vertical">
-
                         <com.google.android.material.textview.MaterialTextView
                             android:layout_width="0dp"
                             android:layout_height="wrap_content"
@@ -333,17 +348,15 @@
                             android:text="AI 识别"
                             android:textAppearance="?attr/textAppearanceLabelMedium"
                             android:textStyle="bold"
-                            android:textColor="#7B1FA2" />
-
+                            android:textColor="@color/capsule_ai_text" />
                         <com.google.android.material.textview.MaterialTextView
                             android:id="@+id/textAiCount"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:text="0 类"
                             android:textAppearance="?attr/textAppearanceLabelSmall"
-                            android:textColor="#7B1FA2" />
+                            android:textColor="@color/capsule_ai_text" />
                     </LinearLayout>
-
                     <com.google.android.flexbox.FlexboxLayout
                         android:id="@+id/flexboxAi"
                         android:layout_width="match_parent"
@@ -353,30 +366,25 @@
                         app:justifyContent="flex_start" />
                 </LinearLayout>
             </com.google.android.material.card.MaterialCardView>
-
-            <!-- 综合分析卡片 -->
+            <!-- 综合分析卡片 - Material 3 风格 -->
             <com.google.android.material.card.MaterialCardView
                 android:id="@+id/cardCombined"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                app:cardCornerRadius="8dp"
+                app:cardCornerRadius="12dp"
                 app:cardElevation="0dp"
-                app:strokeWidth="1dp"
-                app:strokeColor="#4CAF50"
-                app:cardBackgroundColor="#E8F5E9">
-
+                app:strokeWidth="0dp"
+                app:cardBackgroundColor="@color/capsule_combined_bg">
                 <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:orientation="vertical"
                     android:padding="8dp">
-
                     <LinearLayout
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:orientation="horizontal"
                         android:gravity="center_vertical">
-
                         <com.google.android.material.textview.MaterialTextView
                             android:layout_width="0dp"
                             android:layout_height="wrap_content"
@@ -384,17 +392,15 @@
                             android:text="综合分析"
                             android:textAppearance="?attr/textAppearanceLabelMedium"
                             android:textStyle="bold"
-                            android:textColor="#2E7D32" />
-
+                            android:textColor="@color/capsule_combined_text" />
                         <com.google.android.material.textview.MaterialTextView
                             android:id="@+id/textCombinedCount"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:text="0 类"
                             android:textAppearance="?attr/textAppearanceLabelSmall"
-                            android:textColor="#2E7D32" />
+                            android:textColor="@color/capsule_combined_text" />
                     </LinearLayout>
-
                     <com.google.android.flexbox.FlexboxLayout
                         android:id="@+id/flexboxCombined"
                         android:layout_width="match_parent"
@@ -405,5 +411,6 @@
                 </LinearLayout>
             </com.google.android.material.card.MaterialCardView>
         </LinearLayout>
+        </ScrollView>
     </com.google.android.material.card.MaterialCardView>
 </FrameLayout>

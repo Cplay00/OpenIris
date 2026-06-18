@@ -38,13 +38,14 @@ class AiApiClient {
 3. count 为该物体出现的次数
 4. confidence 为置信度（0-1之间的小数）
 5. summary 为简短的场景描述"""
+ 
+         // OkHttpClient 单例
+         val client: OkHttpClient = OkHttpClient.Builder()
+             .connectTimeout(CONNECT_TIMEOUT_SECONDS, TimeUnit.SECONDS)
+             .readTimeout(READ_TIMEOUT_SECONDS, TimeUnit.SECONDS)
+             .writeTimeout(WRITE_TIMEOUT_SECONDS, TimeUnit.SECONDS)
+             .build()
     }
-
-    private val client = OkHttpClient.Builder()
-        .connectTimeout(CONNECT_TIMEOUT_SECONDS, TimeUnit.SECONDS)
-        .readTimeout(READ_TIMEOUT_SECONDS, TimeUnit.SECONDS)
-        .writeTimeout(WRITE_TIMEOUT_SECONDS, TimeUnit.SECONDS)
-        .build()
 
     private val gson = Gson()
 
@@ -90,6 +91,11 @@ class AiApiClient {
      * 获取提供商的模型列表
      */
     fun fetchModelList(provider: AiProvider): Result<List<String>> {
+        // HTTPS 安全验证
+        val urlError = AiProvider.validateBaseUrl(provider.baseUrl)
+        if (urlError != null) {
+            return Result.failure(Exception("URL 安全检查失败: $urlError"))
+        }
         return try {
             val url = "${provider.getEffectiveBaseUrl()}/models"
             val headers = buildHeaders(provider, AiModel(providerId = provider.id, modelId = "", displayName = ""))
@@ -127,7 +133,8 @@ class AiApiClient {
         provider: AiProvider,
         model: AiModel,
         prompt: String,
-        systemPrompt: String? = null
+        systemPrompt: String? = null,
+        enableThinking: Boolean = false
     ): AiResult {
         val startTime = System.currentTimeMillis()
 
@@ -137,6 +144,16 @@ class AiApiClient {
                 modelId = model.id,
                 modelName = model.displayName,
                 error = "提供商 Base URL 为空",
+                durationMs = 0
+            )
+        }
+        // HTTPS 安全验证
+        val urlError = AiProvider.validateBaseUrl(provider.baseUrl)
+        if (urlError != null) {
+            return AiResult.failure(
+                modelId = model.id,
+                modelName = model.displayName,
+                error = "URL 安全检查失败: $urlError",
                 durationMs = 0
             )
         }
@@ -162,8 +179,8 @@ class AiApiClient {
             val headers = buildHeaders(provider, model)
             
             val requestBody = when (provider.apiFormat) {
-                ApiFormat.ANTHROPIC -> buildAnthropicRequestBody(model, prompt, systemPrompt, false, null)
-                else -> buildOpenAIRequestBody(model, prompt, systemPrompt, false, null)
+                ApiFormat.ANTHROPIC -> buildAnthropicRequestBody(model, prompt, systemPrompt, false, null, enableThinking)
+                else -> buildOpenAIRequestBody(model, prompt, systemPrompt, false, null, enableThinking)
             }
 
             val jsonBody = gson.toJson(requestBody)
@@ -215,7 +232,8 @@ class AiApiClient {
         model: AiModel,
         prompt: String,
         imageBase64: String,
-        systemPrompt: String? = null
+        systemPrompt: String? = null,
+        enableThinking: Boolean = false
     ): AiResult {
         val startTime = System.currentTimeMillis()
 
@@ -226,6 +244,16 @@ class AiApiClient {
                 modelId = model.id,
                 modelName = model.displayName,
                 error = "提供商 Base URL 为空",
+                durationMs = 0
+            )
+        }
+        // HTTPS 安全验证
+        val urlError = AiProvider.validateBaseUrl(provider.baseUrl)
+        if (urlError != null) {
+            return AiResult.failure(
+                modelId = model.id,
+                modelName = model.displayName,
+                error = "URL 安全检查失败: $urlError",
                 durationMs = 0
             )
         }
@@ -274,8 +302,8 @@ class AiApiClient {
             val headers = buildHeaders(provider, model)
             
             val requestBody = when (provider.apiFormat) {
-                ApiFormat.ANTHROPIC -> buildAnthropicRequestBody(model, prompt, systemPrompt, true, imageBase64)
-                else -> buildOpenAIRequestBody(model, prompt, systemPrompt, true, imageBase64)
+                ApiFormat.ANTHROPIC -> buildAnthropicRequestBody(model, prompt, systemPrompt, true, imageBase64, enableThinking)
+                else -> buildOpenAIRequestBody(model, prompt, systemPrompt, true, imageBase64, enableThinking)
             }
 
             Log.d(TAG, "Request body assembled for model: ${model.modelId}")
@@ -338,11 +366,17 @@ class AiApiClient {
         model: AiModel,
         prompt: String,
         systemPrompt: String? = null,
-        onToken: ((String) -> Unit)? = null
+        onToken: ((String) -> Unit)? = null,
+        enableThinking: Boolean = false
     ): Pair<String?, String?> {
         // 输入验证
         if (provider.baseUrl.isBlank()) {
             return Pair(null, "提供商 Base URL 为空")
+        }
+        // HTTPS 安全验证
+        val urlError = AiProvider.validateBaseUrl(provider.baseUrl)
+        if (urlError != null) {
+            return Pair(null, "URL 安全检查失败: $urlError")
         }
         if (model.modelId.isBlank()) {
             return Pair(null, "模型 ID 为空")
@@ -356,8 +390,8 @@ class AiApiClient {
             val headers = buildHeaders(provider, model)
 
             val requestBody = when (provider.apiFormat) {
-                ApiFormat.ANTHROPIC -> buildAnthropicRequestBody(model, prompt, systemPrompt, false, null)
-                else -> buildOpenAIRequestBody(model, prompt, systemPrompt, false, null)
+                ApiFormat.ANTHROPIC -> buildAnthropicRequestBody(model, prompt, systemPrompt, false, null, enableThinking)
+                else -> buildOpenAIRequestBody(model, prompt, systemPrompt, false, null, enableThinking)
             }.toMutableMap()
 
             // 添加流式标记
@@ -423,7 +457,8 @@ class AiApiClient {
         prompt: String,
         systemPrompt: String?,
         withImage: Boolean,
-        imageBase64: String?
+        imageBase64: String?,
+        enableThinking: Boolean = false
     ): Map<String, Any> {
         val messages = mutableListOf<Map<String, Any>>()
 
@@ -462,6 +497,18 @@ class AiApiClient {
             }
         }
 
+        // 添加 thinking 参数（适配不同提供商）
+        if (enableThinking) {
+            // DeepSeek 使用 reasoning_effort
+            if (model.modelId.contains("deepseek", ignoreCase = true)) {
+                body["reasoning_effort"] = "high"
+            }
+            // Qwen 使用 enable_thinking
+            else if (model.modelId.contains("qwen", ignoreCase = true)) {
+                body["enable_thinking"] = true
+            }
+        }
+
         return body
     }
 
@@ -473,7 +520,8 @@ class AiApiClient {
         prompt: String,
         systemPrompt: String?,
         withImage: Boolean,
-        imageBase64: String?
+        imageBase64: String?,
+        enableThinking: Boolean = false
     ): Map<String, Any> {
         val messages = mutableListOf<Map<String, Any>>()
 
@@ -514,6 +562,11 @@ class AiApiClient {
             if (key.isNotBlank() && key.lowercase() !in blockedBodyKeys) {
                 body[key] = value
             }
+        }
+
+        // 添加 thinking 参数（Anthropic 格式）
+        if (enableThinking) {
+            body["thinking"] = mapOf("type" to "enabled")
         }
 
         return body

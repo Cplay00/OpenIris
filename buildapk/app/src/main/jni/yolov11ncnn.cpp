@@ -255,6 +255,87 @@ JNIEXPORT jboolean JNICALL Java_com_yolo_openiris_Yolov11Ncnn_loadModel(JNIEnv* 
 
     return JNI_TRUE;
 }
+// public native boolean loadModelFromPath(String paramPath, String modelPath, String labelsPath, int cpugpu);
+JNIEXPORT jboolean JNICALL Java_com_yolo_openiris_Yolov11Ncnn_loadModelFromPath(JNIEnv* env, jobject thiz, jstring paramPath, jstring modelPath, jstring labelsPath, jint cpugpu)
+{
+    if (cpugpu < 0 || cpugpu > 1)
+    {
+        return JNI_FALSE;
+    }
+
+    const char* param_path = env->GetStringUTFChars(paramPath, nullptr);
+    const char* model_path = env->GetStringUTFChars(modelPath, nullptr);
+    const char* labels_path = env->GetStringUTFChars(labelsPath, nullptr);
+
+    __android_log_print(ANDROID_LOG_DEBUG, "ncnn", "loadModelFromPath param=%s model=%s labels=%s", param_path, model_path, labels_path);
+
+    bool use_gpu = (int)cpugpu == 1;
+    const float mean_vals[3] = {0.0f, 0.0f, 0.0f};
+    const float norm_vals[3] = {1/255.f, 1/255.f, 1/255.f};
+    // 从 param 文件解析输入尺寸，解析失败则回退到 640
+    int target_size = Inference::parseParamInputSize(param_path);
+    __android_log_print(ANDROID_LOG_DEBUG, "ncnn", "Parsed target_size=%d from param file", target_size);
+
+    {
+        ncnn::MutexLockGuard g(lock);
+
+        if (use_gpu && ncnn::get_gpu_count() == 0)
+        {
+            __android_log_print(ANDROID_LOG_WARN, "ncnn", "GPU not available, falling back to CPU");
+            use_gpu = false;
+        }
+
+        if (g_yolo)
+        {
+            delete g_yolo;
+            g_yolo = 0;
+        }
+
+        g_yolo = new Inference;
+        int ret = g_yolo->loadNcnnNetworkFromPath(param_path, model_path, target_size, mean_vals, norm_vals, use_gpu);
+        if (ret != 0)
+        {
+            __android_log_print(ANDROID_LOG_ERROR, "ncnn", "loadNcnnNetworkFromPath failed with ret=%d", ret);
+            delete g_yolo;
+            g_yolo = 0;
+            env->ReleaseStringUTFChars(paramPath, param_path);
+            env->ReleaseStringUTFChars(modelPath, model_path);
+            env->ReleaseStringUTFChars(labelsPath, labels_path);
+            return JNI_FALSE;
+        }
+
+        g_yolo->loadLabelsFromPath(labels_path);
+        __android_log_print(ANDROID_LOG_DEBUG, "ncnn", "Model loaded from path with GPU=%d, target_size=%d",
+            use_gpu ? 1 : 0, target_size);
+    }
+
+    env->ReleaseStringUTFChars(paramPath, param_path);
+    env->ReleaseStringUTFChars(modelPath, model_path);
+    env->ReleaseStringUTFChars(labelsPath, labels_path);
+
+    return JNI_TRUE;
+}
+
+
+// public native String getModelInfo(String paramPath, String modelPath);
+JNIEXPORT jstring JNICALL Java_com_yolo_openiris_Yolov11Ncnn_getModelInfo(JNIEnv* env, jobject thiz, jstring paramPath, jstring modelPath)
+{
+    if (!g_yolo)
+    {
+        return env->NewStringUTF("模型未加载");
+    }
+
+    const char* param_path = env->GetStringUTFChars(paramPath, nullptr);
+    const char* model_path = env->GetStringUTFChars(modelPath, nullptr);
+
+    std::string info = g_yolo->getModelInfo(param_path, model_path);
+
+    env->ReleaseStringUTFChars(paramPath, param_path);
+    env->ReleaseStringUTFChars(modelPath, model_path);
+
+    return env->NewStringUTF(info.c_str());
+}
+
 
 // public native boolean openCamera(int facing);
 JNIEXPORT jboolean JNICALL Java_com_yolo_openiris_Yolov11Ncnn_openCamera(JNIEnv* env, jobject thiz, jint facing)
@@ -263,6 +344,9 @@ JNIEXPORT jboolean JNICALL Java_com_yolo_openiris_Yolov11Ncnn_openCamera(JNIEnv*
         return JNI_FALSE;
 
     __android_log_print(ANDROID_LOG_DEBUG, "ncnn", "openCamera %d", facing);
+
+    // Close before open to prevent double-open from lifecycle timing issues
+    g_camera->close();
 
     g_camera->open((int)facing);
 
@@ -380,17 +464,13 @@ JNIEXPORT jboolean JNICALL Java_com_yolo_openiris_Yolov11Ncnn_setCameraResolutio
     // 使用锁保护分辨率切换，避免与captureFrame并发问题
     ncnn::MutexLockGuard g(frame_lock);
 
-    // 保存当前 facing
-    int facing = g_camera->camera_facing;
-
     // 清除旧帧
     g_last_frame.release();
 
-    // 设置新分辨率（会自动关闭摄像头并重新创建 ImageReader）
+    // 设置新分辨率（如果分辨率变化会自动关闭摄像头并重新创建 ImageReader）
+    // 注意：不要在这里调用 open()，由调用方（onResume 中的 openCamera）负责打开摄像头
+    // 否则会导致双重 open()，造成 capture session 泄漏
     g_camera->setResolution(width, height);
-
-    // 重新打开摄像头
-    g_camera->open(facing);
 
     return JNI_TRUE;
 }
@@ -437,9 +517,9 @@ JNIEXPORT jboolean JNICALL Java_com_yolo_openiris_Yolov11Ncnn_captureFrame(JNIEn
         return JNI_FALSE;
     }
 
-    // BGR -> RGBA
+    // RGB -> RGBA (g_last_frame 存储为 RGB 格式)
     cv::Mat rgba;
-    cv::cvtColor(frame, rgba, cv::COLOR_BGR2RGBA);
+    cv::cvtColor(frame, rgba, cv::COLOR_RGB2RGBA);
 
     // 检查转换结果
     if (rgba.empty() || rgba.data == nullptr)
@@ -464,6 +544,61 @@ JNIEXPORT jboolean JNICALL Java_com_yolo_openiris_Yolov11Ncnn_captureFrame(JNIEn
 
     __android_log_print(ANDROID_LOG_DEBUG, "ncnn", "Frame captured: %dx%d", frame.cols, frame.rows);
     return JNI_TRUE;
+}
+
+// 直接从摄像头帧运行检测（避免两次像素复制）
+JNIEXPORT jintArray JNICALL Java_com_yolo_openiris_Yolov11Ncnn_detectCurrentFrame(JNIEnv* env, jobject thiz, jint modelid, jint cpugpu)
+{
+    if (!g_yolo)
+    {
+        __android_log_print(ANDROID_LOG_ERROR, "ncnn", "Model not loaded for detectCurrentFrame");
+        return env->NewIntArray(0);
+    }
+
+    cv::Mat frame;
+    {
+        ncnn::MutexLockGuard g(frame_lock);
+        if (g_last_frame.empty())
+        {
+            __android_log_print(ANDROID_LOG_WARN, "ncnn", "No frame available for detectCurrentFrame");
+            return env->NewIntArray(0);
+        }
+        frame = g_last_frame.clone();
+    }
+
+    // RGB -> BGR（runInference 期望 BGR 格式）
+    cv::Mat bgr;
+    cv::cvtColor(frame, bgr, cv::COLOR_RGB2BGR);
+
+    std::vector<Object> objects;
+    {
+        ncnn::MutexLockGuard g(lock);
+        objects = g_yolo->runInference(bgr);
+    }
+
+    int num_objects = objects.size();
+    int result_size = num_objects * 6;
+    jintArray result = env->NewIntArray(result_size);
+    if (result == nullptr)
+    {
+        return env->NewIntArray(0);
+    }
+
+    jint* result_data = env->GetIntArrayElements(result, nullptr);
+    for (int i = 0; i < num_objects; i++)
+    {
+        const Object& obj = objects[i];
+        result_data[i * 6 + 0] = (int)obj.rect.x;
+        result_data[i * 6 + 1] = (int)obj.rect.y;
+        result_data[i * 6 + 2] = (int)obj.rect.width;
+        result_data[i * 6 + 3] = (int)obj.rect.height;
+        result_data[i * 6 + 4] = obj.label;
+        result_data[i * 6 + 5] = (int)(obj.prob * 1000);
+    }
+    env->ReleaseIntArrayElements(result, result_data, 0);
+
+    __android_log_print(ANDROID_LOG_DEBUG, "ncnn", "detectCurrentFrame: Detected %d objects", num_objects);
+    return result;
 }
 
 }

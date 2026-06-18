@@ -6,4 +6,10 @@
     <external-files-path
         name="exports"
         path="YOLO_Export/" />
+    <files-path
+        name="models"
+        path="models/" />
+    <files-path
+        name="share_temp"
+        path="share_temp/" />
 </paths>

@@ -28,12 +28,17 @@ data class AppConfig(
     // 自定义分辨率列表（格式：["1280x720", "1920x1080"]）
     val customResolutions: List<String> = emptyList(),
     // 实时抓取后简短展示原图
-    val showCapturePreview: Boolean = false
+    val showCapturePreview: Boolean = false,
+    // 实时检测采集间隔（秒）
+    val captureIntervalSeconds: Float = DEFAULT_CAPTURE_INTERVAL
 ) {
     companion object {
-        const val DEFAULT_API_BASE_URL = "https://api.openai.com/v1"
-        const val DEFAULT_VLM_MODEL = "qwen3.5-35b-a3b"
-        const val DEFAULT_LLM_MODEL = "deepseek-v4-flash"
+        const val DEFAULT_API_BASE_URL = ""
+        const val DEFAULT_VLM_MODEL = ""
+        const val DEFAULT_LLM_MODEL = ""
+        const val DEFAULT_CAPTURE_INTERVAL = 1.5f
+        const val MIN_CAPTURE_INTERVAL = 0.5f
+        const val MAX_CAPTURE_INTERVAL = 5.0f
         const val DEFAULT_VLM_INTERVAL = 5
         const val MIN_VLM_INTERVAL = 2
         const val MAX_VLM_INTERVAL = 300

@@ -31,9 +31,11 @@ import com.yolo.openiris.ai.AiModelManager
 import com.yolo.openiris.config.ConfigManager
 import com.yolo.openiris.detection.BoundingBox
 import com.yolo.openiris.detection.DetectedObject
+import com.yolo.openiris.detection.CombinedAnalysisManager
 import com.yolo.openiris.detection.SlidingWindowTracker
 import com.yolo.openiris.utils.ImageUtils
 import com.yolo.openiris.ui.CapsuleView
+import com.yolo.openiris.ui.DraggableLayout
 import com.yolo.openiris.ui.OverlayView
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
@@ -47,6 +49,7 @@ class RealtimeDetectActivity : AppCompatActivity(), SurfaceHolder.Callback {
 
     companion object {
         private const val TAG = "OpenIris-Realtime"
+        private const val REQUEST_STORAGE_PERMISSION = 1001
     }
 
     // Core components
@@ -79,18 +82,27 @@ class RealtimeDetectActivity : AppCompatActivity(), SurfaceHolder.Callback {
     private lateinit var textCombinedCount: MaterialTextView
     private lateinit var textWindowDuration: MaterialTextView
 
+    // 记录开关卡片
+    private lateinit var cardToggleRecord: MaterialCardView
+    private lateinit var textRecordIcon: TextView
+    private lateinit var textRecordState: TextView
+
     // State
-    private var facing = 0
+    private var facing = 1
     private var useGpu = true
     private var currentModel = 0
     private var isAiEnabled = false
     private var isFullscreen = false
+    private var isRecording = true  // 记录开关，默认开启
     private var cachedLabels: List<String> = emptyList()
     private var cachedModelName: String = ""
 
-    // Detection trackers
-    private val yoloTracker = SlidingWindowTracker(15000)
-    private val aiTracker = SlidingWindowTracker(15000)
+    // Detection trackers（改为每帧清空模式，不再使用滑动窗口）
+    private val yoloTracker = SlidingWindowTracker(1000)
+    private val aiTracker = SlidingWindowTracker(1000)
+
+    // 综合分析管理器（独立管理15秒展示/max标注/平均置信度）
+    private val combinedAnalysisManager = CombinedAnalysisManager()
 
     // Jobs
     private var aiCallJob: Job? = null
@@ -129,9 +141,12 @@ class RealtimeDetectActivity : AppCompatActivity(), SurfaceHolder.Callback {
         cardSwitchCamera = findViewById(R.id.cardSwitchCamera)
         cardToggleGpu = findViewById(R.id.cardToggleGpu)
         cardToggleAi = findViewById(R.id.cardToggleAi)
+        cardToggleRecord = findViewById(R.id.cardToggleRecord)
         textGpuStatus = findViewById(R.id.textGpuStatus)
         textAiStatusBtn = findViewById(R.id.textAiStatusBtn)
         textAiState = findViewById(R.id.textAiState)
+        textRecordIcon = findViewById(R.id.textRecordIcon)
+        textRecordState = findViewById(R.id.textRecordState)
 
         // Result summary
         flexboxYolo = findViewById(R.id.flexboxYolo)
@@ -149,6 +164,7 @@ class RealtimeDetectActivity : AppCompatActivity(), SurfaceHolder.Callback {
         // Initialize button states
         updateGpuButton()
         updateAiButton()
+        updateRecordButton()
 
         // Set click listeners
         buttonBack.setOnClickListener { finish() }
@@ -173,15 +189,68 @@ class RealtimeDetectActivity : AppCompatActivity(), SurfaceHolder.Callback {
             updateAiButton()
             if (isAiEnabled) {
                 startAiCallLoop()
-                startScreenshotAnalysis()
             } else {
                 stopAiCallLoop()
-                stopScreenshotAnalysis()
+            }
+        }
+
+        // 记录开关按钮
+        cardToggleRecord.setOnClickListener {
+            isRecording = !isRecording
+            updateRecordButton()
+        }
+
+        // 右侧控制面板拖动（使用 DraggableLayout 处理长按+拖动，子视图点击正常工作）
+        val rightControlPanel = findViewById<DraggableLayout>(R.id.rightControlPanel)
+        rightControlPanel.onDragListener = { dx, dy ->
+            val newX = rightControlPanel.translationX + dx
+            val newY = rightControlPanel.translationY + dy
+
+            // 边界约束：限制在标题栏与检测结果汇总窗口之间
+            val topStatusBar = findViewById<View>(R.id.topStatusBar)
+            val resultSummaryCard = findViewById<MaterialCardView>(R.id.resultSummaryCard)
+            val minY = (topStatusBar.bottom - rightControlPanel.top).toFloat()
+            val maxY = (resultSummaryCard.top - rightControlPanel.bottom).toFloat()
+
+            // 水平边界约束：不超出屏幕左右范围
+            val screenWidth = resources.displayMetrics.widthPixels
+            val minX = -rightControlPanel.left.toFloat()
+            val maxX = (screenWidth - rightControlPanel.right).toFloat()
+
+            rightControlPanel.translationX = newX.coerceIn(minX, maxX)
+            rightControlPanel.translationY = newY.coerceIn(minY, maxY)
+        }
+
+        // 监听结果汇总窗口大小变化，自适应移动按钮栏
+        val resultSummaryCard = findViewById<MaterialCardView>(R.id.resultSummaryCard)
+        resultSummaryCard.addOnLayoutChangeListener { _, _, _, _, bottom, _, _, _, oldBottom ->
+            if (bottom != oldBottom) {
+                // 结果汇总窗口大小变化时，检查是否遮挡按钮栏
+                val panelBottom = rightControlPanel.bottom + rightControlPanel.translationY
+                val summaryTop = resultSummaryCard.top.toFloat()
+                if (panelBottom > summaryTop) {
+                    // 按钮栏被遮挡，向上移动
+                    val targetY = rightControlPanel.translationY - (panelBottom - summaryTop) - 16f
+                    val topStatusBar = findViewById<View>(R.id.topStatusBar)
+                    val minY = (topStatusBar.bottom - rightControlPanel.top).toFloat()
+                    rightControlPanel.translationY = targetY.coerceAtLeast(minY)
+                }
             }
         }
 
         // Update window duration text
-        textWindowDuration.text = "${yoloTracker.getWindowDurationSeconds()}秒窗口"
+        textWindowDuration.text = "实时刷新"
+
+        // 限制结果卡片高度为屏幕40%
+        val displayMetrics = resources.displayMetrics
+        val maxHeight = (displayMetrics.heightPixels * 0.4).toInt()
+        resultSummaryCard.post {
+            if (resultSummaryCard.height > maxHeight) {
+                val layoutParams = resultSummaryCard.layoutParams
+                layoutParams.height = maxHeight
+                resultSummaryCard.layoutParams = layoutParams
+            }
+        }
     }
 
     private fun loadModel(): Boolean {
@@ -189,6 +258,7 @@ class RealtimeDetectActivity : AppCompatActivity(), SurfaceHolder.Callback {
         currentModel = 0
         val cpuGpu = if (useGpu) 1 else 0
 
+        Log.d(TAG, "Loading model: selectedModel=${config.selectedModel}, gpu=$useGpu")
         val ret = yolov11Ncnn.loadModel(assets, currentModel, cpuGpu)
         if (!ret) {
             Log.e(TAG, "Failed to load model")
@@ -198,6 +268,7 @@ class RealtimeDetectActivity : AppCompatActivity(), SurfaceHolder.Callback {
 
         cachedModelName = config.selectedModel
         cachedLabels = loadLabels(config.selectedModel)
+        Log.d(TAG, "Model loaded: labels=${cachedLabels.size}, names=${cachedLabels.take(5)}")
         return true
     }
 
@@ -234,6 +305,20 @@ class RealtimeDetectActivity : AppCompatActivity(), SurfaceHolder.Callback {
         textAiState.text = if (isAiEnabled) "开启" else "关闭"
         textAiState.setTextColor(getContrastColor(color))
         textAiStatusBtn.setTextColor(getContrastColor(color))
+    }
+
+    // 更新记录按钮状态
+    private fun updateRecordButton() {
+        val color = if (isRecording) {
+            ContextCompat.getColor(this, R.color.btn_ai_enabled)
+        } else {
+            ContextCompat.getColor(this, R.color.btn_ai_disabled)
+        }
+        cardToggleRecord.setCardBackgroundColor(color)
+        textRecordIcon.text = if (isRecording) "⏸" else "▶"
+        textRecordState.text = if (isRecording) "暂停" else "开始"
+        textRecordState.setTextColor(getContrastColor(color))
+        textRecordIcon.setTextColor(getContrastColor(color))
     }
 
     // 截图并保存
@@ -308,24 +393,38 @@ class RealtimeDetectActivity : AppCompatActivity(), SurfaceHolder.Callback {
         val timeStamp = SimpleDateFormat("yyyyMMdd_HHmmss", Locale.getDefault()).format(Date())
         val fileName = "OpenIris_${timeStamp}.jpg"
 
-        if (ContextCompat.checkSelfPermission(this, Manifest.permission.WRITE_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED) {
-            Toast.makeText(this, "缺少写入存储权限，无法保存截图", Toast.LENGTH_SHORT).show()
-        }
-
-        val configPath = configManager.getImageExportPath()
-        val baseDir = getExternalFilesDir(Environment.DIRECTORY_PICTURES) ?: filesDir
-        val storageDir = if (configPath.isNotBlank() && configPath != "Pictures") {
-            File(baseDir, configPath).apply { mkdirs() }
+        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.Q) {
+            // Android 10+ 使用 MediaStore 保存到公共相册
+            val contentValues = android.content.ContentValues().apply {
+                put(android.provider.MediaStore.Images.Media.DISPLAY_NAME, fileName)
+                put(android.provider.MediaStore.Images.Media.MIME_TYPE, "image/jpeg")
+                put(android.provider.MediaStore.Images.Media.RELATIVE_PATH, Environment.DIRECTORY_PICTURES + "/OpenIris")
+            }
+            val uri = contentResolver.insert(android.provider.MediaStore.Images.Media.EXTERNAL_CONTENT_URI, contentValues)
+            if (uri != null) {
+                contentResolver.openOutputStream(uri)?.use { out ->
+                    bitmap.compress(Bitmap.CompressFormat.JPEG, 95, out)
+                }
+                Log.d(TAG, "Screenshot saved to MediaStore: $uri")
+            } else {
+                Log.e(TAG, "Failed to create MediaStore entry")
+            }
         } else {
-            File(baseDir, "OpenIris").apply { mkdirs() }
+            // Android 9 及以下需要 WRITE_EXTERNAL_STORAGE 权限
+            if (ContextCompat.checkSelfPermission(this, Manifest.permission.WRITE_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED) {
+                requestPermissions(arrayOf(Manifest.permission.WRITE_EXTERNAL_STORAGE), REQUEST_STORAGE_PERMISSION)
+                Toast.makeText(this, "需要存储权限才能保存截图", Toast.LENGTH_SHORT).show()
+                return
+            }
+            val baseDir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_PICTURES)
+            val storageDir = File(baseDir, "OpenIris").apply { mkdirs() }
+            val file = File(storageDir, fileName)
+            file.outputStream().use { out ->
+                bitmap.compress(Bitmap.CompressFormat.JPEG, 95, out)
+            }
+            android.media.MediaScannerConnection.scanFile(this, arrayOf(file.absolutePath), arrayOf("image/jpeg"), null)
+            Log.d(TAG, "Screenshot saved: ${file.absolutePath}")
         }
-        val file = File(storageDir, fileName)
-
-        file.outputStream().use { out ->
-            bitmap.compress(Bitmap.CompressFormat.JPEG, 95, out)
-        }
-
-        Log.d(TAG, "Screenshot saved: ${file.absolutePath}")
     }
 
     private var capturePreviewDialog: com.google.android.material.bottomsheet.BottomSheetDialog? = null
@@ -393,11 +492,13 @@ class RealtimeDetectActivity : AppCompatActivity(), SurfaceHolder.Callback {
     private fun startScreenshotAnalysis() {
         screenshotJob?.cancel()
         screenshotJob = lifecycleScope.launch {
-            while (isAiEnabled) {
-                delay(1000)
-                if (isAiEnabled) {
+            // 等待摄像头准备好（首次延迟 2 秒）
+            delay(2000)
+            while (true) {
+                if (isRecording) {
                     analyzeCurrentFrame()
                 }
+                delay(1000)
             }
         }
     }
@@ -409,9 +510,14 @@ class RealtimeDetectActivity : AppCompatActivity(), SurfaceHolder.Callback {
 
     private fun analyzeCurrentFrame() {
         try {
-            val bitmap = Bitmap.createBitmap(640, 640, Bitmap.Config.ARGB_8888)
+            // 直接从摄像头帧运行检测（避免两次像素复制）
+            val rawResults = yolov11Ncnn.detectCurrentFrame(currentModel, if (useGpu) 1 else 0)
+            Log.d(TAG, "detectCurrentFrame returned ${rawResults.size} values, model=$currentModel, gpu=${if (useGpu) 1 else 0}, labels=${cachedLabels.size}")
 
-            val rawResults = yolov11Ncnn.detectBitmap(bitmap, currentModel, if (useGpu) 1 else 0)
+            if (rawResults.isEmpty()) {
+                Log.w(TAG, "No detection results - camera may not be ready or no objects detected")
+                return
+            }
 
             val objects = mutableListOf<DetectedObject>()
             var i = 0
@@ -436,9 +542,9 @@ class RealtimeDetectActivity : AppCompatActivity(), SurfaceHolder.Callback {
                 i += 6
             }
 
-            objects.forEach { obj ->
-                yoloTracker.addDetection(obj.label, obj.confidence)
-            }
+            // 使用 clearAndReplace 替代 addDetection：每帧清空旧数据，只保留当前帧结果
+            yoloTracker.clearAndReplace(objects.map { it.label to it.confidence })
+            Log.d(TAG, "YOLO detected ${objects.size} objects: ${objects.map { it.label }.distinct()}")
 
             runOnUiThread {
                 updateResultSummary()
@@ -469,9 +575,9 @@ class RealtimeDetectActivity : AppCompatActivity(), SurfaceHolder.Callback {
 
             if (result.success && result.structuredOutput != null) {
                 val output = result.structuredOutput
-                output.objects.forEach { obj ->
-                    aiTracker.addDetection(obj.name, obj.confidence)
-                }
+                // 使用 clearAndReplace：每次 AI 推理清空旧数据
+                aiTracker.clearAndReplace(output.objects.map { it.name to it.confidence })
+
                 runOnUiThread {
                     updateResultSummary()
                 }
@@ -482,50 +588,61 @@ class RealtimeDetectActivity : AppCompatActivity(), SurfaceHolder.Callback {
     }
 
     private fun updateResultSummary() {
-        // Update YOLO capsules
+        // 暂停时冻结显示，不更新
+        if (!isRecording) return
+
+        // 获取当前帧 YOLO 和 AI 结果
         val yoloSummary = yoloTracker.getSortedSummary()
+        val aiSummary = aiTracker.getSortedSummary()
+
+        // Update YOLO capsules（常规方案，无 max 标注）
+        Log.d(TAG, "updateResultSummary: yoloSummary=${yoloSummary.size} items, hasData=${yoloTracker.hasData()}")
         flexboxYolo.removeAllViews()
         yoloSummary.forEach { stats ->
             val capsule = CapsuleView(this)
-            capsule.bind(stats, CapsuleView.CapsuleSource.YOLO)
+            capsule.bindRecognizedObject(stats.name, stats.count, stats.avgConfidence, CapsuleView.CapsuleSource.YOLO)
             flexboxYolo.addView(capsule)
         }
         textYoloCount.text = "${yoloTracker.getUniqueCount()} 类"
 
-        // Update AI capsules
-        val aiSummary = aiTracker.getSortedSummary()
+        // Update AI capsules（常规方案，无 max 标注）
         flexboxAi.removeAllViews()
         aiSummary.forEach { stats ->
             val capsule = CapsuleView(this)
-            capsule.bind(stats, CapsuleView.CapsuleSource.AI)
+            capsule.bindRecognizedObject(stats.name, stats.count, stats.avgConfidence, CapsuleView.CapsuleSource.AI)
             flexboxAi.addView(capsule)
         }
         textAiCount.text = "${aiTracker.getUniqueCount()} 类"
 
-        // Update combined capsules
-        val combinedMap = mutableMapOf<String, SlidingWindowTracker.ObjectStats>()
-        yoloSummary.forEach { stats ->
-            combinedMap[stats.name] = stats.copy()
-        }
-        aiSummary.forEach { stats ->
-            val existing = combinedMap[stats.name]
-            if (existing != null) {
-                combinedMap[stats.name] = existing.copy(
-                    count = maxOf(existing.count, stats.count),
-                    totalConfidence = (existing.avgConfidence + stats.avgConfidence) / 2 * maxOf(existing.count, stats.count)
-                )
-            } else {
-                combinedMap[stats.name] = stats.copy()
-            }
-        }
+        // Update combined capsules（使用 CombinedAnalysisManager 管理15秒展示/max标注/平均置信度）
+        val yoloTriples = yoloSummary.map { Triple(it.name, it.count, it.avgConfidence) }
+        val aiTriples = aiSummary.map { Triple(it.name, it.count, it.avgConfidence) }
+        val combinedEntries = combinedAnalysisManager.refresh(yoloTriples, aiTriples)
 
         flexboxCombined.removeAllViews()
-        combinedMap.values.sortedByDescending { it.count }.forEach { stats ->
+        combinedEntries.forEach { entry ->
+            val stats = SlidingWindowTracker.ObjectStats.fromAvgConfidence(entry.name, entry.maxCount, entry.avgConfidence)
             val capsule = CapsuleView(this)
-            capsule.bind(stats, CapsuleView.CapsuleSource.COMBINED)
+            capsule.bind(stats, CapsuleView.CapsuleSource.COMBINED, maxCount = entry.maxCount, isMax = entry.isMax)
             flexboxCombined.addView(capsule)
         }
-        textCombinedCount.text = "${combinedMap.size} 类"
+        textCombinedCount.text = "${combinedEntries.size} 类"
+
+        // 自适应移动：检查按钮栏是否被结果卡片遮挡
+        val rightControlPanel = findViewById<DraggableLayout>(R.id.rightControlPanel)
+        val resultSummaryCard = findViewById<MaterialCardView>(R.id.resultSummaryCard)
+        if (rightControlPanel != null && resultSummaryCard != null) {
+            resultSummaryCard.post {
+                val panelBottom = rightControlPanel.bottom + rightControlPanel.translationY
+                val summaryTop = resultSummaryCard.top.toFloat()
+                if (panelBottom > summaryTop) {
+                    val topStatusBar = findViewById<View>(R.id.topStatusBar)
+                    val minY = (topStatusBar.bottom - rightControlPanel.top).toFloat()
+                    val targetY = rightControlPanel.translationY - (panelBottom - summaryTop) - 16f
+                    rightControlPanel.translationY = targetY.coerceAtLeast(minY)
+                }
+            }
+        }
     }
 
     private fun loadLabels(modelName: String): List<String> {
@@ -602,17 +719,29 @@ class RealtimeDetectActivity : AppCompatActivity(), SurfaceHolder.Callback {
 
     override fun surfaceDestroyed(holder: SurfaceHolder) {}
 
+    override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<out String>, grantResults: IntArray) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults)
+        if (requestCode == REQUEST_STORAGE_PERMISSION) {
+            if (grantResults.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                Toast.makeText(this, "存储权限已授予，请重新截图", Toast.LENGTH_SHORT).show()
+            } else {
+                Toast.makeText(this, "存储权限被拒绝，无法保存截图", Toast.LENGTH_SHORT).show()
+            }
+        }
+    }
+
     override fun onResume() {
         super.onResume()
-        
+
         // 应用分辨率配置
         val config = configManager.loadConfig()
         yolov11Ncnn.setCameraResolution(config.cameraResolutionWidth, config.cameraResolutionHeight)
-        
+
         yolov11Ncnn.openCamera(facing)
+        // YOLO 始终运行
+        startScreenshotAnalysis()
         if (isAiEnabled) {
             startAiCallLoop()
-            startScreenshotAnalysis()
         }
     }
 

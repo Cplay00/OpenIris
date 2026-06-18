@@ -31,11 +31,12 @@ object JsonExporter {
             val timestamp = getTimestamp()
             val fileName = "openiris_analysis_${timestamp}.json"
 
-            val baseDir = context.getExternalFilesDir(null) ?: context.filesDir
-            val exportDir = if (jsonPath.isNotBlank()) {
-                File(baseDir, jsonPath)
+            val exportDir = if (jsonPath.isNotBlank() && jsonPath.startsWith("/")) {
+                File(jsonPath)
+            } else if (jsonPath.isNotBlank()) {
+                File(context.getExternalFilesDir(null) ?: context.filesDir, jsonPath)
             } else {
-                File(baseDir, "YOLO_Export/JSON")
+                File(context.getExternalFilesDir(null) ?: context.filesDir, "YOLO_Export/JSON")
             }
             if (!exportDir.exists() && !exportDir.mkdirs()) {
                 return ExportResult(type = ExportType.JSON, filePath = "", success = false, errorMessage = "无法创建导出目录: ${exportDir.absolutePath}")
@@ -89,10 +90,18 @@ object ImageExporter {
 
     fun export(context: Context, bitmap: Bitmap): ExportResult {
         return try {
+            val configManager = ConfigManager.getInstance(context)
+            val imagePath = configManager.getImageExportPath()
             val timestamp = getTimestamp()
-            val fileName = "openiris_annotated_${timestamp}.jpg"
+            val fileName = "openiris_annotated_${timestamp}.png"
 
-            val exportDir = context.getExternalFilesDir(Environment.DIRECTORY_PICTURES) ?: context.filesDir
+            val exportDir = if (imagePath.isNotBlank() && imagePath.startsWith("/")) {
+                File(imagePath)
+            } else if (imagePath.isNotBlank()) {
+                File(context.getExternalFilesDir(null) ?: context.filesDir, imagePath)
+            } else {
+                context.getExternalFilesDir(Environment.DIRECTORY_PICTURES) ?: context.filesDir
+            }
             if (!exportDir.exists() && !exportDir.mkdirs()) {
                 return ExportResult(type = ExportType.ANNOTATED_IMAGE, filePath = "", success = false, errorMessage = "无法创建导出目录: ${exportDir.absolutePath}")
             }
@@ -100,7 +109,7 @@ object ImageExporter {
             val file = File(exportDir, fileName)
 
             FileOutputStream(file).use { out ->
-                bitmap.compress(Bitmap.CompressFormat.JPEG, 95, out)
+                bitmap.compress(Bitmap.CompressFormat.PNG, 100, out)
             }
 
             ExportResult(

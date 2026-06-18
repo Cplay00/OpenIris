@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Material Design 3 Dark Color Scheme -->
+    <color name="md_theme_primary">#AEC6FF</color>
+    <color name="md_theme_onPrimary">#003062</color>
+    <color name="md_theme_primaryContainer">#00468C</color>
+    <color name="md_theme_onPrimaryContainer">#D8E2FF</color>
+    
+    <color name="md_theme_secondary">#BCC7DC</color>
+    <color name="md_theme_onSecondary">#283041</color>
+    <color name="md_theme_secondaryContainer">#3E4759</color>
+    <color name="md_theme_onSecondaryContainer">#DAE2F9</color>
+    
+    <color name="md_theme_tertiary">#DDB9E0</color>
+    <color name="md_theme_onTertiary">#3F2845</color>
+    <color name="md_theme_tertiaryContainer">#573E5D</color>
+    <color name="md_theme_onTertiaryContainer">#F9D8FE</color>
+    
+    <color name="md_theme_error">#FFB4AB</color>
+    <color name="md_theme_onError">#690005</color>
+    <color name="md_theme_errorContainer">#93000A</color>
+    <color name="md_theme_onErrorContainer">#FFDAD6</color>
+    
+    <color name="md_theme_background">#000000</color>
+    <color name="md_theme_onBackground">#E4E1E6</color>
+    <color name="md_theme_surface">#000000</color>
+    <color name="md_theme_onSurface">#E4E1E6</color>
+    <color name="md_theme_surfaceVariant">#1A1A1A</color>
+    <color name="md_theme_onSurfaceVariant">#C4C6D0</color>
+    
+    <color name="md_theme_outline">#8E9099</color>
+    <color name="md_theme_outlineVariant">#44474F</color>
+    <color name="md_theme_inverseSurface">#E4E1E6</color>
+    <color name="md_theme_inverseOnSurface">#303034</color>
+    <color name="md_theme_inversePrimary">#1B6EF3</color>
+    
+    <color name="md_theme_surfaceTint">#AEC6FF</color>
+    
+    <!-- Capsule Colors - YOLO Blue (Dark) - 深色背景 + 高对比度文字 -->
+    <color name="capsule_yolo_bg">#262196F3</color>
+    <color name="capsule_yolo_border">#64B5F6</color>
+    <color name="capsule_yolo_text">#BBDEFB</color>
+    
+    <!-- Capsule Colors - AI Purple (Dark) - 深色背景 + 高对比度文字 -->
+    <color name="capsule_ai_bg">#269C27B0</color>
+    <color name="capsule_ai_border">#CE93D8</color>
+    <color name="capsule_ai_text">#E1BEE7</color>
+    
+    <!-- Capsule Colors - Combined Green (Dark) - 深色背景 + 高对比度文字 -->
+    <color name="capsule_combined_bg">#264CAF50</color>
+    <color name="capsule_combined_border">#81C784</color>
+    <color name="capsule_combined_text">#C8E6C9</color>
+    
+    <!-- Capsule Colors - Unique Orange (Dark) - 深色背景 + 高对比度文字 -->
+    <color name="capsule_unique_bg">#26FF9800</color>
+    <color name="capsule_unique_border">#FFB74D</color>
+    <color name="capsule_unique_text">#FFE0B2</color>
+    
+    <!-- Button State Colors (Dark) -->
+    <color name="btn_gpu_enabled">#66BB6A</color>
+    <color name="btn_gpu_disabled">#FFA726</color>
+    <color name="btn_ai_enabled">#64B5F6</color>
+    <color name="btn_ai_disabled">#9E9E9E</color>
+    <color name="btn_camera">#64B5F6</color>
+    <color name="btn_bg_overlay">#CC000000</color>
+</resources>

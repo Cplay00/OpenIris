@@ -41,19 +41,27 @@ class LlmClient private constructor(
             instance = LlmClient(config)
             return instance!!
         }
+ 
+         // OkHttpClient 单例
+         val client: OkHttpClient = OkHttpClient.Builder()
+             .connectTimeout(30, TimeUnit.SECONDS)
+             .readTimeout(60, TimeUnit.SECONDS)
+             .writeTimeout(30, TimeUnit.SECONDS)
+             .build()
     }
 
     private val gson = Gson()
-    private val client = OkHttpClient.Builder()
-        .connectTimeout(30, TimeUnit.SECONDS)
-        .readTimeout(60, TimeUnit.SECONDS)
-        .writeTimeout(30, TimeUnit.SECONDS)
-        .build()
 
     /**
      * 同步融合结果
      */
     fun fuse(yoloResult: DetectionResult, vlmResult: VlmResult): LlmResult {
+        if (config.llmModel.isBlank()) {
+            return LlmResult(
+                summary = "请在设置中配置 LLM 模型",
+                rawResponse = "LLM model not configured"
+            )
+        }
         return try {
             val prompt = LlmRequestBuilder.buildPrompt(yoloResult, vlmResult)
             val request = buildRequest(prompt)
@@ -78,7 +86,7 @@ class LlmClient private constructor(
             client.newCall(request).enqueue(object : Callback {
             override fun onFailure(call: Call, e: IOException) {
                 Log.e(TAG, "LLM async request failed", e)
-                callback.onError(e)
+                try { callback.onError(e) } catch (ex: Exception) { Log.e(TAG, "Callback error", ex) }
             }
 
             override fun onResponse(call: Call, response: Response) {
@@ -87,13 +95,13 @@ class LlmClient private constructor(
                     callback.onSuccess(result)
                 } catch (e: Exception) {
                     Log.e(TAG, "LLM async response parsing failed", e)
-                    callback.onError(e)
+                    try { callback.onError(e) } catch (ex: Exception) { Log.e(TAG, "Callback error", ex) }
                 }
             }
             })
         } catch (e: Exception) {
             Log.e(TAG, "LLM async build request failed", e)
-            callback.onError(e)
+            try { callback.onError(e) } catch (ex: Exception) { Log.e(TAG, "Callback error", ex) }
         }
     }
 

@@ -29,7 +29,7 @@
             android:id="@+id/buttonBack"
             android:layout_width="40dp"
             android:layout_height="40dp"
-            android:src="@android:drawable/ic_menu_revert"
+            android:src="?attr/homeAsUpIndicator"
             android:background="?attr/selectableItemBackgroundBorderless"
             android:contentDescription="返回"
             app:tint="@android:color/white" />
@@ -135,6 +135,45 @@
                     app:iconGravity="textStart"
                     android:layout_marginStart="4dp"
                     style="@style/Widget.Material3.Button.TonalButton" />
+            </LinearLayout>
+
+            <!-- 视频进度条 -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:gravity="center_vertical"
+                android:layout_marginBottom="8dp"
+                android:paddingHorizontal="4dp">
+
+                <com.google.android.material.textview.MaterialTextView
+                    android:id="@+id/textCurrentTime"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="00:00"
+                    android:textAppearance="?attr/textAppearanceLabelSmall"
+                    android:textColor="?attr/colorOnSurfaceVariant"
+                    android:layout_marginEnd="8dp" />
+
+                <com.google.android.material.slider.Slider
+                    android:id="@+id/sliderVideo"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:valueFrom="0"
+                    android:valueTo="100"
+                    android:stepSize="0"
+                    android:enabled="false"
+                    android:layout_marginHorizontal="4dp" />
+
+                <com.google.android.material.textview.MaterialTextView
+                    android:id="@+id/textTotalTime"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="00:00"
+                    android:textAppearance="?attr/textAppearanceLabelSmall"
+                    android:textColor="?attr/colorOnSurfaceVariant"
+                    android:layout_marginStart="8dp" />
             </LinearLayout>
 
             <!-- 分析按钮 -->

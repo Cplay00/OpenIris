@@ -17,8 +17,9 @@ import com.yolo.openiris.R
  * 自定义Toast组件
  * 支持长文本显示和复制功能
  */
-class CustomToast(private val context: Context) {
+class CustomToast(context: Context) {
 
+    private val appContext: Context = context.applicationContext
     private val handler = Handler(Looper.getMainLooper())
 
     /**
@@ -28,7 +29,7 @@ class CustomToast(private val context: Context) {
      * @param copyable 是否显示复制按钮，默认true
      */
     fun show(message: String, duration: Long = 3000, copyable: Boolean = true) {
-        val inflater = LayoutInflater.from(context)
+        val inflater = LayoutInflater.from(appContext)
         val layout = inflater.inflate(R.layout.layout_custom_toast, null)
 
         val textMessage = layout.findViewById<TextView>(R.id.textMessage)
@@ -40,13 +41,13 @@ class CustomToast(private val context: Context) {
             buttonCopy.visibility = View.VISIBLE
             buttonCopy.setOnClickListener {
                 copyToClipboard(message)
-                Toast.makeText(context, "已复制到剪贴板", Toast.LENGTH_SHORT).show()
+                Toast.makeText(appContext, "已复制到剪贴板", Toast.LENGTH_SHORT).show()
             }
         } else {
             buttonCopy.visibility = View.GONE
         }
 
-        val toast = Toast(context)
+        val toast = Toast(appContext)
         toast.view = layout
         toast.duration = Toast.LENGTH_LONG
         toast.setGravity(Gravity.BOTTOM or Gravity.FILL_HORIZONTAL, 0, 0)
@@ -85,7 +86,7 @@ class CustomToast(private val context: Context) {
     }
 
     private fun copyToClipboard(text: String) {
-        val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
+        val clipboard = appContext.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
         val clip = ClipData.newPlainText("OpenIris", text)
         clipboard.setPrimaryClip(clip)
     }

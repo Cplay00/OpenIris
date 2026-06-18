@@ -40,20 +40,29 @@ class VlmClient private constructor(
             instance = VlmClient(config)
             return instance!!
         }
+ 
+         // OkHttpClient 单例
+         val client: OkHttpClient = OkHttpClient.Builder()
+             .connectTimeout(30, TimeUnit.SECONDS)
+             .readTimeout(60, TimeUnit.SECONDS)
+             .writeTimeout(30, TimeUnit.SECONDS)
+             .build()
     }
 
     private val gson = Gson()
-    private val client = OkHttpClient.Builder()
-        .connectTimeout(30, TimeUnit.SECONDS)
-        .readTimeout(60, TimeUnit.SECONDS)
-        .writeTimeout(30, TimeUnit.SECONDS)
-        .build()
 
     /**
      * 同步识别图片
      */
     fun recognize(bitmap: Bitmap): VlmResult {
         val base64Image = bitmapToBase64(bitmap)
+        if (config.vlmModel.isBlank()) {
+            return VlmResult(
+                imageBase64 = base64Image,
+                rawResponse = "VLM model not configured",
+                sceneSummary = "请在设置中配置 VLM 模型"
+            )
+        }
         return try {
             val request = buildRequest(base64Image)
             executeRequest(request).copy(imageBase64 = base64Image)
@@ -78,7 +87,7 @@ class VlmClient private constructor(
             client.newCall(request).enqueue(object : Callback {
             override fun onFailure(call: Call, e: IOException) {
                 Log.e(TAG, "VLM async request failed", e)
-                callback.onError(e)
+                try { callback.onError(e) } catch (ex: Exception) { Log.e(TAG, "Callback error", ex) }
             }
 
             override fun onResponse(call: Call, response: Response) {
@@ -87,13 +96,13 @@ class VlmClient private constructor(
                     callback.onSuccess(result)
                 } catch (e: Exception) {
                     Log.e(TAG, "VLM async response parsing failed", e)
-                    callback.onError(e)
+                    try { callback.onError(e) } catch (ex: Exception) { Log.e(TAG, "Callback error", ex) }
                 }
             }
             })
         } catch (e: Exception) {
             Log.e(TAG, "VLM async build request failed", e)
-            callback.onError(e)
+            try { callback.onError(e) } catch (ex: Exception) { Log.e(TAG, "Callback error", ex) }
         }
     }
 

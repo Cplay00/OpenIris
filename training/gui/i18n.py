@@ -31,6 +31,26 @@ TRANSLATIONS = {
         "menu_env_check": "环境检测",
         "menu_help": "帮助",
         "menu_about": "关于",
+        "menu_install_deps": "安装依赖",
+        "menu_check_deps": "检查依赖状态",
+        "install_deps_title": "安装依赖",
+        "install_deps_select": "选择要安装的依赖类型：",
+        "install_deps_core": "核心依赖 (必需)",
+        "install_deps_optional": "可选依赖 (推荐)",
+        "install_deps_enhanced": "增强依赖 (可选)",
+        "install_deps_btn": "开始安装",
+        "install_deps_start": "开始安装依赖...",
+        "install_deps_complete": "依赖安装完成",
+        "deps_status_title": "依赖状态",
+        "deps_status_group": "分类",
+        "deps_status_package": "包名",
+        "deps_status_desc": "说明",
+        "deps_status_status": "状态",
+        "deps_installed": "已安装",
+        "deps_not_installed": "未安装",
+        "deps_group_core": "核心依赖",
+        "deps_group_optional": "可选依赖",
+        "deps_group_enhanced": "增强依赖",
 
         # Tabs
         "tab_basic": "基础配置",
@@ -80,6 +100,7 @@ TRANSLATIONS = {
         "error_no_dataset": "请先选择数据集配置文件",
         "error_confirm_stop": "确定要停止训练吗?",
         "error_load_config": "加载配置失败",
+        "error_save_config": "保存配置失败",
         "error_export_no_weights": "请先选择模型权重文件",
         "error_no_dataset_first": "请先选择数据集配置",
 
@@ -204,7 +225,31 @@ TRANSLATIONS = {
         "tip_erasing": "随机擦除概率\n"
                        "裁剪图像随机区域\n"
                        "提升遮挡鲁棒性\n"
-                       "推荐: 0.0-0.4",
+                      "推荐: 0.0-0.4",
+
+        # Button tooltips
+        "tip_start": "开始训练",
+        "tip_stop": "停止训练",
+        "tip_validate": "校验数据集格式和标注",
+        "tip_export": "导出模型为 NCNN 或 PyTorch 格式",
+        "tip_clear_log": "清除日志",
+        "visualize_explain": (
+            "此功能用于生成训练结果的可视化图表。\n\n"
+            "请选择包含 results.csv 的训练输出目录。\n"
+            "图表将保存到该目录下的 plots/ 子目录。\n\n"
+            "生成的图表包括：\n"
+            "- 训练损失曲线\n"
+            "- mAP 变化趋势\n"
+            "- 精度/召回率曲线\n"
+            "- 混淆矩阵"
+        ),
+        # Export
+        "export_select_model": "选择已训练好的模型",
+        "export_select_output": "选择模型导出位置",
+        "export_reminder": "即将导出模型文件。请选择训练好的模型文件(.pt)和输出目录。\n\n导出后请注意为输出文件夹取一个有意义的名称（如模型名称），\n避免下次导出时覆盖。每次训练完成后都会生成新的 best.pt，\n建议用训练名称（如 pig_yolov11s）命名输出文件夹。\n\nNCNN zip 包内含: model.param + model.bin + labels.txt + model_meta.json\nAPP 端可直接导入此 zip 文件使用。",
+        "export_format": "导出格式",
+        "export_format_ncnn": "NCNN (移动端部署)",
+        "export_format_pt": "PyTorch (Python推理)",
     },
 
     "en_US": {
@@ -226,6 +271,26 @@ TRANSLATIONS = {
         "menu_env_check": "Check Environment",
         "menu_help": "Help",
         "menu_about": "About",
+        "menu_install_deps": "Install Dependencies",
+        "menu_check_deps": "Check Dependencies",
+        "install_deps_title": "Install Dependencies",
+        "install_deps_select": "Select dependency type to install:",
+        "install_deps_core": "Core dependencies (required)",
+        "install_deps_optional": "Optional dependencies (recommended)",
+        "install_deps_enhanced": "Enhanced dependencies (optional)",
+        "install_deps_btn": "Start Install",
+        "install_deps_start": "Installing dependencies...",
+        "install_deps_complete": "Dependencies installed",
+        "deps_status_title": "Dependencies Status",
+        "deps_status_group": "Group",
+        "deps_status_package": "Package",
+        "deps_status_desc": "Description",
+        "deps_status_status": "Status",
+        "deps_installed": "Installed",
+        "deps_not_installed": "Not Installed",
+        "deps_group_core": "Core",
+        "deps_group_optional": "Optional",
+        "deps_group_enhanced": "Enhanced",
 
         # Tabs
         "tab_basic": "Basic",
@@ -275,6 +340,7 @@ TRANSLATIONS = {
         "error_no_dataset": "Please select a dataset config file first.",
         "error_confirm_stop": "Stop training?",
         "error_load_config": "Failed to load config",
+        "error_save_config": "Save Config Error",
         "error_export_no_weights": "Please select model weights file first.",
         "error_no_dataset_first": "Please select a dataset config first.",
 
@@ -400,6 +466,30 @@ TRANSLATIONS = {
                        "Cuts random patches from image\n"
                        "Improves occlusion robustness\n"
                        "0.0-0.4 recommended",
+
+        # Button tooltips
+        "tip_start": "Start training",
+        "tip_stop": "Stop training",
+        "tip_validate": "Validate dataset format and labels",
+        "tip_export": "Export model as NCNN or PyTorch",
+        "tip_clear_log": "Clear log",
+        "visualize_explain": (
+            "This feature generates training result visualization charts.\n\n"
+            "Please select a training output directory containing results.csv.\n"
+            "Charts will be saved to the plots/ subdirectory.\n\n"
+            "Generated charts include:\n"
+            "- Training loss curves\n"
+            "- mAP trend\n"
+            "- Precision/Recall curves\n"
+            "- Confusion matrix"
+        ),
+        # Export
+        "export_select_model": "Select trained model",
+        "export_select_output": "Select export output location",
+        "export_reminder": "About to export model files. Please select the trained model (.pt) and output directory.\n\nPlease choose a meaningful folder name (e.g., model name) to avoid overwriting.\nEach training run generates a new best.pt; use the training name (e.g., pig_yolov11s) for the output folder.\n\nNCNN zip contains: model.param + model.bin + labels.txt + model_meta.json\nThe APP can directly import this zip file.",
+        "export_format": "Export format",
+        "export_format_ncnn": "NCNN (Mobile deployment)",
+        "export_format_pt": "PyTorch (Python inference)",
     },
 }
 

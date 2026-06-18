@@ -72,6 +72,7 @@ object AppConfigValidator {
     }
 
     fun validateVlmModel(vlmModel: String): ConfigValidationError? {
+        if (vlmModel.isBlank()) return null // 允许为空，用户需自行配置
         return validateRequiredText(
             value = vlmModel,
             field = ConfigField.VLM_MODEL,
@@ -80,6 +81,7 @@ object AppConfigValidator {
     }
 
     fun validateLlmModel(llmModel: String): ConfigValidationError? {
+        if (llmModel.isBlank()) return null // 允许为空，用户需自行配置
         return validateRequiredText(
             value = llmModel,
             field = ConfigField.LLM_MODEL,

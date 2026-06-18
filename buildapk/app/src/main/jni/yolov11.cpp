@@ -60,59 +60,161 @@ static void generate_proposals(
         std::vector<Object>& objects
 )
 {
-    const int reg_max = 16;
-    float dst[16];
     const int num_w = feat_blob.w;
-    const int num_grid_y = feat_blob.c;
-    const int num_grid_x = feat_blob.h;
+    const int num_h = feat_blob.h;
+    const int num_c = feat_blob.c;
 
-    const int num_class = num_w - 4 * reg_max;
+    // Auto-detect format based on blob dimensions
+    // Decoded: w < 64 (ultralytics post-processed)
+    // Raw DFL: w >= 64 (raw YOLO output)
+    // 格式检测: 检查是否包含 DFL 编码的 64 通道
+    // 条件: c > 1 且 w >= 4*reg_max (即 64)
+    // DFL 格式特征: c > 1 且 c >= 4*reg_max (即 64), w 和 h 是空间维度
+    // ultralytics decoded 格式特征: c == 1, h 是每锚值数, w 是锚点数
+    // 内置模型经过 Permute 0=3 + Concat axis=w 后,特征沿 w 维度(144),空间沿 c 和 h 维度
+    // 因此需要同时检查 c 和 w 是否包含 DFL 特征维度(>= 64)
+    const bool is_decoded_format = !(num_c > 1 && num_w > 1 && num_h > 1 && (num_c >= 4 * 16 || num_w >= 4 * 16));
 
-    for (int i = 0; i < num_grid_y; i++)
+    __android_log_print(ANDROID_LOG_DEBUG, "ncnn",
+        "generate_proposals: stride=%d, c=%d, h=%d, w=%d, decoded=%d",
+        stride, num_c, num_h, num_w, is_decoded_format ? 1 : 0);
+
+    if (is_decoded_format)
     {
-        for (int j = 0; j < num_grid_x; j++)
+        // 检测数据布局
+        bool values_in_w;
+        int num_anchors, num_values;
+
+        if (num_c == 1) {
+            // 2D blob: [c=1, h=values, w=anchors]
+            // ultralytics 导出: [c=1, h=4+nc, w=8400]
+            values_in_w = false;
+            num_anchors = num_w;
+            num_values = num_h;
+        } else if (num_c > 1) {
+            // 3D blob: [c=anchors, h=values, w=1] 或 [c=anchors, h=1, w=values]
+            values_in_w = (num_w > num_h);
+            num_anchors = num_c;
+            num_values = values_in_w ? num_w : num_h;
+        } else {
+            __android_log_print(ANDROID_LOG_ERROR, "ncnn",
+                "generate_proposals: invalid decoded shape c=%d h=%d w=%d",
+                num_c, num_h, num_w);
+            return;
+        }
+
+        if (num_values < 5 || num_anchors <= 0) {
+            __android_log_print(ANDROID_LOG_ERROR, "ncnn",
+                "generate_proposals: invalid decoded shape c=%d h=%d w=%d",
+                num_c, num_h, num_w);
+            return;
+        }
+
+        for (int i = 0; i < num_anchors; i++)
         {
-            const float* matat = feat_blob.channel(i).row(j);
-
+            float cx, cy, bw, bh, max_prob;
             int class_index = 0;
-			float class_score = -FLT_MAX;
-			for (int c = 0; c < num_class; c++)
-			{
-				float score = matat[4 * reg_max + c];
-				if (score > class_score)
-				{
-					class_index = c;
-					class_score = score;
-				}
-			}
 
-            if (class_score >= prob_threshold)
-			{
+            if (values_in_w) {
+                const float* ptr = feat_blob.channel(i).row(0);
+                cx = ptr[0]; cy = ptr[1]; bw = ptr[2]; bh = ptr[3];
+                max_prob = ptr[4];
+                for (int c = 4; c < num_values; c++)
+                    if (ptr[c] > max_prob) { max_prob = ptr[c]; class_index = c - 4; }
+            } else {
+                if (num_c == 1) {
+                    // 2D blob: [c=1, h=values, w=anchors]
+                    // 数据布局: row(value_index)[anchor_index]
+                    cx = feat_blob.channel(0).row(0)[i];
+                    cy = feat_blob.channel(0).row(1)[i];
+                    bw = feat_blob.channel(0).row(2)[i];
+                    bh = feat_blob.channel(0).row(3)[i];
+                    max_prob = feat_blob.channel(0).row(4)[i];
+                    for (int c = 4; c < num_values; c++) {
+                        float s = feat_blob.channel(0).row(c)[i];
+                        if (s > max_prob) { max_prob = s; class_index = c - 4; }
+                    }
+                } else {
+                    // 3D blob: [c=anchors, h=values, w=1]
+                    // 数据布局: channel(anchor_index).row(value_index)[0]
+                    cx = feat_blob.channel(i).row(0)[0];
+                    cy = feat_blob.channel(i).row(1)[0];
+                    bw = feat_blob.channel(i).row(2)[0];
+                    bh = feat_blob.channel(i).row(3)[0];
+                    max_prob = feat_blob.channel(i).row(4)[0];
+                    for (int c = 4; c < num_values; c++) {
+                        float s = feat_blob.channel(i).row(c)[0];
+                        if (s > max_prob) { max_prob = s; class_index = c - 4; }
+                    }
+                }
+            }
 
-				float x0 = j + 0.5f - softmax(matat, dst, 16);
-				float y0 = i + 0.5f - softmax(matat + 16, dst, 16);
-				float x1 = j + 0.5f + softmax(matat + 2 * 16, dst, 16);
-				float y1 = i + 0.5f + softmax(matat + 3 * 16, dst, 16);
+            if (max_prob < prob_threshold)
+                continue;
 
-				x0 *= stride;
-				y0 *= stride;
-				x1 *= stride;
-				y1 *= stride;
-
-				Object obj;
-				obj.rect.x = x0;
-				obj.rect.y = y0;
-				obj.rect.width = x1 - x0;
-				obj.rect.height = y1 - y0;
-				obj.label = class_index;
-				obj.prob = 1.0f / (1.0f + exp(-class_score));  // sigmoid
-				objects.push_back(obj);
-
-			}
-           
+            Object obj;
+            obj.rect.x = cx - bw * 0.5f;
+            obj.rect.y = cy - bh * 0.5f;
+            obj.rect.width = bw;
+            obj.rect.height = bh;
+            obj.label = class_index;
+            obj.prob = max_prob;
+            objects.push_back(obj);
         }
     }
+    else
+    {
+        // Raw DFL format: [DFL_left(16), DFL_top(16), DFL_right(16), DFL_bottom(16), class_logits(nc)]
+        const int reg_max = 16;
+        float dst[16];
+        const int num_class = num_w - 4 * reg_max;
 
+        __android_log_print(ANDROID_LOG_DEBUG, "ncnn",
+            "generate_proposals: DFL format, num_w=%d, num_class=%d, grid_y=%d, grid_x=%d, stride=%d",
+            num_w, num_class, num_c, num_h, stride);
+
+        for (int i = 0; i < num_c; i++)
+        {
+            for (int j = 0; j < num_h; j++)
+            {
+                const float* matat = feat_blob.channel(i).row(j);
+
+                int class_index = 0;
+                float class_score = -FLT_MAX;
+                for (int c = 0; c < num_class; c++)
+                {
+                    float score = matat[4 * reg_max + c];
+                    if (score > class_score)
+                    {
+                        class_index = c;
+                        class_score = score;
+                    }
+                }
+
+                if (class_score >= prob_threshold)
+                {
+                    float x0 = j + 0.5f - softmax(matat, dst, 16);
+                    float y0 = i + 0.5f - softmax(matat + 16, dst, 16);
+                    float x1 = j + 0.5f + softmax(matat + 2 * 16, dst, 16);
+                    float y1 = i + 0.5f + softmax(matat + 3 * 16, dst, 16);
+
+                    x0 *= stride;
+                    y0 *= stride;
+                    x1 *= stride;
+                    y1 *= stride;
+
+                    Object obj;
+                    obj.rect.x = x0;
+                    obj.rect.y = y0;
+                    obj.rect.width = x1 - x0;
+                    obj.rect.height = y1 - y0;
+                    obj.label = class_index;
+                    obj.prob = 1.0f / (1.0f + exp(-class_score));
+                    objects.push_back(obj);
+                }
+            }
+        }
+    }
 }
 
 static float clamp(
@@ -590,40 +692,42 @@ std::vector<Object> Inference::runInference(const cv::Mat &bgr)
 
     std::vector<Object> proposals;
 
-    // stride 8
+    // Try extracting all available output blobs
+    // ultralytics export: only "out0" (single output, all scales merged)
+    // Built-in model: "out0"(stride8), "out1"(stride16), "out2"(stride32)
+    const char* output_names[] = {"out0", "out1", "out2"};
+    const int strides[] = {8, 16, 32};
+
+    // Phase 1: Extract all available output blobs
+    struct OutputBlob { ncnn::Mat mat; int stride; };
+    std::vector<OutputBlob> output_blobs;
+    for (int s = 0; s < 3; s++)
     {
         ncnn::Mat out;
-        ex.extract("out0", out);
-
-        std::vector<Object> objects8;
-        generate_proposals(8, out, prob_threshold, objects8);
-
-        proposals.insert(proposals.end(), objects8.begin(), objects8.end());
+        int ret = ex.extract(output_names[s], out);
+        if (ret == 0 && !out.empty())
+        {
+            __android_log_print(ANDROID_LOG_DEBUG, "ncnn",
+                "Extracted %s: w=%d, h=%d, c=%d",
+                output_names[s], out.w, out.h, out.c);
+            output_blobs.push_back({out, strides[s]});
+        }
+        else if (s == 0)
+        {
+            // out0 must exist
+            __android_log_print(ANDROID_LOG_ERROR, "ncnn", "Failed to extract out0");
+            return {};
+        }
+        // out1, out2 are optional (ultralytics single-output models won't have them)
     }
 
-    // stride 16
+    // Phase 2: Generate proposals with per-blob format auto-detection
+    for (const auto& blob : output_blobs)
     {
-        ncnn::Mat out;
-        ex.extract("out1", out);
-
-        std::vector<Object> objects16;
-        generate_proposals(16, out, prob_threshold, objects16);
-
-        proposals.insert(proposals.end(), objects16.begin(), objects16.end());
+        std::vector<Object> objects_s;
+        generate_proposals(blob.stride, blob.mat, prob_threshold, objects_s);
+        proposals.insert(proposals.end(), objects_s.begin(), objects_s.end());
     }
-
-    // stride 32
-    {
-        ncnn::Mat out;
-        ex.extract("out2", out);
-
-        std::vector<Object> objects32;
-        generate_proposals(32, out, prob_threshold, objects32);
-
-        proposals.insert(proposals.end(), objects32.begin(), objects32.end());
-    }
-
-    // objects = proposals;
     std::vector<Object> objects;
 
     non_max_suppression(proposals, objects,

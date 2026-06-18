@@ -68,6 +68,13 @@ class DefaultModelPickerDialog : BottomSheetDialogFragment() {
         setupSearch()
     }
 
+    override fun onStart() {
+        super.onStart()
+        val behavior = com.google.android.material.bottomsheet.BottomSheetBehavior.from(requireView().parent as android.view.View)
+        behavior.state = com.google.android.material.bottomsheet.BottomSheetBehavior.STATE_EXPANDED
+        behavior.skipCollapsed = true
+    }
+
     private fun loadModels() {
         val providers = aiModelManager.getProviders().filter { it.isEnabled }
         val defaultModel = aiModelManager.getDefaultModel()

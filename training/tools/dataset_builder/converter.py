@@ -3,11 +3,11 @@
 """
 Dataset Format Converter
 
-鏀寔澶氱鏍囨敞鏍煎紡杞崲涓?YOLO 鏍煎紡:
+鏀?寔澶氱?鏍囨敞鏍煎紡杞?崲涓?YOLO 鏍煎紡:
 - COCO JSON
 - Pascal VOC XML
 - LabelMe JSON
-- 鑷畾涔?CSV
+- 鑷?畾涔?CSV
 """
 
 import json
@@ -18,7 +18,7 @@ import shutil
 
 
 class DatasetConverter:
-    """鏁版嵁闆嗘牸寮忚浆鎹㈠櫒"""
+    """鏁版嵁闆嗘牸寮忚浆鎹?櫒"""
 
     @staticmethod
     def coco_to_yolo(
@@ -27,15 +27,15 @@ class DatasetConverter:
         image_dir: Optional[str] = None
     ) -> Dict:
         """
-        灏?COCO JSON 鏍囨敞杞崲涓?YOLO 鏍煎紡銆?
+        灏?COCO JSON 鏍囨敞杞?崲涓?YOLO 鏍煎紡銆?
 
         Args:
-            coco_json: COCO annotations.json 璺緞
-            output_dir: 杈撳嚭鐩綍
-            image_dir: 鍥惧儚鐩綍锛堝彲閫夛紝榛樿浠?JSON 涓鍙栵級
+            coco_json: COCO annotations.json 璺?緞
+            output_dir: 杈撳嚭鐩?綍
+            image_dir: 鍥惧儚鐩?綍锛堝彲閫夛紝榛樿?浠?JSON 涓??鍙栵級
 
         Returns:
-            杞崲缁熻淇℃伅
+            杞?崲缁熻?淇?伅
         """
         output_dir = Path(output_dir)
         label_dir = output_dir / "labels"
@@ -54,7 +54,7 @@ class DatasetConverter:
         categories = {cat["id"]: idx for idx, cat in enumerate(coco["categories"])}
         cat_names = {idx: cat["name"] for idx, cat in enumerate(coco["categories"])}
 
-        # 鏋勫缓鍥惧儚淇℃伅
+        # 鏋勫缓鍥惧儚淇?伅
         images = {img["id"]: img for img in coco["images"]}
 
         # 鎸夊浘鍍忓垎缁勬爣娉?
@@ -67,7 +67,7 @@ class DatasetConverter:
 
         stats = {"images": 0, "labels": 0, "categories": len(categories)}
 
-        # 杞崲鏍囨敞
+        # 杞?崲鏍囨敞
         for img_id, img_info in images.items():
             img_w = img_info["width"]
             img_h = img_info["height"]
@@ -78,10 +78,10 @@ class DatasetConverter:
             with open(label_file, "w") as f:
                 if img_id in annotations:
                     for ann in annotations[img_id]:
-                        # COCO bbox: [x, y, w, h] (缁濆鍧愭爣)
+                        # COCO bbox: [x, y, w, h] (缁濆?鍧愭爣)
                         x, y, w, h = ann["bbox"]
 
-                        # 杞崲涓?YOLO 鏍煎紡: [x_center, y_center, w, h] (褰掍竴鍖?
+                        # 杞?崲涓?YOLO 鏍煎紡: [x_center, y_center, w, h] (褰掍竴鍖?
                         x_center = (x + w / 2) / img_w
                         y_center = (y + h / 2) / img_h
                         w_norm = w / img_w
@@ -100,7 +100,7 @@ class DatasetConverter:
 
             stats["images"] += 1
 
-        # 澶嶅埗鍥惧儚锛堝鏋滄寚瀹氫簡鐩綍锛?
+        # 澶嶅埗鍥惧儚锛堝?鏋滄寚瀹氫簡鐩?綍锛?
         if image_dir:
             img_output = output_dir / "images"
             img_output.mkdir(exist_ok=True)
@@ -125,22 +125,22 @@ class DatasetConverter:
         image_dir: Optional[str] = None
     ) -> Dict:
         """
-        灏?Pascal VOC XML 鏍囨敞杞崲涓?YOLO 鏍煎紡銆?
+        灏?Pascal VOC XML 鏍囨敞杞?崲涓?YOLO 鏍煎紡銆?
 
         Args:
-            voc_dir: VOC Annotations 鐩綍
-            output_dir: 杈撳嚭鐩綍
-            image_dir: 鍥惧儚鐩綍
+            voc_dir: VOC Annotations 鐩?綍
+            output_dir: 杈撳嚭鐩?綍
+            image_dir: 鍥惧儚鐩?綍
 
         Returns:
-            杞崲缁熻淇℃伅
+            转换统计信息
         """
         voc_dir = Path(voc_dir)
         output_dir = Path(output_dir)
         label_dir = output_dir / "labels"
         label_dir.mkdir(parents=True, exist_ok=True)
 
-        # 鏀堕泦鎵€鏈夌被鍒?
+        # 鏀堕泦鎵?鏈夌被鍒?
         all_classes = set()
         xml_files = list(voc_dir.glob("*.xml"))
 
@@ -150,6 +150,7 @@ class DatasetConverter:
             except ET.ParseError as e:
                 print(f"Warning: Skipping malformed XML {xml_file}: {e}")
                 continue
+            root = tree.getroot()
             for obj in root.findall("object"):
                 all_classes.add(obj.find("name").text)
 
@@ -157,7 +158,7 @@ class DatasetConverter:
 
         stats = {"images": 0, "labels": 0, "categories": len(class_map)}
 
-        # 杞崲鏍囨敞
+        # 杞?崲鏍囨敞
         for xml_file in xml_files:
             try:
                 tree = ET.parse(xml_file)
@@ -165,6 +166,7 @@ class DatasetConverter:
                 print(f"Warning: Skipping malformed XML {xml_file}: {e}")
                 continue
 
+            root = tree.getroot()
             img_w = int(root.find("size/width").text)
             img_h = int(root.find("size/height").text)
             img_name = xml_file.stem
@@ -181,7 +183,7 @@ class DatasetConverter:
                     xmax = float(bbox.find("xmax").text)
                     ymax = float(bbox.find("ymax").text)
 
-                    # 杞崲涓?YOLO 鏍煎紡
+                    # 杞?崲涓?YOLO 鏍煎紡
                     x_center = ((xmin + xmax) / 2) / img_w
                     y_center = ((ymin + ymax) / 2) / img_h
                     w = (xmax - xmin) / img_w

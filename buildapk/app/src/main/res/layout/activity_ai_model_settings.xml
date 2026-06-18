@@ -13,7 +13,7 @@
         android:layout_width="match_parent"
         android:layout_height="?attr/actionBarSize"
         app:title="AI 模型设置"
-        app:navigationIcon="@android:drawable/ic_menu_revert" />
+        app:navigationIcon="?attr/homeAsUpIndicator" />
 
     <ScrollView
         android:layout_width="match_parent"

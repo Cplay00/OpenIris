@@ -27,6 +27,12 @@ class SlidingWindowTracker(private val windowDurationMs: Long = 15000) {
     ) {
         val avgConfidence: Float
             get() = if (count > 0) totalConfidence / count else 0f
+
+        companion object {
+            /** 从平均置信度构造（用于综合分析，避免 avgConfidence * count 的绕路写法） */
+            fun fromAvgConfidence(name: String, count: Int, avgConfidence: Float) =
+                ObjectStats(name, count, avgConfidence * count)
+        }
     }
 
     // 存储所有检测记录
@@ -135,6 +141,24 @@ class SlidingWindowTracker(private val windowDurationMs: Long = 15000) {
     fun clear() {
         detections.clear()
         objectStatsMap.clear()
+    }
+
+    /**
+     * 原子化清空并替换为当前帧结果
+     * 用于每次推理后清空旧数据，只保留当前帧
+     */
+    @Synchronized
+    fun clearAndReplace(newDetections: List<Pair<String, Float>>) {
+        detections.clear()
+        objectStatsMap.clear()
+        newDetections.forEach { (label, confidence) ->
+            val detection = TimestampedDetection(label, confidence)
+            detections.add(detection)
+            val stats = objectStatsMap.getOrPut(label) { MutableObjectStats(label) }
+            stats.count++
+            stats.totalConfidence += confidence
+            stats.detections.add(detection)
+        }
     }
 
     /**

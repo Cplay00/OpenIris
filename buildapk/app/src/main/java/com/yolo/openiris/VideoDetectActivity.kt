@@ -57,6 +57,11 @@ class VideoDetectActivity : AppCompatActivity() {
     private lateinit var buttonAnalyze: MaterialButton
     private lateinit var buttonExportJson: MaterialButton
 
+    // Video progress controls
+    private lateinit var sliderVideo: com.google.android.material.slider.Slider
+    private lateinit var textCurrentTime: MaterialTextView
+    private lateinit var textTotalTime: MaterialTextView
+
     // Result summary components
     private lateinit var flexboxYolo: FlexboxLayout
     private lateinit var flexboxAi: FlexboxLayout
@@ -70,8 +75,10 @@ class VideoDetectActivity : AppCompatActivity() {
 
     // Data
     private var videoUri: Uri? = null
-    private var analysisResults: MutableList<AnalysisResult> = mutableListOf()
+    private var analysisResults: MutableList<AnalysisResult> = java.util.concurrent.CopyOnWriteArrayList()
     private var aiCallJob: Job? = null
+    private val progressHandler = android.os.Handler(android.os.Looper.getMainLooper())
+    private var progressRunnable: java.lang.Runnable? = null
 
     private val pickVideoLauncher = registerForActivityResult(
         ActivityResultContracts.GetContent()
@@ -119,6 +126,11 @@ class VideoDetectActivity : AppCompatActivity() {
         buttonAnalyze = findViewById(R.id.buttonAnalyze)
         buttonExportJson = findViewById(R.id.buttonExportJson)
 
+        // Video progress controls
+        sliderVideo = findViewById(R.id.sliderVideo)
+        textCurrentTime = findViewById(R.id.textCurrentTime)
+        textTotalTime = findViewById(R.id.textTotalTime)
+ 
         // Result summary
         flexboxYolo = findViewById(R.id.flexboxYolo)
         flexboxAi = findViewById(R.id.flexboxAi)
@@ -149,6 +161,39 @@ class VideoDetectActivity : AppCompatActivity() {
         // Setup video view
         videoView.setOnPreparedListener { mp ->
             textStatus.text = "视频已加载: ${mp.duration / 1000}秒"
+            
+            // 设置视频缩放模式为居中自适应
+            mp.setVideoScalingMode(android.media.MediaPlayer.VIDEO_SCALING_MODE_SCALE_TO_FIT)
+            
+            // 设置SeekBar最大值为视频时长
+            val duration = mp.duration
+            if (duration > 0) {
+                sliderVideo.valueFrom = 0f
+                sliderVideo.valueTo = duration.toFloat()
+                sliderVideo.isEnabled = true
+                textTotalTime.text = formatTime(duration)
+            }
+            
+            // 更新SeekBar进度
+            progressRunnable?.let { progressHandler.removeCallbacks(it) }
+            progressRunnable = object : java.lang.Runnable {
+                override fun run() {
+                    if (videoView.isPlaying) {
+                        val currentPosition = videoView.currentPosition
+                        sliderVideo.value = currentPosition.toFloat()
+                        textCurrentTime.text = formatTime(currentPosition)
+                        progressHandler.postDelayed(this, 100)
+                    }
+                }
+            }
+            progressHandler.post(progressRunnable!!)
+            
+            // SeekBar拖动监听
+            sliderVideo.addOnChangeListener { slider, value, fromUser ->
+                if (fromUser) {
+                    videoView.seekTo(value.toInt())
+                }
+            }
         }
     }
 
@@ -178,6 +223,8 @@ class VideoDetectActivity : AppCompatActivity() {
             videoView.start()
             buttonPlayPause.text = "暂停"
             buttonPlayPause.setIconResource(android.R.drawable.ic_media_pause)
+            // 恢复进度更新
+            progressRunnable?.let { progressHandler.post(it) }
         }
         isPlaying = !isPlaying
     }
@@ -325,11 +372,7 @@ class VideoDetectActivity : AppCompatActivity() {
                 .average()
                 .toFloat()
 
-            val stats = SlidingWindowTracker.ObjectStats(
-                name = label,
-                count = count,
-                totalConfidence = avgConfidence * count
-            )
+            val stats = SlidingWindowTracker.ObjectStats.fromAvgConfidence(label, count, avgConfidence)
 
             val capsule = CapsuleView(this)
             capsule.bind(stats, CapsuleView.CapsuleSource.YOLO)
@@ -353,13 +396,7 @@ class VideoDetectActivity : AppCompatActivity() {
                 .map { it.confidence }
                 .average()
                 .toFloat()
-
-            val stats = SlidingWindowTracker.ObjectStats(
-                name = label,
-                count = count,
-                totalConfidence = avgConfidence * count
-            )
-
+            val stats = SlidingWindowTracker.ObjectStats.fromAvgConfidence(label, count, avgConfidence)
             val capsule = CapsuleView(this)
             capsule.bind(stats, CapsuleView.CapsuleSource.COMBINED)
             flexboxCombined.addView(capsule)
@@ -489,6 +526,13 @@ class VideoDetectActivity : AppCompatActivity() {
         alpha.start()
     }
 
+    private fun formatTime(ms: Int): String {
+        val seconds = ms / 1000
+        val minutes = seconds / 60
+        val secs = seconds % 60
+        return String.format("%02d:%02d", minutes, secs)
+    }
+
     private fun exportJson() {
         if (analysisResults.isEmpty()) {
             Toast.makeText(this, "没有分析结果可导出", Toast.LENGTH_SHORT).show()
@@ -506,6 +550,7 @@ class VideoDetectActivity : AppCompatActivity() {
 
     override fun onPause() {
         super.onPause()
+        progressRunnable?.let { progressHandler.removeCallbacks(it) }
         if (isPlaying) {
             videoView.pause()
             isPlaying = false

@@ -65,20 +65,20 @@ class ValidationResult:
         if self.warnings:
             print("\n--- 警告 ---")
             for msg in self.warnings:
-                print(f"  ⚠ {msg}")
+                print(f"  [!] {msg}")
 
         if self.errors:
             print("\n--- 错误 ---")
             for msg in self.errors:
-                print(f"  ✗ {msg}")
+                print(f"  [ERR] {msg}")
 
         print("\n" + "-" * 60)
         if self.passed:
-            print("✓ 数据集校验通过!")
+            print("[OK] 数据集校验通过!")
             if self.warnings:
                 print(f"  (有 {len(self.warnings)} 个警告,建议处理)")
         else:
-            print(f"✗ 数据集校验失败!发现 {len(self.errors)} 个错误。")
+            print(f"[ERR] 数据集校验失败!发现 {len(self.errors)} 个错误。")
             print("  请修复上述错误后重新运行。")
         print("=" * 60)
 
@@ -168,7 +168,7 @@ def validate_label_format(label_path: Path, nc: int, result: ValidationResult) -
 
         try:
             class_id = int(parts[0])
-            coords = [float(x) for x in parts[1:5]]
+            all_coords = [float(x) for x in parts[1:]]
         except ValueError as e:
             result.error(f"{label_path}:{line_num} 数值解析错误: {e}")
             continue
@@ -181,22 +181,37 @@ def validate_label_format(label_path: Path, nc: int, result: ValidationResult) -
         else:
             classes.append(class_id)
 
-        # 坐标范围检查
-        x, y, w, h = coords
-        if not (0 <= x <= 1 and 0 <= y <= 1):
-            result.error(
-                f"{label_path}:{line_num} 中心坐标 ({x:.4f}, {y:.4f}) 超出范围 [0, 1]"
-            )
-        if not (0 < w <= 1 and 0 < h <= 1):
-            result.error(
-                f"{label_path}:{line_num} 宽高 ({w:.4f}, {h:.4f}) 超出范围 (0, 1]"
-            )
-
-        # 边界框完整性检查
-        if x - w/2 < -0.01 or x + w/2 > 1.01 or y - h/2 < -0.01 or y + h/2 > 1.01:
-            result.warn(
-                f"{label_path}:{line_num} 边界框部分超出图像范围"
-            )
+        # 判断格式: 5个值=边界框, 多于5个值=多边形
+        is_polygon = len(all_coords) > 4
+        
+        if is_polygon:
+            # 多边形格式: class_id x1 y1 x2 y2 x3 y3 ...
+            # 只检查坐标范围
+            for ci, c in enumerate(all_coords):
+                if not (-0.01 <= c <= 1.01):
+                    coord_name = "x" if ci % 2 == 0 else "y"
+                    result.error(
+                        f"{label_path}:{line_num} 多边形顶点 {coord_name}={c:.4f} 超出范围 [0, 1]"
+                    )
+        else:
+            # 边界框格式: class_id x_center y_center width height
+            x, y, w, h = all_coords
+            # 修正浮点精度误差
+            if -0.001 < x < 0: x = 0.0
+            if -0.001 < y < 0: y = 0.0
+            if not (0 <= x <= 1 and 0 <= y <= 1):
+                result.error(
+                    f"{label_path}:{line_num} 中心坐标 ({x:.4f}, {y:.4f}) 超出范围 [0, 1]"
+                )
+            if not (0 < w <= 1 and 0 < h <= 1):
+                result.error(
+                    f"{label_path}:{line_num} 宽高 ({w:.4f}, {h:.4f}) 超出范围 (0, 1]"
+                )
+            # 边界框完整性检查
+            if x - w/2 < -0.01 or x + w/2 > 1.01 or y - h/2 < -0.01 or y + h/2 > 1.01:
+                result.warn(
+                    f"{label_path}:{line_num} 边界框部分超出图像范围"
+                )
 
     return classes
 

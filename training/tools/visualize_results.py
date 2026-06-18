@@ -3,18 +3,18 @@
 """
 OpenIris Training Results Visualizer
 
-鍙鍖栬缁冭繃绋嬪拰缁撴灉锛屽寘鎷?
-- 璁粌鎹熷け鏇茬嚎
+鍙[?]鍖栬[?]缁冭繃绋嬪拰缁撴灉锛屽寘鎷?
+- 璁[?]粌鎹熷[?]鏇茬嚎
 - mAP 鎸囨爣鏇茬嚎
-- 瀛︿範鐜囧彉鍖?
-- 娣锋穯鐭╅樀
+- 瀛[?]範鐜囧彉鍖?
+- 娣锋穯鐭[?]樀
 - 姣忕被鍒?AP 鏌辩姸鍥?
 
 浣跨敤鏂规硶:
-    # 鍙鍖栬缁冪粨鏋?
+    # 鍙[?]鍖栬[?]缁冪粨鏋?
     python training/tools/visualize_results.py --run-dir runs/train/openiris_v1
 
-    # 鎸囧畾杈撳嚭鐩綍
+    # 鎸囧畾杈撳嚭鐩[?]綍
     python training/tools/visualize_results.py --run-dir runs/train/openiris_v1 --output plots/
 """
 
@@ -26,18 +26,18 @@ from pathlib import Path
 
 def load_training_results(csv_path: str) -> dict:
     """
-    鍔犺浇 ultralytics 璁粌鏃ュ織 CSV銆?
+    鍔犺浇 ultralytics 璁[?]粌鏃[?]織 CSV銆?
 
     Args:
-        csv_path: results.csv 鏂囦欢璺緞
+        csv_path: results.csv 鏂囦欢璺[?]緞
 
     Returns:
-        璁粌缁撴灉瀛楀吀
+        璁[?]粌缁撴灉瀛楀吀
     """
     try:
         import pandas as pd
     except ImportError:
-        print("閿欒: 闇€瑕?pandas銆傝杩愯: pip install pandas")
+        print("閿欒[?]: 闇[?]瑕?pandas銆傝[?]杩愯[?]: pip install pandas")
         sys.exit(1)
 
     df = pd.read_csv(csv_path)
@@ -58,7 +58,7 @@ def plot_training_curves(df, output_dir: str):
     output_dir = Path(output_dir)
     output_dir.mkdir(parents=True, exist_ok=True)
 
-    # 1. 鎹熷け鏇茬嚎
+    # 1. 鎹熷[?]鏇茬嚎
     fig, axes = plt.subplots(2, 2, figsize=(14, 10))
     fig.suptitle("Training Loss Curves", fontsize=14)
 
@@ -137,7 +137,7 @@ def plot_training_curves(df, output_dir: str):
     plt.close()
     print(f"  淇濆瓨: {pr_path}")
 
-    # 4. 瀛︿範鐜囨洸绾?
+    # 4. 瀛[?]範鐜囨洸绾?
     lr_cols = [c for c in df.columns if "lr" in c.lower() or "pg" in c.lower()]
     if lr_cols:
         fig, ax = plt.subplots(figsize=(10, 4))
@@ -158,13 +158,13 @@ def plot_training_curves(df, output_dir: str):
 
 def generate_summary(run_dir: str) -> dict:
     """
-    鐢熸垚璁粌鎽樿銆?
+    鐢熸垚璁[?]粌鎽樿[?]銆?
 
     Args:
-        run_dir: 璁粌杩愯鐩綍
+        run_dir: 璁[?]粌杩愯[?]鐩[?]綍
 
     Returns:
-        鎽樿瀛楀吀
+        鎽樿[?]瀛楀吀
     """
     run_dir = Path(run_dir)
 
@@ -176,14 +176,14 @@ def generate_summary(run_dir: str) -> dict:
         "best_map50_95": 0,
     }
 
-    # 妫€鏌ユ潈閲嶆枃浠?
+    # 妫[?]鏌[?]潈閲嶆枃浠?
     weights_dir = run_dir / "weights"
     if weights_dir.exists():
         for f in weights_dir.glob("*.pt"):
             size_mb = f.stat().st_size / (1024 * 1024)
             summary["weights"][f.name] = f"{size_mb:.1f} MB"
 
-    # 浠?CSV 鎻愬彇鏈€浣虫寚鏍?
+    # 浠?CSV 鎻愬彇鏈[?]浣虫寚鏍?
     csv_path = run_dir / "results.csv"
     if csv_path.exists():
         df = load_training_results(str(csv_path))
@@ -198,11 +198,11 @@ def generate_summary(run_dir: str) -> dict:
 
 
 def print_summary(summary: dict):
-    """鎵撳嵃璁粌鎽樿"""
+    """打印训练摘要"""
     print("\n" + "=" * 60)
-    print("璁粌鎽樿")
+    print("璁[?]粌鎽樿[?]")
     print("=" * 60)
-    print(f"杩愯鐩綍: {summary['run_dir']}")
+    print(f"杩愯[?]鐩[?]綍: {summary['run_dir']}")
 
     if summary["weights"]:
         print(f"\n鏉冮噸鏂囦欢:")
@@ -210,7 +210,7 @@ def print_summary(summary: dict):
             print(f"  {name}: {size}")
 
     if summary["best_epoch"] is not None:
-        print(f"\n鏈€浣崇粨鏋?(Epoch {summary['best_epoch']}):")
+        print(f"\n鏈[?]浣崇粨鏋?(Epoch {summary['best_epoch']}):")
         print(f"  mAP50:    {summary['best_map50']:.4f}")
         print(f"  mAP50-95: {summary['best_map50_95']:.4f}")
 
@@ -225,38 +225,38 @@ def main():
         "--run-dir",
         type=str,
         required=True,
-        help="璁粌杩愯鐩綍璺緞",
+        help="璁[?]粌杩愯[?]鐩[?]綍璺[?]緞",
     )
     parser.add_argument(
         "--output",
         type=str,
         default=None,
-        help="鍥捐〃杈撳嚭鐩綍 (榛樿: <run-dir>/plots)",
+        help="鍥捐[?]杈撳嚭鐩[?]綍 (榛樿[?]: <run-dir>/plots)",
     )
 
     args = parser.parse_args()
 
     run_dir = Path(args.run_dir)
     if not run_dir.exists():
-        print(f"閿欒: 杩愯鐩綍涓嶅瓨鍦? {run_dir}")
+        print(f"閿欒[?]: 杩愯[?]鐩[?]綍涓嶅瓨鍦? {run_dir}")
         sys.exit(1)
 
     output_dir = args.output or str(run_dir / "plots")
 
-    # 鐢熸垚鎽樿
+    # 鐢熸垚鎽樿[?]
     summary = generate_summary(str(run_dir))
     print_summary(summary)
 
     # 缁樺埗鏇茬嚎
     csv_path = run_dir / "results.csv"
     if csv_path.exists():
-        print("\n姝e湪鐢熸垚璁粌鏇茬嚎...")
+        print("\n姝e湪鐢熸垚璁[?]粌鏇茬嚎...")
         df = load_training_results(str(csv_path))
         plot_training_curves(df, output_dir)
-        print(f"\n鍥捐〃宸蹭繚瀛樺埌: {output_dir}")
+        print(f"\n图表已保存到: {output_dir}")
     else:
-        print(f"\n璀﹀憡: 鏈壘鍒?results.csv锛岃烦杩囨洸绾跨粯鍒躲€?)
-        print(f"  棰勬湡璺緞: {csv_path}")
+        print(f"\n警告: 未找到 results.csv，跳过曲线绘制")
+        print(f"  预期路径: {csv_path}")
 
 
 if __name__ == "__main__":

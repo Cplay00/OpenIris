@@ -1,4 +1,4 @@
-package com.yolo.openiris
+﻿package com.yolo.openiris
 
 import android.Manifest
 import android.animation.AnimatorSet
@@ -30,6 +30,7 @@ import com.google.android.material.button.MaterialButton
 import com.google.android.material.materialswitch.MaterialSwitch
 import com.google.android.material.textview.MaterialTextView
 import com.yolo.openiris.ai.AiModelManager
+import com.yolo.openiris.label.LabelPresetManager
 import com.yolo.openiris.config.ConfigManager
 import com.yolo.openiris.detection.*
 import com.yolo.openiris.export.ImageExporter
@@ -49,6 +50,17 @@ class ImageDetectActivity : AppCompatActivity() {
 
     companion object {
         private const val TAG = "OpenIris-ImageDetect"
+        private val DEFAULT_COCO_LABELS = listOf(
+            "person", "bicycle", "car", "motorcycle", "airplane", "bus", "train", "truck", "boat", "traffic light",
+            "fire hydrant", "stop sign", "parking meter", "bench", "bird", "cat", "dog", "horse", "sheep", "cow",
+            "elephant", "bear", "zebra", "giraffe", "backpack", "umbrella", "handbag", "tie", "suitcase", "frisbee",
+            "skis", "snowboard", "sports ball", "kite", "baseball bat", "baseball glove", "skateboard", "surfboard",
+            "tennis racket", "bottle", "wine glass", "cup", "fork", "knife", "spoon", "bowl", "banana", "apple",
+            "sandwich", "orange", "broccoli", "carrot", "hot dog", "pizza", "donut", "cake", "chair", "couch",
+            "potted plant", "bed", "dining table", "toilet", "tv", "laptop", "mouse", "remote", "keyboard", "cell phone",
+            "microwave", "oven", "toaster", "sink", "refrigerator", "book", "clock", "vase", "scissors", "teddy bear",
+            "hair drier", "toothbrush"
+        )
     }
 
     // Core components
@@ -83,6 +95,7 @@ class ImageDetectActivity : AppCompatActivity() {
     private var analysisResult: AnalysisResult? = null
     private var lastAiOutput: com.yolo.openiris.ai.StructuredOutput? = null
     private var photoUri: Uri? = null
+    private lateinit var labelPresetManager: LabelPresetManager
 
     // Activity result launchers
     private val pickImageLauncher = registerForActivityResult(
@@ -117,6 +130,7 @@ class ImageDetectActivity : AppCompatActivity() {
         configManager = ConfigManager.getInstance(this)
         aiModelManager = AiModelManager.getInstance(this)
         yolov11Ncnn = Yolov11Ncnn()
+        labelPresetManager = LabelPresetManager(this)
 
         initViews()
         if (!loadModel()) {
@@ -161,11 +175,33 @@ class ImageDetectActivity : AppCompatActivity() {
 
     private fun loadModel(): Boolean {
         val cpuGpu = if (configManager.loadConfig().useGpu) 1 else 0
-        val ret = yolov11Ncnn.loadModel(assets, 0, cpuGpu)
-        if (!ret) {
-            Log.e(TAG, "Failed to load model")
-            textStatus.text = "模型加载失败"
-            return false
+        val selectedModel = configManager.loadConfig().selectedModel
+        val ret: Boolean
+
+        val modelDir = getDir("models", MODE_PRIVATE)
+        val customModelDir = File(modelDir, selectedModel)
+        val isCustomModel = customModelDir.exists() &&
+            customModelDir.listFiles()?.any { it.extension == "param" } == true &&
+            customModelDir.listFiles()?.any { it.extension == "bin" } == true
+
+        if (isCustomModel) {
+            val paramFile = customModelDir.listFiles()!!.first { it.extension == "param" }
+            val binFile = customModelDir.listFiles()!!.first { it.extension == "bin" }
+            val labelsFile = File(customModelDir, "labels.txt")
+            Log.d(TAG, "Loading custom model from: ${paramFile.absolutePath}")
+            ret = yolov11Ncnn.loadModelFromPath(paramFile.absolutePath, binFile.absolutePath, labelsFile.absolutePath, cpuGpu)
+            if (!ret) {
+                Log.e(TAG, "Failed to load custom model")
+                textStatus.text = "自定义模型加载失败"
+                return false
+            }
+        } else {
+            ret = yolov11Ncnn.loadModel(assets, 0, cpuGpu)
+            if (!ret) {
+                Log.e(TAG, "Failed to load model")
+                textStatus.text = "模型加载失败"
+                return false
+            }
         }
         return true
     }
@@ -278,6 +314,9 @@ class ImageDetectActivity : AppCompatActivity() {
 
                 textStatus.text = "检测完成"
 
+                // 不论 AI 是否启用/成功，都刷新综合分析视图
+                updateCombinedResults()
+
             } catch (e: Exception) {
                 Log.e(TAG, "Detection failed", e)
                 textStatus.text = "检测失败: ${e.message}"
@@ -324,10 +363,29 @@ class ImageDetectActivity : AppCompatActivity() {
 
     private fun loadLabels(modelName: String): List<String> {
         return try {
-            assets.open("models/$modelName/labels.txt").use { it.bufferedReader().readLines().filter { line -> line.isNotBlank() } }
+            // 首先尝试从 assets 加载
+            assets.open("models/$modelName/labels.txt").use { it.bufferedReader().readLines().map { line -> line.trimStart('\uFEFF') }.filter { line -> line.isNotBlank() } }
         } catch (e: Exception) {
-            Log.e(TAG, "Failed to load labels", e)
-            emptyList()
+            // 内置 assets 中找不到，尝试从内部存储读取（自定义模型）
+            try {
+                val modelDir = getDir("models", MODE_PRIVATE)
+                val labelsFile = File(modelDir, "$modelName/labels.txt")
+                if (labelsFile.exists()) {
+                    Log.d(TAG, "Loading labels from internal storage: ${labelsFile.absolutePath}")
+                    val labels = labelPresetManager.loadLabelsFromFile(labelsFile)
+                    if (labels != null) {
+                        return labels
+                    }
+                    // 如果 loadLabelsFromFile 返回 null，使用默认标签
+                    labelPresetManager.loadPresetLabels(LabelPresetManager.PRESET_COCO_80) ?: DEFAULT_COCO_LABELS
+                } else {
+                    Log.w(TAG, "Labels file not found in assets or internal storage for model: $modelName")
+                    labelPresetManager.loadPresetLabels(LabelPresetManager.PRESET_COCO_80) ?: DEFAULT_COCO_LABELS
+                }
+            } catch (e2: Exception) {
+                Log.e(TAG, "Failed to load labels from internal storage", e2)
+                labelPresetManager.loadPresetLabels(LabelPresetManager.PRESET_COCO_80) ?: DEFAULT_COCO_LABELS
+            }
         }
     }
 
@@ -342,11 +400,7 @@ class ImageDetectActivity : AppCompatActivity() {
                 .average()
                 .toFloat()
 
-            val stats = SlidingWindowTracker.ObjectStats(
-                name = label,
-                count = count,
-                totalConfidence = avgConfidence * count
-            )
+            val stats = SlidingWindowTracker.ObjectStats.fromAvgConfidence(label, count, avgConfidence)
 
             val capsule = CapsuleView(this)
             capsule.bind(stats, CapsuleView.CapsuleSource.YOLO)
@@ -430,11 +484,7 @@ class ImageDetectActivity : AppCompatActivity() {
         }
 
         combinedMap.forEach { (label, triple) ->
-            val stats = SlidingWindowTracker.ObjectStats(
-                name = label,
-                count = triple.first,
-                totalConfidence = triple.second * triple.first
-            )
+            val stats = SlidingWindowTracker.ObjectStats.fromAvgConfidence(label, triple.first, triple.second)
 
             val capsule = CapsuleView(this)
             capsule.bind(stats, CapsuleView.CapsuleSource.COMBINED)
@@ -525,3 +575,4 @@ class ImageDetectActivity : AppCompatActivity() {
         }
     }
 }
+

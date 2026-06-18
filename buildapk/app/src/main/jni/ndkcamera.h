@@ -34,7 +34,7 @@ public:
 
     // facing 0=front 1=back
     int open(int camera_facing = 0);
-    void close();
+    virtual void close();
 
     // 设置分辨率（需要重新打开摄像头生效）
     void setResolution(int width, int height);
@@ -70,10 +70,11 @@ public:
     virtual ~NdkCameraWindow();
 
     void set_window(ANativeWindow* win);
+    void close() override;
 
     virtual void on_image_render(cv::Mat& rgb) const;
 
-    virtual void on_image(const unsigned char* nv21, int nv21_width, int nv21_height) const;
+    void on_image(const unsigned char* nv21, int nv21_width, int nv21_height) const override;
 
 public:
     mutable int accelerometer_orientation;

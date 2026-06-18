@@ -80,7 +80,8 @@ class AiModelManager private constructor(context: Context) {
     suspend fun callModel(
         model: AiModel,
         prompt: String,
-        systemPrompt: String? = null
+        systemPrompt: String? = null,
+        enableThinking: Boolean = false
     ): AiResult = withContext(Dispatchers.IO) {
         val provider = configStore.getProvider(model.providerId)
             ?: return@withContext AiResult.failure(
@@ -93,7 +94,7 @@ class AiModelManager private constructor(context: Context) {
         if (provider.enableStream) {
             val startTime = System.currentTimeMillis()
             val streamResult = withTimeoutOrNull(STREAM_TIMEOUT_MS) {
-                val (content, error) = apiClient.callModelStream(provider, model, prompt, systemPrompt)
+                val (content, error) = apiClient.callModelStream(provider, model, prompt, systemPrompt, enableThinking = enableThinking)
                 if (content != null) {
                     AiResult.success(
                         modelId = model.id,
@@ -114,7 +115,7 @@ class AiModelManager private constructor(context: Context) {
         }
 
         // 非流式调用
-        apiClient.callModel(provider, model, prompt, systemPrompt)
+        apiClient.callModel(provider, model, prompt, systemPrompt, enableThinking = enableThinking)
     }
 
     /**
@@ -125,7 +126,8 @@ class AiModelManager private constructor(context: Context) {
         model: AiModel,
         prompt: String,
         imageBase64: String,
-        systemPrompt: String? = null
+        systemPrompt: String? = null,
+        enableThinking: Boolean = false
     ): AiResult = withContext(Dispatchers.IO) {
         val provider = configStore.getProvider(model.providerId)
             ?: return@withContext AiResult.failure(
@@ -135,7 +137,7 @@ class AiModelManager private constructor(context: Context) {
             )
 
         // 流式调用目前不支持带图片，直接使用非流式
-        apiClient.callModelWithImage(provider, model, prompt, imageBase64, systemPrompt)
+        apiClient.callModelWithImage(provider, model, prompt, imageBase64, systemPrompt, enableThinking = enableThinking)
     }
 
     /**

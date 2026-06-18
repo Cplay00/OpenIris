@@ -34,6 +34,7 @@ class ConfigManager private constructor(context: Context) {
         private const val KEY_CAMERA_RESOLUTION_HEIGHT = "camera_resolution_height"
         private const val KEY_CUSTOM_RESOLUTIONS = "custom_resolutions"
         private const val KEY_SHOW_CAPTURE_PREVIEW = "show_capture_preview"
+        private const val KEY_CAPTURE_INTERVAL = "capture_interval_seconds"
 
         @Volatile
         private var instance: ConfigManager? = null
@@ -133,6 +134,7 @@ class ConfigManager private constructor(context: Context) {
             putInt(KEY_CAMERA_RESOLUTION_HEIGHT, config.cameraResolutionHeight)
             putString(KEY_CUSTOM_RESOLUTIONS, config.customResolutions.joinToString(","))
             putBoolean(KEY_SHOW_CAPTURE_PREVIEW, config.showCapturePreview)
+            putFloat(KEY_CAPTURE_INTERVAL, config.captureIntervalSeconds)
             apply()
         }
     }
@@ -175,7 +177,8 @@ class ConfigManager private constructor(context: Context) {
             cameraResolutionWidth = encryptedPrefs.getInt(KEY_CAMERA_RESOLUTION_WIDTH, AppConfig.DEFAULT_CAMERA_WIDTH),
             cameraResolutionHeight = encryptedPrefs.getInt(KEY_CAMERA_RESOLUTION_HEIGHT, AppConfig.DEFAULT_CAMERA_HEIGHT),
             customResolutions = customResolutions,
-            showCapturePreview = encryptedPrefs.getBoolean(KEY_SHOW_CAPTURE_PREVIEW, false)
+            showCapturePreview = encryptedPrefs.getBoolean(KEY_SHOW_CAPTURE_PREVIEW, false),
+            captureIntervalSeconds = encryptedPrefs.getFloat(KEY_CAPTURE_INTERVAL, AppConfig.DEFAULT_CAPTURE_INTERVAL)
         )
     }
 

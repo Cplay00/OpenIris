@@ -15,6 +15,9 @@ import sys
 from pathlib import Path
 import yaml
 
+# Project root (training/scripts/train.py -> project root)
+PROJECT_ROOT = Path(__file__).resolve().parent.parent.parent
+
 # Mobile deployment constraints
 MOBILE_CONSTRAINTS = {
     "model": "yolo11n.pt",
@@ -70,7 +73,7 @@ def build_train_args(args, hyp):
         "save_period": hyp.get("save_period", 10),
         "device": args.device or hyp.get("device", 0),
         "amp": hyp.get("amp", True),
-        "project": hyp.get("project", "runs/train"),
+        "project": hyp.get("project", str(PROJECT_ROOT / "training" / "run")),
         "name": args.name or hyp.get("name", "openiris"),
         "exist_ok": True,
         "pretrained": True,
@@ -161,4 +164,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-

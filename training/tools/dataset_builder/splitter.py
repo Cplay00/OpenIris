@@ -3,10 +3,10 @@
 """
 Dataset Splitter
 
-鏁版嵁闆嗗垝鍒嗗伐鍏凤紝鏀寔:
-- 璁粌/楠岃瘉/娴嬭瘯闆嗗垝鍒?
-- 鍒嗗眰鍒掑垎锛堜繚鎸佺被鍒瘮渚嬶級
-- 鎸夌洰褰曠粨鏋勮嚜鍔ㄥ垝鍒?
+鏁版嵁闆嗗垝鍒嗗伐鍏凤紝鏀?寔:
+- 璁?粌/楠岃瘉/娴嬭瘯闆嗗垝鍒?
+- 鍒嗗眰鍒掑垎锛堜繚鎸佺被鍒?瘮渚嬶級
+- 鎸夌洰褰曠粨鏋勮嚜鍔?垝鍒?
 """
 
 import random
@@ -31,20 +31,20 @@ class DatasetSplitter:
         stratify: bool = True
     ) -> dict:
         """
-        鍒掑垎鏁版嵁闆嗕负璁粌/楠岃瘉/娴嬭瘯闆嗐€?
+        鍒掑垎鏁版嵁闆嗕负璁?粌/楠岃瘉/娴嬭瘯闆嗐??
 
         Args:
-            image_dir: 鍥惧儚鐩綍
-            label_dir: 鏍囨敞鐩綍
-            output_dir: 杈撳嚭鐩綍
-            train_ratio: 璁粌闆嗘瘮渚?
+            image_dir: 鍥惧儚鐩?綍
+            label_dir: 鏍囨敞鐩?綍
+            output_dir: 杈撳嚭鐩?綍
+            train_ratio: 璁?粌闆嗘瘮渚?
             val_ratio: 楠岃瘉闆嗘瘮渚?
             test_ratio: 娴嬭瘯闆嗘瘮渚?
             seed: 闅忔満绉嶅瓙
-            stratify: 鏄惁鍒嗗眰鍒掑垎锛堜繚鎸佺被鍒瘮渚嬶級
+            stratify: 鏄?惁鍒嗗眰鍒掑垎锛堜繚鎸佺被鍒?瘮渚嬶級
 
         Returns:
-            鍒掑垎缁熻淇℃伅
+            鍒掑垎缁熻?淇?伅
         """
         image_dir = Path(image_dir)
         label_dir = Path(label_dir)
@@ -55,7 +55,7 @@ class DatasetSplitter:
         if abs(total_ratio - 1.0) > 0.001:
             raise ValueError(f"姣斾緥涔嬪拰蹇呴』涓?1.0锛屽綋鍓? {total_ratio}")
 
-        # 鏀堕泦閰嶅鐨勫浘鍍忓拰鏍囨敞
+        # 鏀堕泦閰嶅?鐨勫浘鍍忓拰鏍囨敞
         image_exts = {".jpg", ".jpeg", ".png", ".bmp", ".webp"}
         pairs = []
 
@@ -66,7 +66,7 @@ class DatasetSplitter:
                     pairs.append((img_file, label_file))
 
         if not pairs:
-            raise ValueError(f"鏈壘鍒版湁鏁堢殑鍥惧儚-鏍囨敞瀵? {image_dir}, {label_dir}")
+            raise ValueError(f"鏈?壘鍒版湁鏁堢殑鍥惧儚-鏍囨敞瀵? {image_dir}, {label_dir}")
 
         # 鍒嗗眰鍒掑垎
         if stratify:
@@ -86,7 +86,7 @@ class DatasetSplitter:
                 "test": pairs[n_train + n_val:]
             }
 
-        # 鍒涘缓杈撳嚭鐩綍骞跺鍒舵枃浠?
+        # 鍒涘缓杈撳嚭鐩?綍骞跺?鍒舵枃浠?
         stats = {}
         for split_name, split_pairs in splits.items():
             if not split_pairs:
@@ -107,7 +107,7 @@ class DatasetSplitter:
 
     @staticmethod
     def _get_file_classes(pairs: List[Tuple[Path, Path]]) -> dict:
-        """鑾峰彇姣忎釜鏂囦欢鐨勪富瑕佺被鍒?""
+        """获取每个文件的主要类别"""
         file_classes = {}
         for img_file, label_file in pairs:
             classes = []
@@ -116,7 +116,7 @@ class DatasetSplitter:
                     parts = line.strip().split()
                     if parts:
                         classes.append(int(parts[0]))
-            # 浣跨敤鍑虹幇鏈€澶氱殑绫诲埆浣滀负涓昏绫诲埆
+            # 浣跨敤鍑虹幇鏈?澶氱殑绫诲埆浣滀负涓昏?绫诲埆
             if classes:
                 file_classes[img_file.stem] = max(set(classes), key=classes.count)
             else:
@@ -131,10 +131,10 @@ class DatasetSplitter:
         val_ratio: float,
         seed: int
     ) -> dict:
-        """鍒嗗眰鍒掑垎锛屼繚鎸佺被鍒瘮渚?""
+        """分层划分, 保持类别比例"""
         random.seed(seed)
 
-        # 鎸夌被鍒垎缁?
+        # 鎸夌被鍒?垎缁?
         class_files = defaultdict(list)
         for img_file, label_file in pairs:
             cls = file_classes[img_file.stem]
@@ -164,14 +164,14 @@ class DatasetSplitter:
         output_dir: str
     ) -> dict:
         """
-        鍚堝苟澶氫釜鏁版嵁闆嗐€?
+        合并多个数据集
 
         Args:
-            dataset_dirs: 鏁版嵁闆嗙洰褰曞垪琛?
-            output_dir: 杈撳嚭鐩綍
+            dataset_dirs: 数据集目录列表
+            output_dir: 输出目录
 
         Returns:
-            鍚堝苟缁熻淇℃伅
+            合并统计信息
         """
         output_dir = Path(output_dir)
         stats = {"datasets": len(dataset_dirs), "images": 0, "labels": 0}
@@ -193,7 +193,7 @@ class DatasetSplitter:
 
                 for img_file in img_src.iterdir():
                     if img_file.suffix.lower() in {".jpg", ".jpeg", ".png", ".bmp", ".webp"}:
-                        # 娣诲姞鏁版嵁闆嗗墠缂€閬垮厤閲嶅悕
+                        # 娣诲姞鏁版嵁闆嗗墠缂?閬垮厤閲嶅悕
                         new_name = f"{dataset_dir.name}_{img_file.name}"
                         shutil.copy2(img_file, img_dst / new_name)
                         stats["images"] += 1
